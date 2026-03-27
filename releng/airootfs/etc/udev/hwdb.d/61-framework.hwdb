@@ -1,0 +1,27 @@
+### Framework 12 – Rotation Fix
+#   Problem:
+#   Rotation incorrectly detected in tablet mode.
+#
+#   Hardware:
+#        Framework 12
+#        Sensor: KIOX000A
+#
+#   Solution:
+#   hwdb entry added:
+#       61-framework12.hwdb
+#
+#   Entry:
+#   (sensor mapping snippet)
+#   
+#   Test status:
+#       ✓ KDE Wayland
+#       ✓ KDE X11
+#       ⚠ Suspend not fully tested
+#
+#       Source:
+#       Kernel Bug #xxxxx
+#
+# Kernel version: ToDo
+
+sensor:modalias:acpi:FRMWC004*:dmi:*
+ ACCEL_MOUNT_MATRIX=0, 1, 0; -1, 0, 0; 0, 0, 1

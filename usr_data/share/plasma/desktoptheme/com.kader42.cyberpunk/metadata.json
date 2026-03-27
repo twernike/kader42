@@ -1,0 +1,10 @@
+{
+    "KPackageStructure": "Plasma/Theme",
+    "KPlugin": {
+        "Authors": [ { "Name": "Thomas Wernike" } ],
+        "Id": "com.kader42.cyberpunk",
+        "Name": "Kader⁴²",
+        "ServiceTypes": [ "Plasma/Theme" ],
+        "Version": "1.0"
+    }
+}

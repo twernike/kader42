@@ -1,0 +1,16 @@
+[Unit]
+Description=Plasma 6 Tablet Mode Switcher
+# Wichtig: Wir warten, bis die Session und das D-Bus-Interface stehen
+After=plasma-plasmashell.service
+Partof=graphical-session.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/plasma-launcher-switcher.sh
+# Falls Plasma mal abstürzt, warten wir kurz mit dem Re-Connect
+ExecStartPre=/usr/bin/sleep 5
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=plasma-core.target

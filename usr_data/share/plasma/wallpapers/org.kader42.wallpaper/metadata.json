@@ -1,0 +1,8 @@
+{
+    "KPackageStructure": "Wallpaper/Images",
+    "KPlugin": {
+        "Id": "Kader42_Cyberpunk_Wall",
+        "Name": "Kader42 Cyberpunk Default",
+        "ServiceTypes": [ "Wallpaper/Images" ]
+    }
+}

@@ -1,0 +1,11 @@
+{
+    "KPackageStructure": "Plasma/Theme",
+    "KPlugin": {
+        "Authors": [ { "Name": "Thomas Wernike" } ],
+        "Id": "Kader42",
+        "Name": "Kader⁴²",
+        "Description": "Kader⁴² Default Theme",
+        "ServiceTypes": [ "Plasma/Theme" ],
+        "Version": "1.0"
+    }
+}

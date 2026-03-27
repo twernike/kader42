@@ -1,0 +1,14 @@
+[Unit]
+Description=Enable linger for first real user
+After=multi-user.target
+ConditionPathExists=!/var/lib/plasma-convertible-linger.done
+ConditionPathExists=!/run/archiso
+
+[Service]
+Type=oneshot
+# Wir nutzen ein einfaches Skript-File statt Inline-Bash, das ist weniger fehleranfällig
+ExecStart=/usr/bin/plasma-convertible-helper --enable-linger
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

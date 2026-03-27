@@ -1,0 +1,8 @@
+Image = Image("logo.png");
+W = Plymouth.GetScreenWidth();
+H = Plymouth.GetScreenHeight();
+w = Image.GetWidth();
+h = Image.GetHeight();
+sprite = Plymouth.CreateSprite(Image);
+sprite.SetX((W - w) / 2);
+sprite.SetY((H - h) / 2);

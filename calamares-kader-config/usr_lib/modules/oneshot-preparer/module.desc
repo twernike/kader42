@@ -1,0 +1,6 @@
+# /usr/lib/calamares/modules/oneshot_preparer/module.desc
+---
+type:       "job"
+name:       "oneshot-preparer"
+interface:  "python"
+script:     "main.py"

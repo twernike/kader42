@@ -1,0 +1,89 @@
+#!/bin/bash
+# /usr/bin/plasma-convertible-switcher.sh
+
+# --- 1. INPUT LOGIC ---
+# We expect 1 (tablet) or 0 (laptop/desktop) from the Systemd service
+INPUT_MODE="$1"
+
+
+if [[ "$INPUT_MODE" != "0" && "$INPUT_MODE" != "1" ]]; then
+    echo "Error: Invalid mode. Use 0 for desktop or 1 for tablet."
+    exit 1
+fi
+
+# Conversion to readable variables (Boolean-style)
+if [ "$INPUT_MODE" = "1" ]; then
+    IS_TABLET=true
+    MODE_NAME="Tablet"
+else
+    IS_TABLET=false
+    MODE_NAME="Desktop"
+fi
+
+STATE_FILE="/tmp/plasma-convertible-state"
+
+# --- 2. SESSION FINDER ---
+# We are looking for the user context for D-Bus (Wayland-safe)
+USER_ID=$(ls /run/user/ | head -n1) 
+REAL_USER=$(id -nu "$USER_ID")
+
+export XDG_RUNTIME_DIR="/run/user/$USER_ID"
+export DBUS_SESSION_BUS_ADDRESS="unix:path=$XDG_RUNTIME_DIR/bus"
+
+# --- 3. DEBOUNCE ---
+# Only execute if the mode has actually changed
+[ -f "$STATE_FILE" ] && [ "$(cat "$STATE_FILE")" = "$INPUT_MODE" ] && exit 0
+echo "$INPUT_MODE" > "$STATE_FILE"
+
+# --- 4. PLASMA INTERFACE LOGIC (JavaScript) ---
+# Here we use IS_TABLET directly in the JavaScript logic
+JS="
+var isTablet = ${IS_TABLET};
+var allPanels = panels();
+
+for (var i = 0; i < allPanels.length; ++i) {
+    var p = allPanels[i];
+    
+    // UI-Anpassung
+    p.thickness = isTablet ? 53 : 32;
+    p.floating = isTablet;
+
+    var widgets = p.widgets();
+    var widgetTypes = [];
+    var launcherIndex = -1;
+
+    for (var j = 0; j < widgets.length; ++j) {
+        widgetTypes.push(widgets[j].type);
+        if (widgets[j].type.indexOf('kick') !== -1) {
+            launcherIndex = j;
+        }
+    }
+
+    if (launcherIndex === -1) continue;
+
+    var targetLauncher = isTablet ? 'org.kde.plasma.kickerdash' : 'org.kde.plasma.kickoff';
+    
+    // Austausch nur bei Bedarf
+    if (widgetTypes[launcherIndex] !== targetLauncher) {
+        for (var j = widgets.length - 1; j >= 0; --j) { widgets[j].remove(); }
+        for (var j = 0; j < widgetTypes.length; ++j) {
+            var w = p.addWidget(j === launcherIndex ? targetLauncher : widgetTypes[j]);
+            if (j === launcherIndex && isTablet) {
+                w.currentConfigGroup = ['General'];
+                w.writeConfig('showCategories', false);
+            }
+        }
+    }
+}
+"
+
+# --- 5. EXECUTION ---
+# Feedback in the system log (useful for debugging the distro)
+echo "Kader⁴² launcher switcher: Switching to $MODE_NAME Mode for user $REAL_USER"
+
+sudo -u "$REAL_USER" DBUS_SESSION_BUS_ADDRESS="$DBUS_SESSION_BUS_ADDRESS" \
+     XDG_RUNTIME_DIR="$XDG_RUNTIME_DIR" \
+     qdbus6 org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell.evaluateScript "$JS" &
+
+# Nur falls die Rotation nach dem Switch klemmt:
+# qdbus6 org.kde.KWin /KWin org.kde.KWin.reconfigure > /dev/null 2>&1
