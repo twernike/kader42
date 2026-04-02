@@ -1,0 +1,33 @@
+#!/bin/bash
+
+export DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/$(id -u)/bus"
+
+# Am Anfang des Skripts den Modus speichern
+DEBUG_ENABLED=false
+if [[ "$1" == "debug" ]]; then
+    DEBUG_ENABLED=true
+fi
+
+# Die Funktion nutzt dann die globale Variable
+debugMessage() {
+    if [ "$DEBUG_ENABLED" = true ]; then
+        echo -e "\e[33m[DEBUG]\e[0m $1" # Mit ein bisschen Farbe (Gelb)
+    fi
+}
+
+echo "[Kader42] Listening for tabletModeChanged..."
+
+gdbus monitor --session \
+  --dest org.kde.KWin \
+  --object-path /org/kde/KWin |
+while read -r line; do
+    if [[ "$line" == *"tabletModeChanged"* && "$line" == *"true"* ]]; then
+            debugMessage "The value of the line is $line"
+            /usr/bin/plasma-convertible-switcher 1
+    else
+            debugMessage "The value of the line is $line"
+            /usr/bin/plasma-convertible-switcher 0
+    fi
+        read -r nextline
+        debugMessage "nextLine ➤ $nextline"
+done

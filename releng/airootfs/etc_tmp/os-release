@@ -1,0 +1,12 @@
+NAME="Kader42"
+PRETTY_NAME="Kader42"
+ID=kader42
+ID_LIKE=arch
+BUILD_ID=rolling
+ANSI_COLOR="1;34"
+HOME_URL="https://github.com/twernike/kader42"
+DOCUMENTATION_URL="https://github.com/twernike/kader42"
+SUPPORT_URL="https://github.com/twernike/kader42"
+BUG_REPORT_URL="https://github.com/twernike/kader42"
+PRIVACY_POLICY_URL="https://github.com/twernike/kader42"
+LOGO=kader42

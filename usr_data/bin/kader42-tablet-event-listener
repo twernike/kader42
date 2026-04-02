@@ -1,0 +1,37 @@
+#!/bin/bash
+
+export DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/$(id -u)/bus"
+
+echo "[Kader42 Tablet Event Listener] Sensor-based TabletMode started..."
+
+LAST_MODE=""
+
+monitor-sensor | while read -r line; do
+
+    if echo "$line" | grep -q "Accelerometer orientation changed"; then
+        
+        if echo "$line" | grep -q "normal"; then
+            MODE=0
+        else
+            MODE=1
+        fi
+
+    elif echo "$line" | grep -q "Tilt changed"; then
+
+        if echo "$line" | grep -q "vertical"; then
+            MODE=0
+        else
+            MODE=1
+        fi
+    else
+        continue
+    fi
+
+    # Debounce
+    if [ "$MODE" != "$LAST_MODE" ]; then
+        echo "[Kader42 Tablet Event Listener] Mode changed → $MODE"
+        /usr/bin/plasma-convertible-switcher "$MODE"
+        LAST_MODE="$MODE"
+    fi
+
+done

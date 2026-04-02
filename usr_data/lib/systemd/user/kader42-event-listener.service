@@ -1,0 +1,12 @@
+[Unit]
+Description=Kader42 Event Listener
+After=plasma-plasmashell.service
+
+[Service]
+Type=exec
+ExecStart=/usr/bin/kader42-tabletmode-watcher-passive
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=default.target

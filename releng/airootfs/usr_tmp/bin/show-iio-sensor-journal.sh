@@ -1,0 +1,1 @@
+journalctl -u iio-sensor-proxy

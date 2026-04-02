@@ -1,0 +1,3 @@
+#!/bin/bash
+# Zeigt an, ob udev das Gerät mit dem systemd-Tag markiert hat
+udevadm info --export-db | grep -A 15 "gpio-keys"

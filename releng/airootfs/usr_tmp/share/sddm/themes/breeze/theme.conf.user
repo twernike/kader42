@@ -1,0 +1,4 @@
+[General]
+background=login-screen.png
+# 'none' oder 'Letterbox' sorgt dafür, dass das Bild nicht gestreckt wird
+backgroundFillMode=none

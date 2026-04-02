@@ -5,3 +5,4 @@ enable plymouth-killer.service
 enable sddm.service
 enable NetworkManager.service
 enable iio-sensor-proxy.service
+enable bluetooth.service

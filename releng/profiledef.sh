@@ -43,7 +43,7 @@ users=(
   {
     "name": "liveuser",
     "password": '$1$AzoXqmKJ$r67GODY5j/K/GaXp2YZbY.',
-    "groups": ["wheel", "audio", "video", "network", "input", "storage", "power"],
+    "groups": ["wheel", "audio", "video", "network", "input", "storage", "power", "lp"],
     "shell": "/bin/bash"
   }
 )

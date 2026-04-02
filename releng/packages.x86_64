@@ -42,6 +42,11 @@ pambase
 bolt
 alsa-ucm-conf
 libnotify
+fbida
+smartmontools
+sof-firmware
+squashfs-tools
+sudo
 
 #######################################################
 # Needed packages for convertible
@@ -201,10 +206,6 @@ screen
 sdparm
 
 sg3_utils
-smartmontools
-sof-firmware
-squashfs-tools
-sudo
 
 terminus-font
 testdisk
@@ -232,7 +233,6 @@ discover
 kpackage
 ark
 libinput-tools
-
 kinfocenter
 ark
 kio-extras
@@ -357,8 +357,6 @@ wireplumber
 plasma-pa
 pipewire-zeroconf
 pipewire-jack-client
-gamemode
-umu-launcher
 
 # office
 libreoffice-fresh
@@ -385,17 +383,24 @@ extra-cmake-modules
 lmms
 gst-libav
 gst-plugins-good
+python-setuptools
 
 # Bluetooth
 bluez
 bluez-utils
-bluez-deprecated-tools
 bluez-obex
 bluez-mesh
 bluedevil
+# pulseaudio-bluetooth
 
 # Gaming
 steam
+umu-launcher
+lutris
+
+#Virtualbox
+virtualbox
+virtualbox-guest-utils-nox
 
 # AUR packages
 calamares-git
@@ -403,23 +408,5 @@ yay
 pamac-aur
 pamac-tray-icon-plasma
 winboat
-heroic-games-launcher-bin
 openboard
-
-#Virtualbox
-virtualbox
-virtualbox-guest-utils-nox
-
-#gestures
-python-setuptools
 inputactions-kwin
-#python-libinput
-#plasma-mobile
-#ruby-fusuma
-#ruby-fusuma-plugin-appmatcher
-#ruby-fusuma-plugin-keypress
-#ruby-fusuma-plugin-remap
-#ruby-fusuma-plugin-sendkey
-#ruby-fusuma-plugin-tap
-#ruby-fusuma-plugin-thumbsense
-#ruby-fusuma-plugin-wmctrl

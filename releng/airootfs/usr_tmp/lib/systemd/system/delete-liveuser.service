@@ -1,0 +1,13 @@
+[Unit]
+Description=Delete liveuser after installation
+# Only run the service when we are NOT in the live system.
+ConditionPathExists=!/run/archiso/bootmnt
+After=multi-user.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/userdel -r -f liveuser
+ExecStartPost=/usr/bin/systemctl disable remove-liveuser.service
+
+[Install]
+WantedBy=multi-user.target

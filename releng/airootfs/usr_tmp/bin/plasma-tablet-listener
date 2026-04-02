@@ -1,0 +1,6 @@
+#!/bin/bash
+
+dbus-monitor "interface='org.kde.KWin',member='tabletModeChanged'" |
+while read -r line; do
+    /usr/bin/plasma-tablet-layout
+done

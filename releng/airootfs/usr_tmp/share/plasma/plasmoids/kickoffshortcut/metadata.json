@@ -1,0 +1,19 @@
+{
+    "KPackageStructure": "Plasma/Applet",
+    "KPlugin": {
+        "Name": "Kickoff Shortcut Setter",
+        "Id": "kickoffshortcut",
+        "Version": "1.0",
+        "Description": "Sets the Meta key for Kickoff at login",
+        "Icon": "system-run",
+        "Authors": [
+            {
+                "Name": "Thomas Wernike",
+                "Email": "thomas@kader42.de"
+            }
+        ],
+        "License": "GPL"
+    },
+    "X-Plasma-API": "javascript",
+    "X-Plasma-MainScript": "contents/code/main.js"
+}
