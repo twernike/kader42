@@ -1,0 +1,21 @@
+[Unit]
+Description=Kader42 Boot Splash
+DefaultDependencies=no
+After=local-fs.target
+Before=sysinit.target
+
+[Service]
+# Wir nutzen simple, damit fbi im Hintergrund bleibt, bis wir ihn killen
+Type=simple
+ExecStart=/usr/bin/fbi -d /dev/fb0 -T 1 -noverbo- -a /usr/share/calamares/linux-preset/logo.png
+# Das hier schützt TTY1 vor anderen Text-Ausgaben
+StandardInput=tty
+TTYPath=/dev/tty1
+# Das hier verhindert, dass fbi selbst Fehlermeldungen auf TTY1 schreibt
+StandardOutput=null
+StandardError=null
+# Wichtig: fbi soll nicht unendlich laufen
+TimeoutStopSec=2
+
+[Install]
+WantedBy=sysinit.target

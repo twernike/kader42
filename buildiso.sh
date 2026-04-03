@@ -69,6 +69,34 @@ echo -e "\e[1;92m ████████████████████�
     exit 1
 }
 
+# Funktion: Sicherstellen, dass Verzeichnisse wirklich weg sind
+# Nutzung: force_remove "/pfad/zum/ordner"
+force_remove() {
+    local target="$1"
+    
+    if [ -d "$target" ] || [ -f "$target" ]; then
+        echo "[force_remove] Try to delete: $target ..."
+        
+        # 1. Attempt: Normal deletion
+        rm -rf "$target" 2>/dev/null
+        
+        # 2. Check: Is it still there? (Due to mounts or Docker locks)
+        if [ -e "$target" ]; then
+            echo "[force_remove] WARNING: $target is persistent. Attempting to unmount..."
+            umount -l "$target" 2>/dev/null
+            rm -rf "$target"
+        fi
+        
+        # 3. Final check: If it's still there -> Abort!
+        if [ -e "$target" ]; then
+            echo "!!! ERROR: Could not remove $target. Build will be stopped!" >&2
+            exit 1
+        fi
+        echo "[✅️ force_remove] Success: $target has been removed."
+    fi
+}
+
+
 if [[ "$1" == "help" ]]; then
     showHelp
 fi
@@ -83,20 +111,11 @@ airootfs="$releng/airootfs"
 LOCAL_PACKAGES="/packages"
 LOCAL_REPO="$LOCAL_PACKAGES/custom"
 REPO_DB="$LOCAL_REPO/custom.db.tar.zst"
-bootdir_tmp="$airootfs/boot_tmp"
 etc="$airootfs/etc"
 usr_share="$airootfs/usr/share"
 usr_lib="$airootfs/usr/lib"
 usr_systemd="$usr_lib/systemd"
 shareIcons="$usr_share/icons"
-etc_tmp="$airootfs/etc_tmp"
-build_temp="/build-temp"
-work_dir="/build-temp/work"
-os_release_tmp="$airootfs/os-release-tmp"
-os_release="os-release-info/os-release"
-etc_conf="etc_conf"
-builduser="builduser"
-
 # Plasma KDE Share directory (for wallpapers in this case)
 sharePlasma="$usr_share/plasma"
 plasmaWallpapers="$sharePlasma/wallpapers"
@@ -112,11 +131,22 @@ polkitActions="$sharePolkit/actions"
 
 rootpath="$airootfs/root"
 kaderCalamares="calamares-kader-config"
-rootCalamares="$airootfs/$kaderCalamares"
 shareCalamares="$airootfs/usr/share/calamares"
 etcCalamares="$airootfs/etc/calamares"
-tmpUsr="$airootfs/usr_tmp"
 liveuserHome="$airootfs/home/liveuser"
+work_dir="/build-temp/work"
+os_release="os-release-info/os-release"
+etc_conf="etc_conf"
+builduser="builduser"
+
+# temporary folders for the build process (will be deleted afterwards)
+etc_tmp="$airootfs/etc_tmp"
+build_temp="/build-temp"
+os_release_tmp="$airootfs/os-release-tmp"
+tmpUsr="$airootfs/usr_tmp"
+rootCalamares="$airootfs/$kaderCalamares"
+bootdir_tmp="$airootfs/boot_tmp"
+
 
 # Get the line “ID=” from /etc/os-release
 echo -e "\e[1;34m 🕵 Check whether it is an Arch Linux installation...\e[0m"
@@ -197,7 +227,6 @@ mkdir -p "$share_plymouth"
 mkdir -p "$sharePolkit"
 mkdir -p "$polkitActions"
 mkdir -p "$tmpUsr"
-mkdir -p "$airootfs/preset_tmp"
 mkdir -p "$LOCAL_PACKAGES"
 mkdir -p "$LOCAL_REPO"
 mkdir -p "$etc_tmp"
@@ -252,6 +281,8 @@ else
 fi
 
 echo -e "\e[1;92m | ✍🏼| Copy linux.preset to airootfs |\e[0m"
+mkdir -p "$kaderCalamares/linux-preset"
+cp /etc/mkinitcpio.d/linux.preset "$kaderCalamares/linux-preset"
 cp -r "$etc_conf/." "$etc_tmp"
 
 echo -e  "\x1b[43m\e[38;5;20m |🕵|==================================================|\e[0m"
@@ -383,6 +414,32 @@ echo -e "\x1b[43m\e[1;34m |⚒️|--------------------------------------|\e[0m"
 # mkarchiso -r -v -w /build/archiso-work -o /mydata/archlive/out releng -C
 mkarchiso -r -v -w /build-temp/work -o /mydata/out releng -C
 chown -R $USER:$USER .
+
+echo
+echo -e "\x1b[92m\e[1;118m |=================================================| \e[0m"
+echo -e "\x1b[92m\e[1;118m | 👉🗑️ | Remove temporary directories and files..  | \e[0m"
+echo -e "\x1b[92m\e[1;118m |=================================================| \e[0m"
+
+# 1. Make sure nothing is mounted anymore
+sync
+
+etc_tmp="$airootfs/etc_tmp"
+build_temp="/build-temp"
+os_release_tmp="$airootfs/os-release-tmp"
+tmpUsr="$airootfs/usr_tmp"
+rootCalamares="$airootfs/$kaderCalamares"
+bootdir_tmp="$airootfs/boot_tmp"
+
+# 2. Aggressive deletion with verification
+TEMP_DIRS=("$etc_tmp" "$build_temp" "$os_release_tmp" "$bootdir_tmp" "$rootCalamares", "$tmpUsr")
+
+for dir in "${TEMP_DIRS[@]}"; do
+    if [ -d "$dir" ]; then
+        echo "[Kader42-Builder] Try to delete folder: $dir"
+        force_remove "$dir"
+        echo "[Kader42-Builder] Folder $dir deleted"
+    fi
+done
 
 echo
 echo -e "\e[1;92m |============|\e[0m"

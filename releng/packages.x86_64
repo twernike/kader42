@@ -47,6 +47,7 @@ smartmontools
 sof-firmware
 squashfs-tools
 sudo
+libwacom
 
 #######################################################
 # Needed packages for convertible
