@@ -1,5 +1,17 @@
 #!/bin/bash
 
+mydataDir="/mydata"
+dockerData=$mydataDir/data
+isoDir=$dockerData/out
+build_temp="/build-temp"
+workDir=$build_temp/work
+
+# Wechselt automatisch in das Verzeichnis, in dem das Skript liegt
+cd $mydataDir
+
+# Debug-Ausgabe, damit du siehst, wo du arbeitest
+echo -e "\e[1;34m 📂 Working directory set to: $(pwd)\e[0m"
+
 function showHelp()
 {
 
@@ -134,14 +146,13 @@ kaderCalamares="calamares-kader-config"
 shareCalamares="$airootfs/usr/share/calamares"
 etcCalamares="$airootfs/etc/calamares"
 liveuserHome="$airootfs/home/liveuser"
-work_dir="/build-temp/work"
 os_release="os-release-info/os-release"
 etc_conf="etc_conf"
 builduser="builduser"
+BUILD_DIR="/build"
 
 # temporary folders for the build process (will be deleted afterwards)
 etc_tmp="$airootfs/etc_tmp"
-build_temp="/build-temp"
 os_release_tmp="$airootfs/os-release-tmp"
 tmpUsr="$airootfs/usr_tmp"
 rootCalamares="$airootfs/$kaderCalamares"
@@ -183,14 +194,20 @@ EOF
 echo
 echo -e "\e[1;92m ✅ Arch Linux detected. Script will continue...⏩\e[0m"
 
+
+echo -e "\e[1;92m Copy pacman.conf to container... \e[0m"
+cp $releng/pacman.conf /etc/pacman.conf
+
 echo -e "\e[1;92m 🧹 Clear package cache \e[0m"
+pacman -Scc --noconfirm
+
+echo -e "\e[1;92m 🗘 Refreshing and initializing pacman repositories... \e[0m"
+pacman -Syyu --noconfirm
 
 echo
 echo -e  "\x1b[45m\e[33;1;20m|🧹|=======================|\e[0m"
 echo -e  "\x1b[45m\e[33;1;20m|🧹| Start cleanup first...|\e[0m"
 echo -e  "\x1b[45m\e[33;1;20m|🧹|=======================|\e[0m"
-
-pacman -Scc --noconfirm
 
 rm -rf $work_dir
 rm -rf out
@@ -207,6 +224,10 @@ chmod 755 usr_data/bin/delete-and-reconnect-network.sh
 chown root:root usr_data/bin/delete-and-reconnect-network.sh
 chown root:root -R *
 
+# Anstatt chown -R root:root *
+# Nur die Ordner ändern, die du wirklich für das ISO baust:
+chown -R root:root releng data 2>/dev/null || true
+
 ./create-live-user.sh
 
 echo
@@ -215,6 +236,8 @@ echo -e  "\x1b[43m\e[38;5;20m |✍🏼| Create needed directories...|\e[0m"
 echo -e  "\x1b[43m\e[38;5;20m |✍🏼|=============================|\e[0m"
 
 mkdir -p build
+mkdir -p "$build_temp"
+mkdir -p "$workDir"
 mkdir -p "$liveuserHome"
 mkdir -p "$rootpath"
 mkdir -p "$usr_share"
@@ -353,8 +376,11 @@ if [[ $1 == build-custom || $2 == build-custom ]]; then
     chmod -R 777 build
     chmod -R 777 /packages
 
+    mkdir -p $BUILD_DIR
+    chown -R $builduser:$builduser $BUILD_DIR
     su $builduser ./build_packages.sh
     cp -R /packages "$airootfs"
+    pacman -Syyu --noconfirm
 fi
 
 cp $os_release $os_release_tmp
@@ -362,6 +388,7 @@ cp $os_release $os_release_tmp
 if [[ ! -f "$REPO_DB" ]]; then
     echo "custom repo DB missing - create it now..."
     repo-add "$REPO_DB" "$LOCAL_REPO"/*.pkg.tar.*
+    pacman -Syyu --noconfirm
 fi
 
 if [[ $1 == generate-icons || $2 == generate-icons ]]; then
@@ -412,7 +439,7 @@ echo -e "\x1b[43m\e[1;34m |⚒️| Build ISO file with mkarchiso  💿... |\e[0m
 echo -e "\x1b[43m\e[1;34m |⚒️|--------------------------------------|\e[0m"
 
 # mkarchiso -r -v -w /build/archiso-work -o /mydata/archlive/out releng -C
-mkarchiso -r -v -w /build-temp/work -o /mydata/out releng -C
+mkarchiso -r -v -w $workDir -o $isoDir releng -C
 chown -R $USER:$USER .
 
 echo
