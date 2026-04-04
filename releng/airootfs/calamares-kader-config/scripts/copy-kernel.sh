@@ -4,7 +4,7 @@
 # 1. Den Namen des einzigen Ordners in /usr/lib/modules finden
 # Wir nehmen den ersten Treffer, falls mehrere da sind
 KERNEL_DIR=$(find /usr/lib/modules -maxdepth 1 -mindepth 1 -type d -printf '%P\n' | head -n 1)
-presetSrcDir="/etc_tmp/mkinitcpio.d"
+presetSrcDir="/usr/share/calamares/linux-preset"
 presetDestDir="/etc/mkinitcpio.d"
 
 echo
