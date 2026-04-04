@@ -1,1 +1,0 @@
-udevadm monitor --environment --udev | grep -E "switch|tablet-mode"

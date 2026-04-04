@@ -1,4 +1,0 @@
-#!/bin/bash
-# Shows the journal for the plasma-convertible service, which is responsible for switching modes on convertible devices. 
-# This can be useful for debugging and monitoring the service's activity in real-time.
-journalctl -f --user-unit=plasma-convertible.service

@@ -1,2 +1,0 @@
-#!/bin/bash
-journalctl -u NetworkManager --no-pager | tail -200
