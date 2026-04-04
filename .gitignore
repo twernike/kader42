@@ -12,3 +12,13 @@
 
 pkg/
 src/
+docker-work/
+data/
+build/
+packages/
+releng/airootfs/usr_tmp/
+releng/airootfs/etc_tmp
+releng/airootfs/calamares-kader-config/
+releng/airootfs/preset_tmp/
+releng/airootfs/os-release-tmp/
+releng/airootfs/boot_tmp/
