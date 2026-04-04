@@ -34,6 +34,7 @@ memtest86+-efi
 flatpak
 flatpak-kcm
 archlinux-appstream-data
+appstream
 libhandy
 libadwaita
 archlinux-keyring
@@ -48,6 +49,21 @@ sof-firmware
 squashfs-tools
 sudo
 libwacom
+poppler
+qt6-declarative
+qt6-multimedia
+qt6-svg
+qt6-webchannel
+qt6-webengine
+ffmpeg
+quazip-qt6
+yaml-cpp
+meson
+vala
+ninja
+dbus-glib
+json-glib
+libsoup3
 
 #######################################################
 # Needed packages for convertible
@@ -77,6 +93,7 @@ kwin
 kcmutils
 power-profiles-daemon
 fwupd
+gobject-introspection
 
 packagekit
 #packagekit-qt6
@@ -248,7 +265,6 @@ xorg-server
 xf86-input-evdev
 xf86-input-libinput
 xf86-video-amdgpu
-inputactions-kwin
 adwaita-icon-theme
 ca-certificates
 dconf
