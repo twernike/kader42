@@ -379,7 +379,7 @@ pipewire-jack-client
 libreoffice-fresh
 
 # tools and libraries
-plymouth
+#plymouth
 ttf-dejavu
 noto-fonts
 sequoia-sq
