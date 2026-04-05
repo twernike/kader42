@@ -224,8 +224,8 @@ chmod 755 usr_data/bin/delete-and-reconnect-network.sh
 chown root:root usr_data/bin/delete-and-reconnect-network.sh
 chown root:root -R *
 
-# Anstatt chown -R root:root *
-# Nur die Ordner ändern, die du wirklich für das ISO baust:
+# Instead of `chown -R root:root *`
+# Only change the directories you're actually using to build the ISO:
 chown -R root:root releng data 2>/dev/null || true
 
 ./create-live-user.sh
