@@ -1,0 +1,28 @@
+# Maintainer: Thomas <thomas@kader42.de>
+pkgname=kader42-hwdb
+pkgver=1.0.0
+pkgrel=1
+pkgdesc="Matrix configuration for the Framework 12 convertible"
+arch=('any')
+source=('61-framework.hwdb')
+
+sha256sums=('SKIP')
+
+package() {
+  # 1. The matrix of the Framework 12
+  install -Dm644 "${srcdir}/61-framework.hwdb" "${pkgdir}/etc/udev/hwdb.d/61-framework.hwdb" 
+}
+
+post_install() {
+  echo "--- 🧠 Aktualisiere Hardware-Datenbank (Matrix)... ---"
+  systemd-hwdb update
+  udevadm trigger
+}
+
+post_upgrade() {
+  post_install
+}
+
+post_remove() {
+  post_install
+}

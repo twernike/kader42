@@ -1,0 +1,4 @@
+post_upgrade() {
+  # Icon Cache erneuern
+  gtk-update-icon-cache -qt /usr/share/icons/Kader42
+}

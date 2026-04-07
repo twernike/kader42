@@ -7,7 +7,7 @@ Before=sysinit.target
 [Service]
 # Wir nutzen simple, damit fbi im Hintergrund bleibt, bis wir ihn killen
 Type=simple
-ExecStart=/usr/bin/fbi -d /dev/fb0 -T 1 -noverbo- -a /usr/share/pixmaps/bootsplash.png
+ExecStart=/usr/bin/fbi -d /dev/fb0 -T 1 -noverbo- -a /usr/share/pixmaps/kader42.png
 # Das hier schützt TTY1 vor anderen Text-Ausgaben
 StandardInput=tty
 TTYPath=/dev/tty1
@@ -15,7 +15,7 @@ TTYPath=/dev/tty1
 StandardOutput=null
 StandardError=null
 # Wichtig: fbi soll nicht unendlich laufen
-TimeoutStopSec=4
+TimeoutStopSec=10
 
 [Install]
 WantedBy=sysinit.target

@@ -401,6 +401,7 @@ lmms
 gst-libav
 gst-plugins-good
 python-setuptools
+kader-tools
 
 # Bluetooth
 bluez
@@ -427,3 +428,8 @@ pamac-tray-icon-plasma
 winboat
 openboard
 inputactions-kwin
+# kader42-packages
+kader42-calamares-config
+kader42-hwdb
+kader42-plasma-theme
+kader42-icons

@@ -1,0 +1,11 @@
+post_upgrade() {
+  echo "--- 🎨 Kader42 Theme-Update: Update Plasma-Look... ---"
+  # Das sorgt dafür, dass Plasma das Theme neu lädt
+  # Aber Achtung: Das funktioniert nur, wenn eine grafische Session läuft!
+  if [ -n "$DISPLAY" ]; then
+     sudo -u $(logname) lookandfeeltool -a Kader42
+  fi
+  
+  # Icon Cache erneuern
+  gtk-update-icon-cache -qt /usr/share/icons/Kader42
+}

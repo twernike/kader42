@@ -1,0 +1,40 @@
+# Maintainer: Thomas <thomas@kader42.de>
+pkgname=kader42-calamares-config
+pkgver=1.0.0
+pkgrel=1
+pkgdesc="Spezifische Calamares-Konfiguration für den Kader42-Installer"
+arch=('any')
+depends=('calamares') # Stellt sicher, dass Calamares auch installiert wird
+# Wir gehen davon aus, dass deine Config-Dateien im selben Ordner wie das PKGBUILD liegen
+source=('settings.conf')
+
+sha256sums=('SKIP')
+
+package() {
+  # 1. Die Haupt-Konfiguration
+  install -Dm644 "${srcdir}/settings.conf" "${pkgdir}/etc/calamares/settings.conf"
+
+  # 2. Ganze Verzeichnisse kopieren (Module und Branding)
+  # Hier nutzen wir 'cp', da 'install' für ganze Ordnerstrukturen mühsam ist
+
+  mkdir -p "${pkgdir}/usr/share/calamares/linux-preset" 
+  cp -r "${startdir}/linux-preset/"* "${pkgdir}/usr/share/calamares/linux-preset/"
+
+  mkdir -p "${pkgdir}/etc/calamares/modules"
+  cp -r "${startdir}/modules/"* "${pkgdir}/etc/calamares/modules/"
+
+  mkdir -p "${pkgdir}/etc/calamares/qml"
+  cp -r "${startdir}/qml/"* "${pkgdir}/etc/calamares/qml/"
+
+  mkdir -p "${pkgdir}/etc/calamares/scripts"
+  cp -r "${startdir}/scripts/"* "${pkgdir}/etc/calamares/scripts/"
+
+  mkdir -p "${pkgdir}/etc/calamares/branding/kader42"
+  cp -r "${startdir}/branding/"* "${pkgdir}/etc/calamares/branding/kader42/"
+
+  mkdir -p "${pkgdir}/etc/calamares/lib"
+  cp -r "${startdir}/usr_lib/" "${pkgdir}/etc/calamares/lib"
+
+  mkdir -p "${pkgdir}/etc/calamares/qml"
+  cp -R "${startdir}/qml/" "${pkgdir}/etc/calamares/"
+}

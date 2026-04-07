@@ -1,0 +1,2 @@
+iso_file=Kader42-2026.04.07-x86_64.iso
+rsync -avP "data/out/$iso_file" "mello@frs.sourceforge.net:/home/frs/project/kader42/ISO-Releases/"

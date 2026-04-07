@@ -1,0 +1,14 @@
+# Maintainer: Thomas <thomas@kader42.de>
+pkgname=kader42-icons
+pkgver=1.0.0
+pkgrel=1
+pkgdesc="The specific Kader42 Plasma Theme"
+arch=('any')
+install=kader42-icons.install
+
+        # Erstelle das Zielverzeichnis
+    install -d "${pkgdir}/usr/share/icons/Kader42"
+    
+    # Kopiere den Inhalt des Quellordners OHNE Sternchen
+    cp -r "${startdir}/Kader42/." "${pkgdir}/usr/share/icons/Kader42/"
+}
