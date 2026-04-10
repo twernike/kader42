@@ -252,7 +252,7 @@ echo -e "\x1b[43m\e[38;5;20m | ⚙️ |=======================| \e[0m"
 echo -e "\x1b[43m\e[38;5;20m | ⚙️ | Set Plymouth-Theme... | \e[0m"
 echo -e "\x1b[43m\e[38;5;20m | ⚙️ |=======================| \e[0m"
 
-plymouth-set-default-theme kader42-mello -R
+# plymouth-set-default-theme kader42-mello -R
 
 echo
 echo -e "\x1b[44m\e[1;118m  |================================|\e[0m"

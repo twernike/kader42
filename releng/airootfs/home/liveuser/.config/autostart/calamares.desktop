@@ -2,7 +2,7 @@
 Type=Application
 Name=Install Kader⁴²
 Exec=/usr/bin/bash /usr/bin/kader-install.sh
-Icon=/usr/share/calamares/branding/kader42/images/42.png
+Icon=/etc/calamares/branding/kader42/images/logo.svg
 Terminal=false
 Categories=System;Installer;
 X-KDE-Authorized-Link=true

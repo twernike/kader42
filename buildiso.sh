@@ -458,7 +458,7 @@ rootCalamares="$airootfs/$kaderCalamares"
 bootdir_tmp="$airootfs/boot_tmp"
 
 # 2. Aggressive deletion with verification
-TEMP_DIRS=("$etc_tmp" "$build_temp" "$os_release_tmp" "$bootdir_tmp" "$rootCalamares", "$tmpUsr")
+TEMP_DIRS=("$etc_tmp" "$build_temp" "$os_release_tmp" "$bootdir_tmp"  "$tmpUsr" "$rootCalamares")
 
 for dir in "${TEMP_DIRS[@]}"; do
     if [ -d "$dir" ]; then

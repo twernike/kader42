@@ -421,15 +421,15 @@ virtualbox
 virtualbox-guest-utils-nox
 
 # AUR packages
-calamares-git
+calamares
 yay
 pamac-aur
 pamac-tray-icon-plasma
 winboat
 openboard
 inputactions-kwin
+
 # kader42-packages
-kader42-calamares-config
 kader42-hwdb
 kader42-plasma-theme
 kader42-icons

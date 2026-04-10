@@ -4,8 +4,7 @@ shareCalamares="/usr/share/calamares"
 modules="$shareCalamares/modules"
 branding="$shareCalamares/branding"
 qmlCalamares="$shareCalamares/qml"
-# calamaresScripts="$shareCalamares/scripts"
-calamaresScripts="/etc/calamares/scripts"
+calamaresScripts="$shareCalamares/scripts"
 tmpCalamares="/calamares-kader-config"
 tmpUsrLib="$tmpCalamares/usr_lib"
 tmpLibModules="$tmpUsrLib/modules"
@@ -127,36 +126,36 @@ chmod 777 /home/liveuser/Desktop/calamares.desktop
 echo -e "\x1b[43m\e[38;5;20m 🧹 clean up calamares directories \e[0m"
 rm -rf $shareCalamares
 
-# echo -e "\x1b[38;5;208m |==========================================| \e[0m"
-# echo -e "\x1b[38;5;208m |✍🏼| create needed calamares directories...|\e[0m"
-# echo -e "\x1b[38;5;208m |==========================================| \e[0m"
-# echo
+echo -e "\x1b[38;5;208m |==========================================| \e[0m"
+echo -e "\x1b[38;5;208m |✍🏼| create needed calamares directories...|\e[0m"
+echo -e "\x1b[38;5;208m |==========================================| \e[0m"
+echo
 
-# mkdir -p "$shareCalamares"
-# mkdir -p "$modules"
-# mkdir -p "$branding"
-# mkdir -p "$qmlCalamares"
-# mkdir -p "$calamaresScripts"
-# mkdir -p "$usrLibCalamares"
-# mkdir -p "$usrModules"
-# mkdir -p "$bootloaderLib"
-# mkdir -p "$tmpEtc"
-# mkdir -p "$oneShotPreparerLib"
+mkdir -p "$shareCalamares"
+mkdir -p "$modules"
+mkdir -p "$branding"
+mkdir -p "$qmlCalamares"
+mkdir -p "$calamaresScripts"
+mkdir -p "$usrLibCalamares"
+mkdir -p "$usrModules"
+mkdir -p "$bootloaderLib"
+mkdir -p "$tmpEtc"
+mkdir -p "$oneShotPreparerLib"
 
-# echo -e "\x1b[95m\e[1;96m |=========================================================================| \e[0m"
-# echo -e "\x1b[95m\e[1;96m | 🗐 | Copy the calamares configuration files to the needed directories... | \e[0m"
-# echo -e "\x1b[95m\e[1;96m |=========================================================================| \e[0m"
+echo -e "\x1b[95m\e[1;96m |=========================================================================| \e[0m"
+echo -e "\x1b[95m\e[1;96m | 🗐 | Copy the calamares configuration files to the needed directories... | \e[0m"
+echo -e "\x1b[95m\e[1;96m |=========================================================================| \e[0m"
 
-# cp -r $tmpCalamares/modules/. $modules
-# cp -r $tmpCalamares/branding/. $branding
-# cp -r $tmpCalamares/qml/. $qmlCalamares
-# cp -r $tmpCalamares/scripts/. $calamaresScripts
-# cp -r $tmpCalamares/settings.conf /usr/share/calamares
-# cp -R $tmpCalamares/linux-preset /usr/share/calamares
-# cp -r $tmpBootloaderLib/* $bootloaderLib
-# cp -r $tmpBootloaderLib/* $bootloaderLib
-# cp -r $tmpOneShotPreparer/* $oneShotPreparerLib
-# cp -R $tmpEtc/* /etc
+cp -r $tmpCalamares/modules/. $modules
+cp -r $tmpCalamares/branding/. $branding
+cp -r $tmpCalamares/qml/. $qmlCalamares
+cp -r $tmpCalamares/scripts/. $calamaresScripts
+cp -r $tmpCalamares/settings.conf /usr/share/calamares
+cp -R $tmpCalamares/linux-preset /usr/share/calamares
+cp -r $tmpBootloaderLib/* $bootloaderLib
+cp -r $tmpBootloaderLib/* $bootloaderLib
+cp -r $tmpOneShotPreparer/* $oneShotPreparerLib
+cp -R $tmpEtc/* /etc
 
 chmod +x $calamaresScripts/*.sh
 
@@ -253,7 +252,7 @@ echo -e "\x1b[43m\e[38;5;20m | ⚙️ |=======================| \e[0m"
 echo -e "\x1b[43m\e[38;5;20m | ⚙️ | Set Plymouth-Theme... | \e[0m"
 echo -e "\x1b[43m\e[38;5;20m | ⚙️ |=======================| \e[0m"
 
-plymouth-set-default-theme kader42-mello -R
+# plymouth-set-default-theme kader42-mello -R
 
 echo
 echo -e "\x1b[44m\e[1;118m  |================================|\e[0m"

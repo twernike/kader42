@@ -59,7 +59,7 @@ PACKAGES=(
     "inputactions-ctl"
     "pamac-cli"
     "asciidoc"
-    "calamares-git"
+    # "calamares"
     "yay"
     "libpamac-full"
     "winboat"
@@ -77,10 +77,10 @@ for pkg in "${PACKAGES[@]}"; do
     fi
     cd "$BUILD_DIR/$pkg"
     # build package without installation
-    makepkg -srf --noconfirm
+    makepkg -srfC --noconfirm
     # copy built package to local repo
     cp *.pkg.tar.zst "$LOCAL_REPO"
-    repo-add $LOCAL_REPO/custom.db.tar.gz $LOCAL_REPO/$pkg*.pkg.tar.zst
+    repo-add $LOCAL_REPO/custom.db.tar.gz $LOCAL_REPO/$pkg/*.pkg.tar.zst
     sudo pacman -Syyu --noconfirm
 
 done
