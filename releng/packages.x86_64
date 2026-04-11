@@ -426,7 +426,7 @@ calamares
 yay
 pamac-aur
 pamac-tray-icon-plasma
-winboat
+# winboat
 openboard
 inputactions-kwin
 
