@@ -71,6 +71,12 @@ echo -e "\e[1;92m ████████████████████�
     and is not included in an installation. 
     However, the installed packages are, of course, copied over. \e[0m"
     echo
+    echo -e "\e[1;92m create-build-user ➤
+    Creates a user named 'builduser' with passwordless sudo rights for building 
+    the AUR packages. If no user with the name 'builduser' exists, it will be created.
+    You have to this parameter, if you set the build-custom parameter and the user doesn't exist, 
+    because the AUR packages need to be built as a non-root user."
+    echo
     echo -e "\e[1;92m generate-icons ➤
  ============== 
     Converts the icons copied to the icons subdirectory to the correct sizes,
@@ -157,6 +163,8 @@ os_release_tmp="$airootfs/os-release-tmp"
 tmpUsr="$airootfs/usr_tmp"
 rootCalamares="$airootfs/$kaderCalamares"
 bootdir_tmp="$airootfs/boot_tmp"
+packages="$airootfs/packages/"
+customRepo="$packages/custom"
 
 
 # Get the line “ID=” from /etc/os-release
@@ -193,10 +201,6 @@ EOF
 
 echo
 echo -e "\e[1;92m ✅ Arch Linux detected. Script will continue...⏩\e[0m"
-
-
-echo -e "\e[1;92m Copy pacman.conf to container... \e[0m"
-cp $releng/pacman.conf /etc/pacman.conf
 
 echo -e "\e[1;92m 🧹 Clear package cache \e[0m"
 pacman -Scc --noconfirm
@@ -254,6 +258,8 @@ mkdir -p "$LOCAL_PACKAGES"
 mkdir -p "$LOCAL_REPO"
 mkdir -p "$etc_tmp"
 mkdir -p "$os_release_tmp"
+mkdir -p "$packages"
+mkdir -p "$customRepo"
 
 echo -e  "\x1b[43m\e[38;5;20m |✍🏼|=====================================|\e[0m"
 echo -e  "\x1b[43m\e[38;5;20m |✍🏼| Set ownership of airootfs to root...|\e[0m"
@@ -263,23 +269,24 @@ chown -R root:root *
 chmod -R 755 $airootfs
 chown -R root:root "$airootfs"
 
-echo
-echo -e  "\x1b[43m\e[38;5;20m |🕵|============================================|\e[0m"
-echo -e  "\x1b[43m\e[38;5;20m |🕵| Check whether archiso is already installed |\e[0m"
-echo -e  "\x1b[43m\e[38;5;20m |🕵| or still needs to be installed...          |\e[0m"
-echo -e  "\x1b[43m\e[38;5;20m |🕵|============================================|\e[0m"
+echo -e  "\x1b[43m\e[38;5;20m |Refresh pacman database|\e[0m"
+pacman -Syyu --noconfirm
 
 echo -e  "\e[1;92m|⚒️|===============================|\e[0m"
 echo -e "\e[1;92m |⚒️| Install other needed packages |\e[0m"
 echo -e  "\e[1;92m|⚒️|===============================|\e[0m"
 
-pacman -S --needed libinput systemd-libs base-devel --noconfirm
+pacman -S --needed libinput systemd-libs base-devel sudo git --noconfirm
 
 echo -e "\x1b[43m\e[38;5;20m 🗘 ==================================================\e[0m"
 echo -e "\x1b[43m\e[38;5;20m 🗘 Refreshing and initializing pacman repositories...\e[0m"
 echo -e "\x1b[43m\e[38;5;20m 🗘 ==================================================\e[0m"
 
-pacman -Syyu --noconfirm
+echo
+echo -e  "\x1b[43m\e[38;5;20m |🕵|============================================|\e[0m"
+echo -e  "\x1b[43m\e[38;5;20m |🕵| Check whether archiso is already installed |\e[0m"
+echo -e  "\x1b[43m\e[38;5;20m |🕵| or still needs to be installed...          |\e[0m"
+echo -e  "\x1b[43m\e[38;5;20m |🕵|============================================|\e[0m"
 
 pacman -Q archiso > /dev/null 2>&1
 
@@ -321,17 +328,17 @@ else
 fi
 
 
-echo -e  "\x1b[43m\e[38;5;20m |🕵|============================================|\e[0m"
-echo -e  "\x1b[43m\e[38;5;20m |🕵| Check if the plymouth package is installed |\e[0m"
-echo -e  "\x1b[43m\e[38;5;20m |🕵|============================================|\e[0m"
-pacman -Q plymouth > /dev/null 2>&1
+# echo -e  "\x1b[43m\e[38;5;20m |🕵|============================================|\e[0m"
+# echo -e  "\x1b[43m\e[38;5;20m |🕵| Check if the plymouth package is installed |\e[0m"
+# echo -e  "\x1b[43m\e[38;5;20m |🕵|============================================|\e[0m"
+# pacman -Q plymouth > /dev/null 2>&1
 
-if [ $? -eq 0 ]; then
-    echo -e "\e[1;92m ⏩ Package plymouth already installed. Continue script...\e[0m"
-else
-    echo -e "\e[1;95m 👨‍🔧 Package plymouth is not installed. Install plymouth first...\e[0m"
-    pacman -S plymouth  --noconfirm
-fi
+# if [ $? -eq 0 ]; then
+#     echo -e "\e[1;92m ⏩ Package plymouth already installed. Continue script...\e[0m"
+# else
+#     echo -e "\e[1;95m 👨‍🔧 Package plymouth is not installed. Install plymouth first...\e[0m"
+#     pacman -S plymouth  --noconfirm
+# fi
 
 
 echo -e  "\x1b[43m\e[38;5;20m |🕵|============================================|\e[0m"
@@ -346,8 +353,12 @@ else
     pacman -S mkinitcpio-archiso  --noconfirm
 fi
 
-echo -e "\e[1;92m |⚒️| Create user $builduser for building the AUR packages |\e[0m"
-./create_builduser.sh
+
+if [[ $1 == create-build-user || $2 == create-build-user || $3 == create-build-user ]]; then
+
+    echo -e "\e[1;92m |⚒️| Create user $builduser for building the AUR packages |\e[0m"
+    ./create_builduser.sh
+fi
 
 echo -e "🔨  \x1b[43m\e[38;5;20m Install needed packages for building custom packages...\e[0m"
 pacman -S --needed git base-devel libhandy libadwaita flatpak --noconfirm
@@ -367,7 +378,7 @@ mkdir -p "$airootfs/home/liveuser/.config"
 mkdir -p "$airootfs/home/liveuser/.config/autostart"
 
 
-if [[ $1 == build-custom || $2 == build-custom ]]; then
+if [[ $1 == build-custom || $2 == build-custom || $3 == build-custom ]]; then
     echo -e "\e[1;92m | ⬇️ ⚒️|-------------------------------------------------------------|\e[0m"
     echo -e "\e[1;92m | ⬇️ ⚒️| Download AUR packages and build packages for custom repo... |\e[0m"
     echo -e "\e[1;92m | ⬇️ ⚒️|-------------------------------------------------------------|\e[0m"
@@ -378,11 +389,14 @@ if [[ $1 == build-custom || $2 == build-custom ]]; then
 
     mkdir -p $BUILD_DIR
     chown -R $builduser:$builduser $BUILD_DIR
-    su $builduser ./build_packages.sh
+    # su $builduser ./build_packages.sh > build_packages.log
+    su $builduser -c "./build_packages.sh 2>&1 | tee build_packages_$(date +%Y%m%d_%H%M%S).log"
     cp -R /packages "$airootfs"
     pacman -Syyu --noconfirm
 fi
 
+echo -e "\e[1;92m Copy pacman.conf to container... \e[0m"
+cp $releng/pacman.conf /etc/pacman.conf
 cp $os_release $os_release_tmp
 
 if [[ ! -f "$REPO_DB" ]]; then
@@ -391,7 +405,7 @@ if [[ ! -f "$REPO_DB" ]]; then
     pacman -Syyu --noconfirm
 fi
 
-if [[ $1 == generate-icons || $2 == generate-icons ]]; then
+if [[ $1 == generate-icons || $2 == generate-icons || $3 == generate-icons ]]; then
     echo 
     echo -e "\x1b[43m\e[1;34m |⚒️|-------------------|\e[0m"
     echo -e "\x1b[43m\e[1;34m |⚒️| Generate Icons... |\e[0m"

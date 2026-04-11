@@ -13,14 +13,14 @@ if ! sudo docker ps -q -f name=$CONTAINER_NAME | grep -q .; then
     
     echo "Creating new container..."
     # Wir mounten docker-work direkt als Basis
-    sudo docker run --privileged --name $CONTAINER_NAME -it \
+    sudo docker run --privileged --name $CONTAINER_NAME \
             -v "$SCRIPT_DIR":/mydata \
             -v "$SCRIPT_DIR/packages":/packages \
             -v "$SCRIPT_DIR/docker-work":/build-temp \
-            archlinux:latest \
-            tail -f /dev/null
+            archlinux:latest 
 fi
 
+sudo docker start $CONTAINER_NAME
 # Fix für das Sudo-Problem im Container (Sicherheitsnetz)
 sudo docker exec -u root $CONTAINER_NAME chown root:root /usr/bin/sudo
 sudo docker exec -u root $CONTAINER_NAME chmod 4755 /usr/bin/sudo

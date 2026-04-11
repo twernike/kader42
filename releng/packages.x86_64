@@ -421,6 +421,7 @@ virtualbox
 virtualbox-guest-utils-nox
 
 # AUR packages
+inputactions-ctl
 calamares
 yay
 pamac-aur
