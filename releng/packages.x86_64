@@ -270,7 +270,7 @@ ca-certificates
 dconf
 gimp
 libreoffice-fresh
-keepassxc
+keepass
 audacity
 vlc
 vlc-gui-qt
