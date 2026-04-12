@@ -11,7 +11,9 @@ depends=('bash' 'dbus' ) # Ergänze hier weitere Abhängigkeiten deiner Skripte
 # Hier listen wir die Dateien auf, die im Ordner liegen
 source=('kader42-event-listener'
         'plasma-convertible-switcher'
-        'kader42-event-listener.service')
+        'kader42-event-listener.service'
+        'kader42-gravity-sync.service'
+        'kader42-gravity-sync.timer')
 
 # Since we're only copying scripts, we don't need a build() step
 # You can generate the checksums using ‘updpkgsums’ or leave it set to 'SKIP'
@@ -27,4 +29,7 @@ package() {
 
   # Copy the systemd service file
   install -Dm644 "${srcdir}/kader42-event-listener.service" "${pkgdir}/usr/lib/systemd/user/kader42-event-listener.service"
+  install -Dm644 "${srcdir}/kader42-gravity-sync.service" "${pkgdir}/usr/lib/systemd/user/kader42-gravity-sync.service"
+  install -Dm644 "${srcdir}/kader42-gravity-sync.timer" "${pkgdir}/usr/lib/systemd/user/kader42-gravity-sync.timer"
+
 }

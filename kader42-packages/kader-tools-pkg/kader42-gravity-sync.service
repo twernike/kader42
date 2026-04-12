@@ -1,0 +1,6 @@
+[Unit]
+Description=Kader42 Gravity Sync
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/bash -c 'systemctl status iio-sensor-proxy || systemctl restart iio-sensor-proxy'

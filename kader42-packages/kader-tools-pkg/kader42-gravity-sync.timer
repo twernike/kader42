@@ -1,0 +1,9 @@
+[Unit]
+Description=Run Kader42 Gravity Sync every minute
+
+[Timer]
+OnBootSec=1min
+OnUnitActiveSec=1min
+
+[Install]
+WantedBy=timers.target
