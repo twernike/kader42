@@ -135,7 +135,13 @@ konsole
 #######################################################
 
 krita
+inkscape
 okular
+mypaint
+rawtherapee
+darktable
+obsidian
+blanket
 rnote
 xournalpp
 kate
@@ -402,6 +408,9 @@ gst-libav
 gst-plugins-good
 python-setuptools
 kader-tools
+bookworm
+calibre
+
 
 # Bluetooth
 bluez
