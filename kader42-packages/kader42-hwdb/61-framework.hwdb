@@ -11,17 +11,11 @@
 #       61-framework12.hwdb
 #
 #   Entry:
-#   (sensor mapping snippet)
+#   mapping for the framework12 sensor
 #   
 #   Test status:
 #       ✓ KDE Wayland
-#       ✓ KDE X11
-#       ⚠ Suspend not fully tested
 #
-#       Source:
-#       Kernel Bug #xxxxx
-#
-# Kernel version: ToDo
-
+# Kernel version: 6.19.11.arch1-1
 sensor:modalias:acpi:FRMWC004*:dmi:*
  ACCEL_MOUNT_MATRIX=0, 1, 0; -1, 0, 0; 0, 0, 1

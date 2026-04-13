@@ -1,0 +1,21 @@
+#!/bin/bash
+
+if command -v systemd-hwdb >/dev/null 2>&1; then
+    echo "The systemd-hwdb command is available."
+    systemd-hwdb update
+else
+    echo "The systemd-hwdb command is NOT available!"
+    # Versuch 1: Der Wrapper (funktioniert oft, auch wenn die Binary "fehlt")
+    if command -v udevadm >/dev/null 2>&1; then
+        echo "Using udevadm fallback..."
+        udevadm hwdb --update
+    else
+        # Versuch 2: Neuinstallation (nur wenn Internet da ist)
+        echo "Reinstalling systemd package..."
+        pacman -S --noconfirm --overwrite "*" systemd
+        systemd-hwdb update
+    fi
+fi
+
+# Dienste neu anschubsen
+systemctl restart iio-sensor-proxy.service

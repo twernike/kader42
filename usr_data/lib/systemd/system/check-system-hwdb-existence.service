@@ -1,0 +1,14 @@
+[Unit]
+Description=Kader42 system-hwdb existence checker
+Before=iio-sensor-proxy.service
+ConditionPathExists=!/etc/udev/hwdb.bin
+
+[Service]
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/bash /usr/bin/check-system-hwdb-existence
+ExecStartPost=/usr/bin/udevadm trigger
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
