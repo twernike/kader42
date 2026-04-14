@@ -216,7 +216,17 @@ ln -s /usr/lib/systemd/user/kader42-event-listener.service \
 find / -name "$hwdFilename" ! -path "$hwdbDir/*" -delete
 
 # 3. IMPORTANT: Build the HWDB ONLY AFTERWARDS
-systemd-hwdb update
+
+echo "HWDB-Update..."
+if command -v systemd-hwdb >/dev/null 2>&1; then
+    systemd-hwdb update
+else
+    echo "The systemd-hwdb command is NOT available!"
+    echo "Reinstall systemd package to get systemd-hwdb and use udevadm hwdb --update to update the HWDB first time..."
+    pacman -S --noconfirm --overwrite "*" systemd
+    udevadm hwdb --update
+fi
+
 sync
 
 echo -e "\x1b[32m[Kader42-Final-Check] Verify HWDB status...\e[0m"
