@@ -1,7 +1,7 @@
 # Maintainer: Dein Name <dein@kader42.de>
 pkgname=kader-tools
 pkgver=1.0.0
-pkgrel=1
+pkgrel=2
 pkgdesc="An event listener and a launcher switcher that ensures you have the Dash menu in tablet mode and the standard Start menu in laptop mode."
 arch=('any')
 url="https://kader42.de"

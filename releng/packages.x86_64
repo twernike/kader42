@@ -34,7 +34,6 @@ memtest86+-efi
 flatpak
 flatpak-kcm
 archlinux-appstream-data
-appstream
 libhandy
 libadwaita
 archlinux-keyring
@@ -43,27 +42,7 @@ pambase
 bolt
 alsa-ucm-conf
 libnotify
-fbida
-smartmontools
-sof-firmware
-squashfs-tools
-sudo
-libwacom
-poppler
-qt6-declarative
-qt6-multimedia
-qt6-svg
-qt6-webchannel
-qt6-webengine
-ffmpeg
-quazip-qt6
-yaml-cpp
-meson
-vala
-ninja
-dbus-glib
-json-glib
-libsoup3
+
 
 #######################################################
 # Needed packages for convertible
@@ -93,7 +72,7 @@ kwin
 kcmutils
 power-profiles-daemon
 fwupd
-gobject-introspection
+libkscreen
 
 packagekit
 #packagekit-qt6
@@ -224,6 +203,10 @@ screen
 sdparm
 
 sg3_utils
+smartmontools
+sof-firmware
+squashfs-tools
+sudo
 
 terminus-font
 testdisk
@@ -251,6 +234,7 @@ discover
 kpackage
 ark
 libinput-tools
+
 kinfocenter
 ark
 kio-extras
@@ -265,12 +249,13 @@ xorg-server
 xf86-input-evdev
 xf86-input-libinput
 xf86-video-amdgpu
+inputactions-kwin
 adwaita-icon-theme
 ca-certificates
 dconf
 gimp
 libreoffice-fresh
-keepass
+keepassxc
 audacity
 vlc
 vlc-gui-qt
@@ -374,12 +359,13 @@ wireplumber
 plasma-pa
 pipewire-zeroconf
 pipewire-jack-client
+gamemode
+umu-launcher
 
 # office
 libreoffice-fresh
 
 # tools and libraries
-#plymouth
 ttf-dejavu
 noto-fonts
 sequoia-sq
@@ -400,37 +386,36 @@ extra-cmake-modules
 lmms
 gst-libav
 gst-plugins-good
-python-setuptools
-kader-tools
 
 # Bluetooth
 bluez
 bluez-utils
+bluez-deprecated-tools
 bluez-obex
 bluez-mesh
 bluedevil
-# pulseaudio-bluetooth
 
 # Gaming
 steam
-umu-launcher
-lutris
+
+# AUR packages
+calamares
+yay
+pamac-aur
+pamac-tray-icon-plasma
+#winboat
+#heroic-games-launcher-bin
+openboard
 
 #Virtualbox
 virtualbox
 virtualbox-guest-utils-nox
 
-# AUR packages
-inputactions-ctl
-calamares
-yay
-pamac-aur
-pamac-tray-icon-plasma
-# winboat
-openboard
+#gestures
+python-setuptools
 inputactions-kwin
 
-# kader42-packages
 kader42-hwdb
-kader42-plasma-theme
 kader42-icons
+kader42-plasma-theme
+kader-tools

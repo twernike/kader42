@@ -1,6 +1,6 @@
 # Maintainer: Thomas <thomas@kader42.de>
 pkgname=kader42-hwdb
-pkgver=1.0.0
+pkgver=1.0.1
 pkgrel=1
 pkgdesc="Matrix configuration for the Framework 12 convertible"
 arch=('any')

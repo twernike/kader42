@@ -11,9 +11,6 @@ install_dir="kader42"
 buildmodes=('iso')
 bootmodes=('uefi.systemd-boot')
 pacman_conf="pacman.conf"
-custom_repos=(
-    "file:///packages"
-)
 airootfs_image_type="squashfs"
 # airootfs_image_tool_options=('-comp' 'xz' '-Xbcj' 'x86' '-b' '1M' '-Xdict-size' '1M')
 

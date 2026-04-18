@@ -327,20 +327,6 @@ else
     pacman -S linux-firmware  --noconfirm
 fi
 
-
-# echo -e  "\x1b[43m\e[38;5;20m |🕵|============================================|\e[0m"
-# echo -e  "\x1b[43m\e[38;5;20m |🕵| Check if the plymouth package is installed |\e[0m"
-# echo -e  "\x1b[43m\e[38;5;20m |🕵|============================================|\e[0m"
-# pacman -Q plymouth > /dev/null 2>&1
-
-# if [ $? -eq 0 ]; then
-#     echo -e "\e[1;92m ⏩ Package plymouth already installed. Continue script...\e[0m"
-# else
-#     echo -e "\e[1;95m 👨‍🔧 Package plymouth is not installed. Install plymouth first...\e[0m"
-#     pacman -S plymouth  --noconfirm
-# fi
-
-
 echo -e  "\x1b[43m\e[38;5;20m |🕵|============================================|\e[0m"
 echo -e  "\x1b[43m\e[38;5;20m |🕵| Check if the mkinitcpio-archiso package is installed |\e[0m"
 echo -e  "\x1b[43m\e[38;5;20m |🕵|============================================|\e[0m"
