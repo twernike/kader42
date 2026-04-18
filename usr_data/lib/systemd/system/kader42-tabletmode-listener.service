@@ -1,0 +1,12 @@
+[Unit]
+Description=kader42-tabletmode-listener
+After=graphical.target
+
+[Service]
+ExecStart=/usr/bin/python /usr/local/bin/kader42-tabletmode-listener.py
+Restart=always
+# Wichtig: Der Service muss Zugriff auf die Input-Gruppe haben oder als Root laufen
+User=root 
+
+[Install]
+WantedBy=multi-user.target

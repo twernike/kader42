@@ -1,0 +1,12 @@
+[Unit]
+Description=Kader⁴² tabletmode listener
+# Service starts, if GUI is ready.
+After=graphical-session.target
+
+[Service]
+ExecStart=/usr/bin/python /usr/local/bin/kader42-tabletmode-listener.py
+Restart=always
+
+[Install]
+# Starts with session
+WantedBy=graphical-session.target
