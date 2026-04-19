@@ -10,14 +10,27 @@ def run_switcher(mode):
     Executes the mode change.
     mode 0 = Laptop (hardware returns 0)
     mode 1 = Tablet (hardware returns 1)
+    Try setting this mode. If `retry=True`, the script will attempt the login 
+    up to 5 times in quick succession. 
+    This is useful during the boot process when the system might not be fully ready to handle the switch immediately.
     """
-    try:
-        # We call the switcher directly with the mode value from the hardware
-        subprocess.run(["plasma-convertible-switcher", str(mode)], check=True)
-        status_text = "NOTEBOOK" if mode == 0 else "TABLET"
-        print(f"[kader42-tabletmode-listener] Hardware status detected -> {status_text} (Value: {mode})")
-    except Exception as e:
-        print(f"[kader42-tabletmode-listener] Error occurred while calling plasma-convertible-switcher: {e}", file=sys.stderr)
+    for i in range(5 if retry else 1):
+        try:
+            subprocess.run(["plasma-convertible-switcher", str(mode)], check=True)
+            return True # Erfolg!
+        except Exception:
+            if retry:
+                time.sleep(0.5) # Just a brief moment of silence during system startup
+            else:
+                break
+    return False
+    # try:
+    #     # We call the switcher directly with the mode value from the hardware
+    #     subprocess.run(["plasma-convertible-switcher", str(mode)], check=True)
+    #     status_text = "NOTEBOOK" if mode == 0 else "TABLET"
+    #     print(f"[kader42-tabletmode-listener] Hardware status detected -> {status_text} (Value: {mode})")
+    # except Exception as e:
+    #     print(f"[kader42-tabletmode-listener] Error occurred while calling plasma-convertible-switcher: {e}", file=sys.stderr)
 
 def find_tablet_switch_device():
     """
@@ -32,40 +45,32 @@ def find_tablet_switch_device():
     return None
 
 def main():
-    print("Kader42 Tablet Mode Listener started...")
-    
-    # Find the device (with a small retry buffer for the boot process)
+    # 1. Find a device with the SW_TABLET_MODE switch (this is the hardware event we want to monitor)
     device = None
-    for i in range(5):
+    # Quick check at startup to see if the device is already connected (search takes max. 2 seconds)
+    for _ in range(4):
         device = find_tablet_switch_device()
         if device:
             break
-        print(f"[kader42-tabletmode-listener] Searching for Tablet Switch... (Attempt {i+1}/5)")
-        time.sleep(2)
+        time.sleep(0.5)
 
     if not device:
-        print("[kader42-tabletmode-listener] Critical Error: No SW_TABLET_MODE device found!")
-        sys.exit(1)
+        print("[kader42-tabletmode-listener] No tablet switch found. Quitting.")
+        sys.exit(0) # Beenden ohne Fehler, falls Hardware kein Convertible ist
 
-    print(f"[kader42-tabletmode-listener] Monitoring active on: {device.name} ({device.path})")
-
-    # --- INITIAL CHECK AT STARTUP ---
-    # We immediately read the current physical state
+    # 2. Set initial status immediately upon login
+    # We use `retry=True` to intercept the moment the desktop is being built
     try:
-        current_switches = device.switches()
-        if ecodes.SW_TABLET_MODE in current_switches:
-            initial_val = current_switches[ecodes.SW_TABLET_MODE]
-            run_switcher(initial_val)
+        initial_val = device.switches().get(ecodes.SW_TABLET_MODE, 0)
+        run_switcher(initial_val, retry=True)
     except Exception as e:
-        print(f"[kader42-tabletmode-listener] Warning during initial check: {e}")
+        print(f"[kader42-tabletmode-listener] Initial check failed: {e}")
 
-    # --- EVENT LOOP ---
-    # Here we listen for hardware changes
+    # 3. Continuous monitoring of hardware events
+    # read_loop() is extremely CPU-efficient (waits for interrupts)
     for event in device.read_loop():
         if event.type == ecodes.EV_SW and event.code == ecodes.SW_TABLET_MODE:
-            # This is where the “logic” takes place:
-            # event.value is 0 for a laptop (switch open)
-            # event.value is 1 for a tablet (switch closed)
+            # 0 = Notebook, 1 = Tablet
             run_switcher(event.value)
 
 if __name__ == "__main__":
