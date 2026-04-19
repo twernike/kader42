@@ -1,70 +1,76 @@
 #!/usr/bin/env python
+import evdev
+from evdev import ecodes
 import subprocess
+import time
 import sys
 
 def run_switcher(mode):
     """
-    Calls the plasma-convertible-switcher.
-    1 = Tablet mode (keyboard disabled)
-    0 = Notebook mode (keyboard enabled)
+    Executes the mode change.
+    mode 0 = Laptop (hardware returns 0)
+    mode 1 = Tablet (hardware returns 1)
     """
     try:
-        # Wir nutzen volle Pfade für den Service-Betrieb
-        subprocess.run(["/usr/local/bin/plasma-convertible-switcher", str(mode)], check=True)
-        print(f"[✅][kader42-tablet-mode-listener] Mode set to {'TABLET' if mode == 1 else 'NOTEBOOK'}.")
+        # We call the switcher directly with the mode value from the hardware
+        subprocess.run(["plasma-convertible-switcher", str(mode)], check=True)
+        status_text = "NOTEBOOK" if mode == 0 else "TABLET"
+        print(f"[kader42-tabletmode-listener] Hardware status detected -> {status_text} (Value: {mode})")
     except Exception as e:
-        print(f"[❌][kader42-tablet-mode-listener] Error calling the switcher: {e}", file=sys.stderr)
+        print(f"[kader42-tabletmode-listener] Error occurred while calling plasma-convertible-switcher: {e}", file=sys.stderr)
 
-def get_initial_state():
+def find_tablet_switch_device():
     """
-    Checks the current hardware status when the service starts.
+    Scans all input devices for the SW_TABLET_MODE switch.
     """
+    devices = [evdev.InputDevice(path) for path in evdev.list_devices()]
+    for device in devices:
+        caps = device.capabilities()
+        if ecodes.EV_SW in caps:
+            if ecodes.SW_TABLET_MODE in caps[ecodes.EV_SW]:
+                return device
+    return None
+
+def main():
+    print("Kader42 Tablet Mode Listener started...")
+    
+    # Find the device (with a small retry buffer for the boot process)
+    device = None
+    for i in range(5):
+        device = find_tablet_switch_device()
+        if device:
+            break
+        print(f"[kader42-tabletmode-listener] Searching for Tablet Switch... (Attempt {i+1}/5)")
+        time.sleep(2)
+
+    if not device:
+        print("[kader42-tabletmode-listener] Critical Error: No SW_TABLET_MODE device found!")
+        sys.exit(1)
+
+    print(f"[kader42-tabletmode-listener] Monitoring active on: {device.name} ({device.path})")
+
+    # --- INITIAL CHECK AT STARTUP ---
+    # We immediately read the current physical state
     try:
-        output = subprocess.check_output(["libinput", "list-devices"], text=True)
-        # We are looking for the Tablet Mode Switch and its status
-        if "switch tablet-mode" in output.lower():
-            # If ‘state: down’ or ‘state: set’ (depending on the libinput version)
-            # Here we simply check for the presence of 'state: set'
-            if "state: set" in output.lower():
-                return 1
-    except Exception:
-        print("[❌][kader42-tablet-mode-listener] Error checking initial state.", file=sys.stderr)
-    return 0
+        current_switches = device.switches()
+        if ecodes.SW_TABLET_MODE in current_switches:
+            initial_val = current_switches[ecodes.SW_TABLET_MODE]
+            run_switcher(initial_val)
+    except Exception as e:
+        print(f"[kader42-tabletmode-listener] Warning during initial check: {e}")
 
-def monitor_logic():
-    """
-    The main loop: Sets the initial value and then listens for events.
-    """
-    print("Kader⁴² Tablet Mode Listener started...")
-
-    #  1. Initial check during bootup
-    initial_mode = get_initial_state()
-    run_switcher(initial_mode)
-
-    # 2. Event monitoring via libinput
-    # We use --screen-stdout to ensure that we receive the lines immediately
-    try:
-        process = subprocess.Popen(
-            ["libinput", "debug-events"], 
-            stdout=subprocess.PIPE, 
-            text=True,
-            bufsize=1 # Line-buffered für Echtzeit-Reaktion
-        )
-    except FileNotFoundError:
-        print("[❌][kader42-tablet-mode-listener] Error: 'libinput' is not installed! Please install the libinput package via pacman, first!", file=sys.stderr)
-        return
-
-    for line in iter(process.stdout.readline, ""):
-        # We are looking for the hardware event for the tablet mode
-        if "switch tablet-mode" in line:
-            if "state 1" in line:
-                run_switcher(1)
-            elif "state 0" in line:
-                run_switcher(0)
+    # --- EVENT LOOP ---
+    # Here we listen for hardware changes
+    for event in device.read_loop():
+        if event.type == ecodes.EV_SW and event.code == ecodes.SW_TABLET_MODE:
+            # This is where the “logic” takes place:
+            # event.value is 0 for a laptop (switch open)
+            # event.value is 1 for a tablet (switch closed)
+            run_switcher(event.value)
 
 if __name__ == "__main__":
     try:
-        monitor_logic()
+        main()
     except KeyboardInterrupt:
-        print("\nKader⁴² Tablet Mode Listener stopped.")
+        print("\n[kader42-tabletmode-listener] Monitor closed. Exiting gracefully.")
         sys.exit(0)

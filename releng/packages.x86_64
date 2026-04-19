@@ -42,7 +42,8 @@ pambase
 bolt
 alsa-ucm-conf
 libnotify
-
+evtest
+python-evdev
 
 #######################################################
 # Needed packages for convertible

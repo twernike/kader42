@@ -4,7 +4,7 @@ Description=Kader⁴² tabletmode listener
 After=graphical-session.target
 
 [Service]
-ExecStart=/usr/bin/python /usr/local/bin/kader42-tabletmode-listener.py
+ExecStart=/usr/bin/python /usr/bin/kader42-tabletmode-listener.py
 Restart=always
 
 [Install]
