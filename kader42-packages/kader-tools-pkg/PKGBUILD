@@ -26,6 +26,7 @@ package() {
   
   # Skripte nach /usr/bin kopieren
   install -Dm755 "${srcdir}/kader42-event-listener.py" "${pkgdir}/usr/bin/kader42-event-listener.py"
+  install -Dm755 "${srcdir}/kader42-event-listener" "${pkgdir}/usr/bin/kader42-event-listener"
   install -Dm755 "${srcdir}/plasma-convertible-switcher" "${pkgdir}/usr/bin/plasma-convertible-switcher"
 
   # Copy the systemd service file

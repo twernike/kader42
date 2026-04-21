@@ -6,8 +6,7 @@ After=iio-sensor-proxy.service plasma-plasmashell.service
 [Service]
 Type=exec
 ExecStartPre=/usr/bin/sleep 20
-ExecStart=/usr/bin/python /usr/bin/kader42-event-listener.py
-# Falls gdbus die Verbindung verliert (weil der Proxy neu startet):
+ExecStart=/usr/bin/bash /usr/bin/kader42-event-listener
 Restart=always
 RestartSec=3
 
