@@ -1,0 +1,8 @@
+{
+  "KPlugin": {
+    "Name": "Force Auto Rotation",
+    "Description": "Forces autoRotation to always",
+    "Version": "1.0",
+    "EnabledByDefault": true
+  }
+}

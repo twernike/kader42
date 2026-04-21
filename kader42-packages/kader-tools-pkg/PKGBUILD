@@ -1,7 +1,7 @@
 # Maintainer: Dein Name <dein@kader42.de>
 pkgname=kader-tools
 pkgver=1.0.0
-pkgrel=2
+pkgrel=4
 pkgdesc="An event listener and a launcher switcher that ensures you have the Dash menu in tablet mode and the standard Start menu in laptop mode."
 arch=('any')
 url="https://kader42.de"
@@ -9,22 +9,30 @@ license=('GPL')
 depends=('bash' 'dbus' ) # Ergänze hier weitere Abhängigkeiten deiner Skripte
 
 # Hier listen wir die Dateien auf, die im Ordner liegen
-source=('kader42-event-listener'
-        'plasma-convertible-switcher'
-        'kader42-event-listener.service')
+# source=('kader42-event-listener.py'
+#         'plasma-convertible-switcher'
+#         'kader42-event-listener.service'
+#         'forceautorotation/metadata.json'
+#         'forceautorotation/code/main.js'
+#         'kwinrc',
+#         )
 # Since we're only copying scripts, we don't need a build() step
 # You can generate the checksums using ‘updpkgsums’ or leave it set to 'SKIP'
-md5sums=('SKIP' 'SKIP' 'SKIP')
+#md5sums=('SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP')
 
 package() {
   # 1. Create the directories in the package image ($pkgdir)
   # -D creates any missing parent directories; -m755 sets execution permissions
   
   # Skripte nach /usr/bin kopieren
-  install -Dm755 "${srcdir}/kader42-event-listener" "${pkgdir}/usr/bin/kader42-event-listener"
+  install -Dm755 "${srcdir}/kader42-event-listener.py" "${pkgdir}/usr/bin/kader42-event-listener.py"
   install -Dm755 "${srcdir}/plasma-convertible-switcher" "${pkgdir}/usr/bin/plasma-convertible-switcher"
 
   # Copy the systemd service file
   install -Dm644 "${srcdir}/kader42-event-listener.service" "${pkgdir}/usr/lib/systemd/user/kader42-event-listener.service"
 
+  # Activate autorotation kwin script
+  install -Dm644 "${srcdir}/forceautorotation/metadata.json" "${pkgdir}/usr/share/kwin/scripts/forceautorotation/metadata.json"
+  install -Dm644 "${srcdir}/forceautorotation/code/main.js" "${pkgdir}/usr/share/kwin/scripts/forceautorotation/code/main.js"
+  install -Dm644 "${srcdir}/kwinrc" "${pkgdir}/etc/xdg/kwinrc"
 }

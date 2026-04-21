@@ -16,18 +16,22 @@ debugMessage() {
 }
 
 echo "[Kader42] Listening for tabletModeChanged..."
+last_state=""
 
 gdbus monitor --session \
   --dest org.kde.KWin \
   --object-path /org/kde/KWin |
 while read -r line; do
-    if [[ "$line" == *"tabletModeChanged"* && "$line" == *"true"* ]]; then
-            debugMessage "The value of the line is $line"
-            /usr/bin/plasma-convertible-switcher 1
-    else
-            debugMessage "The value of the line is $line"
-            /usr/bin/plasma-convertible-switcher 0
-    fi
+
+    if [[ "$line" == *"tabletModeChanged"* ]]; then
         read -r nextline
-        debugMessage "nextLine ➤ $nextline"
+
+        if [[ "$nextline" == *"true"* && "$last_state" != "1" ]]; then
+            last_state="1"
+            /usr/bin/plasma-convertible-switcher 1
+        elif [[ "$nextline" == *"false"* && "$last_state" != "0" ]]; then
+            last_state="0"
+            /usr/bin/plasma-convertible-switcher 0
+        fi
+    fi
 done

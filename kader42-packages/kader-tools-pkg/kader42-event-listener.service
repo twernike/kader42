@@ -1,12 +1,12 @@
 [Unit]
-Description=Kader42 Event Listener
+Description=Kader⁴² Event Listener
 Requires=iio-sensor-proxy.service
 After=iio-sensor-proxy.service plasma-plasmashell.service
 
 [Service]
 Type=exec
 ExecStartPre=/usr/bin/sleep 20
-ExecStart=/usr/bin/kader42-tabletmode-watcher-passive
+ExecStart=/usr/bin/python /usr/bin/kader42-event-listener.py
 # Falls gdbus die Verbindung verliert (weil der Proxy neu startet):
 Restart=always
 RestartSec=3

@@ -150,4 +150,4 @@ inactiveForeground=152,159,172
 shell/evaluateScript=true
 
 [KScreen]
-TabletMode=never
+TabletMode=auto

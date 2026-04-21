@@ -25,13 +25,6 @@ Top=LockScreen
 Left=ShowDesktop
 Right=Grid
 
-#Alternativ:
-#[ElectricBorders]
-#Top=ShowDashboard
-#
-#[TouchEdges]
-#Top=ShowDashboard
-
 [Wayland]
 InputMethod[$e]=/usr/share/applications/org.kde.plasma.keyboard.desktop
 VirtualKeyboard=org.kde.kwin.inputmethod.keyboard
@@ -43,6 +36,7 @@ theme=org.kde.plastic
 
 [Plugins]
 translucencyEnabled=true
+forceautorotationEnabled=true
 
 [ModifierOnlyShortcuts]
 Meta=org.kde.plasmashell,/PlasmaShell,org.kde.PlasmaShell,activateApplicationLauncher

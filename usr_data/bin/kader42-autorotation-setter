@@ -1,0 +1,50 @@
+#!/bin/bash
+#!/bin/bash
+CONF="$HOME/.config/kwinoutputconfig.json"
+LISTENER="/usr/bin/kader42-tabletmode-listener.py"
+
+# --- PHASE 1: Der elegante Weg über JavaScript ---
+KWIN_JS="var os = workspace.outputs; for (var i=0; i<os.length; i++) { os[i].autoRotation = 'always'; }"
+SID=$(qdbus6 org.kde.KWin /Scripting loadScript "inline" "$KWIN_JS")
+
+if [[ "$SID" =~ ^[0-9]+$ ]]; then
+    qdbus6 org.kde.KWin /$SID run
+    qdbus6 org.kde.KWin /KWin org.kde.KWin.reconfigure
+    qdbus6 org.kde.KWin /Scripting unloadScript "$SID"
+    
+    # Kurze Pause, damit KWin Zeit zum Schreiben hat
+    sleep 1
+fi
+
+--- PHASE 2: Die Überprüfung ---
+Wir prüfen, ob 'always' in der Datei steht
+if grep -q '"autoRotation": "always"' "$CONF" 2>/dev/null; then
+    echo "[kader42-autorotation-setter]: API method successful, autoRotation set to 'always'."
+    exit 0
+else
+    echo "[kader42-autorotation-setter]: API method failed, attempting fallback by directly modifying the config file via sed."
+    
+    # Falls die Datei existiert, aber den falschen Wert hat:
+    if [ -f "$CONF" ]; then
+        sed -i 's/"autoRotation": "InTabletMode"/"autoRotation": "always"/g' "$CONF"
+     #   qdbus6 org.kde.KWin /KWin org.kde.KWin.reconfigure
+    else
+        # Falls die Datei gar nicht existiert (sehr seltener Fall beim Autostart):
+        echo "[kader42-autorotation-setter]: File not found, waiting for KWin..."
+    fi
+fi
+
+# --- PHASE 3: Verifizierung nach Fallback ---
+if grep -q '"autoRotation": "always"' "$CONF" 2>/dev/null; then
+    echo "[kader42-autorotation-setter]: Fallback successful."
+else
+    echo "[kader42-autorotation-setter]: Critical error - Rotation could not be forced."
+fi
+
+if [ -f "$LISTENER" ]; then
+    echo "[✅][kader42-autorotation-setter] Start Kader⁴² Tabletmode Listener..." >> "$LOG"
+    # Start mit 'python' (Arch-Standard), im Hintergrund
+    python "$LISTENER" >> "$LOG" 2>&1 &
+else
+    echo "[❌][kader42-autorotation-setter] Error: Listener not found under $LISTENER" >> "$LOG"
+fi
