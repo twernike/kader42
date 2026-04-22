@@ -7,7 +7,6 @@ import sys
 import threading
 import os
 import dbus
-import dbus.mainloop.glib
 
 # ---------------- CONFIG ----------------
 USE_DBUS_FALLBACK = True

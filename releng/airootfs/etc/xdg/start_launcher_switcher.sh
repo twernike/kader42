@@ -1,0 +1,1 @@
+python /usr/bin/kader42-event-listener.py

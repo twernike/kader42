@@ -1,7 +1,0 @@
-[Desktop Entry]
-Type=Application
-Name=Kader⁴² tabletmode listener
-Exec=/usr/bin/python /usr/bin/kader42-tabletmode-listener.py
-Icon=input-tablet
-Terminal=false
-X-KDE-autostart-phase=2
