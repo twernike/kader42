@@ -15,9 +15,9 @@ def run_switcher(mode):
         # We call the switcher directly with the mode value from the hardware
         subprocess.run(["plasma-convertible-switcher", str(mode)], check=True)
         status_text = "NOTEBOOK" if mode == 0 else "TABLET"
-        print(f"[✅][kader42-tabletmode-listener] Hardware status detected -> {status_text} (Value: {mode})")
+        print(f"[✅][kader42-event-listener] Hardware status detected -> {status_text} (Value: {mode})")
     except Exception as e:
-        print(f"[❌][kader42-tabletmode-listener] Error occurred while calling plasma-convertible-switcher: {e}", file=sys.stderr)
+        print(f"[❌][kader42-event-listener] Error occurred while calling plasma-convertible-switcher: {e}", file=sys.stderr)
 
 def find_tablet_switch_device():
     """
@@ -32,7 +32,7 @@ def find_tablet_switch_device():
     return None
 
 def main():
-    print("Kader42 Tablet Mode Listener started...")
+    print("Kader42 Event Listener started...")
     
     # Find the device (with a small retry buffer for the boot process)
     device = None
@@ -40,14 +40,14 @@ def main():
         device = find_tablet_switch_device()
         if device:
             break
-        print(f"[🔍][kader42-tabletmode-listener] Searching for Tablet Switch... (Attempt {i+1}/5)")
+        print(f"[🔍][kader42-event-listener] Searching for Tablet Switch... (Attempt {i+1}/5)")
         time.sleep(2)
 
     if not device:
-        print("[❌][kader42-tabletmode-listener] Critical Error: No SW_TABLET_MODE device found!")
+        print("[❌][kader42-event-listener] Critical Error: No SW_TABLET_MODE device found!")
         sys.exit(1)
 
-    print(f"[✅][kader42-tabletmode-listener] Monitoring active on: {device.name} ({device.path})")
+    print(f"[✅][kader42-event-listener] Monitoring active on: {device.name} ({device.path})")
 
     # --- INITIAL CHECK AT STARTUP ---
     # We immediately read the current physical state
@@ -57,7 +57,7 @@ def main():
             initial_val = current_switches[ecodes.SW_TABLET_MODE]
             run_switcher(initial_val)
     except Exception as e:
-        print(f"[⚠️][kader42-tabletmode-listener] Warning during initial check: {e}")
+        print(f"[⚠️][kader42-event-listener] Warning during initial check: {e}")
 
     # --- EVENT LOOP ---
     # Here we listen for hardware changes
@@ -72,5 +72,5 @@ if __name__ == "__main__":
     try:
         main()
     except KeyboardInterrupt:
-        print("[➜]]\n[kader42-tabletmode-listener] Monitor closed. Exiting gracefully.")
+        print("[➜]]\n[kader42-event-listener] Monitor closed. Exiting gracefully.")
         sys.exit(0)

@@ -1,8 +1,19 @@
 {
-  "KPlugin": {
-    "Name": "Force Auto Rotation",
-    "Description": "Forces autoRotation to always",
-    "Version": "1.0",
-    "EnabledByDefault": true
-  }
+    "KPackageStructure": "KWin/Script",
+    "KPlugin": {
+        "Authors": [
+            {
+                "Email": "support@kader42.de"
+            }
+        ],
+        "Description": "Forces autoRotation to always",
+        "Icon": "preferences-system-windows-script-test",
+        "Id": "forceautorotation",
+        "License": "GPL",
+        "Name": "Force Auto-Rotation",
+        "Version": "1.0",
+        "EnabledByDefault": true
+    },
+    "X-KDE-ConfigModule": "kwin/effects/configs/kcm_kwin4_genericscripted",
+    "X-Plasma-API": "javascript"
 }

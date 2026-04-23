@@ -162,32 +162,12 @@ echo -e "\x1b[43m\e[38;5;20m ############################### \e[0m"
 systemd-hwdb update
 udevadm trigger
 
-# Ordner für den Override erstellen
-mkdir -p /etc/systemd/system/sddm.service.d/
-
-# Den SDDM-Start so verzögern, dass Plymouth nicht flackert
-echo "[Unit]
-After=plymouth-quit.service
-Conflicts=plymouth-quit.service
-
-[Service]
-# Plymouth erst beenden, wenn SDDM wirklich den Grafik-Buffer übernimmt
-ExecStartPre=-/usr/bin/plymouth deactivate
-ExecStopPost=-/usr/bin/plymouth quit" > /etc/systemd/system/sddm.service.d/override.conf
-
 echo
 echo -e "\x1b[43m\e[38;5;20m |===================================|\e[0m"
 echo -e "\x1b[43m\e[38;5;20m | ⚙️ | Enforce systemd presets now! | \e[0m"
 echo -e "\x1b[43m\e[38;5;20m |===================================|\e[0m"
 systemctl preset-all
 echo
-
-echo -e "\x1b[43m\e[38;5;20m | ⚙️ |=======================| \e[0m"
-echo -e "\x1b[43m\e[38;5;20m | ⚙️ | Set Plymouth-Theme... | \e[0m"
-echo -e "\x1b[43m\e[38;5;20m | ⚙️ |=======================| \e[0m"
-
-plymouth-set-default-theme kader42-mello -R
-
 
 # Add flathub repo system-wide
 flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo

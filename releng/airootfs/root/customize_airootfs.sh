@@ -162,6 +162,13 @@ echo -e "\x1b[43m\e[38;5;20m ############################### \e[0m"
 systemd-hwdb update
 udevadm trigger
 
+echo
+echo -e "\x1b[43m\e[38;5;20m |===================================|\e[0m"
+echo -e "\x1b[43m\e[38;5;20m | ⚙️ | Enforce systemd presets now! | \e[0m"
+echo -e "\x1b[43m\e[38;5;20m |===================================|\e[0m"
+systemctl preset-all
+echo
+
 # Add flathub repo system-wide
 flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
 
