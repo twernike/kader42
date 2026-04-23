@@ -395,6 +395,7 @@ bluez-deprecated-tools
 bluez-obex
 bluez-mesh
 bluedevil
+plymouth
 
 # Gaming
 steam
@@ -419,4 +420,5 @@ inputactions-kwin
 kader42-hwdb
 kader42-icons
 kader42-plasma-theme
-kader-tools
+kader42-convertible-tools
+kader42-forceautorotation

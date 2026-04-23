@@ -1,0 +1,24 @@
+# Maintainer: Thomas Wernike <support@kader42.de>
+pkgname=kader42-forceautorotation
+pkgver=1.0.0
+pkgrel=1
+pkgdesc="Activates autorotation in KDE Plasma without the option 'only in tablet mode' and ensures you have the Dash menu in tablet mode and the standard Start menu in laptop mode."
+arch=('any')
+url="https://kader42.de"
+license=('GPL')
+
+source=('main.js'
+        'metadata.json'
+        'kwinrc'
+        )
+md5sums=('SKIP' 'SKIP' 'SKIP')
+
+package() {
+  # 1. Create the directories in the package image ($pkgdir)
+  # -D creates any missing parent directories; -m755 sets execution permissions
+  
+  # Skripte nach /usr/bin kopieren
+  install -Dm755 "${srcdir}/main.js" "${pkgdir}/usr/share/kwin-wayland/scripts/forceautorotation/contents/code/main.js"
+  install -Dm755 "${srcdir}/metadata.json" "${pkgdir}/usr/share/kwin-wayland/scripts/forceautorotation/metadata.json"
+  install -Dm755 "${srcdir}/kwinrc" "${pkgdir}/etc/xdg/kwinrc"
+}

@@ -1,0 +1,58 @@
+[Plymouth Theme]
+Name=mello42
+Description=Kader42 Boot Logo with mascot Mello
+ModuleName=two-step
+
+[two-step]
+Font=Cantarell 12
+TitleFont=Cantarell Light 30
+ImageDir=/usr/share/plymouth/themes/mello42
+DialogHorizontalAlignment=.5
+DialogVerticalAlignment=.682
+TitleHorizontalAlignment=.5
+TitleVerticalAlignment=.382
+HorizontalAlignment=.5
+VerticalAlignment=.5
+Transition=none
+TransitionDuration=0.0
+BackgroundStartColor=0x000000
+BackgroundEndColor=0x000000
+DialogClearsFirmwareBackground=false
+MessageBelowAnimation=true
+Animation=animation
+NumberOfFrames=112
+FrameDuration=0.05
+
+[boot-up]
+UseEndAnimation=true
+UseFirmwareBackground=false
+
+[shutdown]
+UseEndAnimation=false
+UseFirmwareBackground=true
+
+[reboot]
+UseEndAnimation=false
+UseFirmwareBackground=false
+
+[updates]
+SuppressMessages=true
+ProgressBarShowPercentComplete=true
+UseProgressBar=true
+_Title=Installing Updates...
+_SubTitle=Do not turn off your computer
+
+[system-upgrade]
+SuppressMessages=true
+ProgressBarShowPercentComplete=true
+UseProgressBar=true
+_Title=Upgrading System...
+_SubTitle=Do not turn off your computer
+
+[firmware-upgrade]
+SuppressMessages=true
+ProgressBarShowPercentComplete=true
+UseProgressBar=true
+UseFirmwareBackground=true
+_Title=Upgrading Firmware...
+_SubTitle=Do not turn off your computer

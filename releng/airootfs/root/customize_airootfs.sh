@@ -97,9 +97,10 @@ chmod +x /etc/skel/autostart/*.sh || true
 chmod 644 /etc/systemd/system/*.service || true
 chown root:root /usr/bin/*
 
-sudo chmod 4755 /usr/bin/sudo
-sudo chmod 0644 /etc/sudo.conf
-sudo chmod 0644 /etc/sudoers
+chmod 4755 /usr/bin/sudo
+chmod 0644 /etc/sudo.conf
+chmod 0644 /etc/sudoers
+chmod +x /etc/xdg/autostart/
 
 chmod 777 /home/liveuser/Desktop/calamares.desktop
 

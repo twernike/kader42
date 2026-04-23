@@ -1,14 +1,19 @@
 [Unit]
-Description=Kader⁴² Event Listener
-Requires=iio-sensor-proxy.service
-After=iio-sensor-proxy.service plasma-plasmashell.service
+Description=Kader42 Event Listener
+# Strikte Bindung an die Wayland-Sitzung
+After=plasma-workspace-wayland.target
+After=kwin_wayland.service
+PartOf=graphical-session.target
 
 [Service]
-Type=exec
-ExecStartPre=/usr/bin/sleep 20
-ExecStart=/usr/bin/bash /usr/bin/kader42-event-listener
-Restart=always
-RestartSec=3
+Type=simple
+# Passives Warten auf KWin via DBus
+ExecStartPre=/usr/bin/gdbus wait --session org.kde.KWin --timeout 30
+# Der Sicherheits-Puffer (2s reichen bei Wayland meist aus)
+ExecStartPre=/usr/bin/sleep 2
+ExecStart=/usr/bin/python /usr/bin/kader42-event-listener.py
+Restart=on-failure
+RestartSec=5
 
 [Install]
-WantedBy=default.target
+WantedBy=plasma-workspace-wayland.target
