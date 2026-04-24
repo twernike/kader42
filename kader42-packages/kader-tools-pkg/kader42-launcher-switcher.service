@@ -1,0 +1,19 @@
+[Unit]
+Description=Kader42 Event Listener
+# Strikte Bindung an die Wayland-Sitzung
+After=plasma-workspace-wayland.target
+After=kwin_wayland.service
+PartOf=graphical-session.target
+
+[Service]
+Type=simple
+# Passives Warten auf KWin via DBus
+ExecStartPre=/usr/bin/gdbus wait --session org.kde.KWin --timeout 30
+# Der Sicherheits-Puffer (2s reichen bei Wayland meist aus)
+ExecStartPre=/usr/bin/sleep 2
+ExecStart=/usr/bin/python /usr/bin/kader42-launcher-switcher.py
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=plasma-workspace-wayland.target
