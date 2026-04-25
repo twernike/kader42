@@ -1,0 +1,60 @@
+#!/bin/bash
+
+# =================================================================
+# Kader⁴² Hardware-Observer
+# Detects tablet mode via libinput (status-based)
+# Supported: Framework (convertible) & Surface (detachable)
+# =================================================================
+
+SWITCHER="/usr/bin/plasma-convertible-switcher"
+LAST_STATE="unknown"
+
+# Function for determining the hardware status
+check_hardware_mode() {
+    # 1. Search for internal input devices (keyboard/Type Cover/touchpad)
+    # We filter by typical internal buses: platform, i2c, i8042 (PS/2), MSHW (Surface)
+    INTERNAL_DEVS=$(libinput list-devices 2>/dev/null | awk '/Device:.*(Keyboard|Touchpad|Type Cover|Pointer)/, /Stats:/' | grep -iE "platform|i2c|i8042|serio|MSHW")
+
+    echo "[💡][kader42-hardware-observer] Checking internal input devices..."
+    echo "[💡][kader42-hardware-observer] Found Keyboards / Hardware: $INTERNAL_DEVS"
+    # CASE A: No internal keyboard/touchpad detected (e.g., Surface Cover removed)
+    if [ -z "$INTERNAL_DEVS" ]; then
+        echo "[💡][kader42-hardware-observer] No internal input devices found. Tablet mode detected."
+        return
+    fi
+
+    # CASE B: Internal devices are present, but we check whether they are ‘disabled’
+    # If libinput disables a device (when folding it down), it displays “libinput: disabled”
+    if echo "$INTERNAL_DEVS" | grep -iq "disabled"; then
+        echo "1" # Tablet mode (hardware is physically present but disabled)
+    else
+        echo "0" # Notebook mode (hardware is present and active)
+    fi
+}
+
+echo "[🚀] Kader42 Hardware-Observer started..."
+
+# Main Loop: Continuously monitors the hardware status
+while true; do
+    # Determine the current mode (0=Notebook, 1=Tablet)
+    CURRENT_STATE=$(check_hardware_mode)
+
+    # Respond only when the status changes
+    if [ "$CURRENT_STATE" != "$LAST_STATE" ]; then
+        
+        # Skip the initial run to prevent false triggers during bootup
+        if [ "$LAST_STATE" != "unknown" ]; then
+            echo "[❗][kader42-hardware-observer] Hardware change detected: Mode $CURRENT_STATE"
+            
+            # Call the switcher (0=laptop, 1=tablet)
+            # ‘timeout’ prevents a hung DBus call from blocking the observer.
+            # ‘&’ ensures asynchronous execution (fire-and-forget).
+            timeout 5s "$SWITCHER" "$CURRENT_STATE" > /dev/null 2>&1 &
+        fi
+        
+        LAST_STATE="$CURRENT_STATE"
+    fi
+
+    # Check interval: 2 seconds is the “sweet spot” for battery life and response time
+    sleep 2
+done

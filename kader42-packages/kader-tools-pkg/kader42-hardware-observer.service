@@ -1,0 +1,13 @@
+[Unit]
+Name=Kader⁴² Hardware Observer
+Description=Detects tablet mode via libinput (status-based)
+After=plasma-plasmashell.service
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/bash /usr/bin/kader42-hardware-observer
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=default.target

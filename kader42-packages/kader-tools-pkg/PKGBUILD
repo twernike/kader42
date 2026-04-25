@@ -1,7 +1,7 @@
 # Maintainer: Thomas Wernike <support@kader42.de>
 pkgname=kader42-convertible-tools
 pkgver=1.0.0
-pkgrel=7
+pkgrel=8
 pkgdesc="An event listener and a launcher switcher that ensures you have the Dash menu in tablet mode and the standard Start menu in laptop mode."
 arch=('any')
 url="https://kader42.de"
@@ -13,9 +13,10 @@ source=('kader42-event-listener.py'
         'plasma-convertible-switcher'
         'kader42-event-listener.service'
         'kader42-launcher-switcher.py'
-        'kader42-launcher-switcher.service'
+        'kader42-hardware-observer'
+        'kader42-hardware-observer.service'
         )
-md5sums=('SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP')
+md5sums=('SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP')
 
 package() {
   # 1. Create the directories in the package image ($pkgdir)
@@ -26,5 +27,6 @@ package() {
   install -Dm755 "${srcdir}/kader42-event-listener.service" "${pkgdir}/usr/lib/systemd/user/kader42-event-listener.service"
   install -Dm755 "${srcdir}/plasma-convertible-switcher" "${pkgdir}/usr/bin/plasma-convertible-switcher"
   install -Dm755 "${srcdir}/kader42-launcher-switcher.py" "${pkgdir}/usr/bin/kader42-launcher-switcher.py"
-  install -Dm755 "${srcdir}/kader42-launcher-switcher.service" "${pkgdir}/usr/lib/systemd/user/kader42-launcher-switcher.service"
+  install -Dm755 "${srcdir}/kader42-hardware-observer" "${pkgdir}/usr/bin/kader42-hardware-observer"
+  install -Dm755 "${srcdir}/kader42-hardware-observer.service" "${pkgdir}/usr/lib/systemd/user/kader42-hardware-observer.service"
 }
