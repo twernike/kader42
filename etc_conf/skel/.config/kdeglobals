@@ -148,6 +148,3 @@ inactiveForeground=152,159,172
 
 [KDE Action Restrictions]
 shell/evaluateScript=true
-
-[KScreen]
-TabletMode=auto

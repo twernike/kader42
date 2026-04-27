@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+FILE="$HOME/.config/kwinoutputconfig.json"
+LOCK="/tmp/kader42-kwin-lock"
+
+# ---------------- LOCK (wichtig gegen doppelte Starts) ----------------
+exec 9>"$LOCK"
+flock -n 9 || exit 0
+
+echo "[kader42-autorotation-fix] waiting for KWin config..."
+
+# ---------------- WAIT FOR FILE (Race fix) ----------------
+for i in {1..30}; do
+    if [ -f "$FILE" ]; then
+        break
+    fi
+    sleep 1
+done
+
+if [ ! -f "$FILE" ]; then
+    echo "[kader42] kwin config not found"
+    exit 0
+fi
+
+echo "[kader42-autorotation-fix] patching autoRotation..."
+
+# ---------------- SAFE JSON PATCH ----------------
+TMP="$(mktemp)"
+
+jq '
+.outputs |= with_entries(
+    .value.autoRotation = "always"
+)
+' "$FILE" > "$TMP"
+
+mv "$TMP" "$FILE"
+
+echo "[kader42-autorotation-fix] reconfiguring KWin..."
+qdbus6 org.kde.KWin /KWin reconfigure
+echo "[kader42-autorotation-fix] done"

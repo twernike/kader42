@@ -1,0 +1,12 @@
+[Unit]
+Description=Force KWin AutoRotation Always (jq safe patch)
+After=graphical-session.target
+PartOf=graphical-session.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/bash /usr/bin/kader42-autorotation-fix
+RemainAfterExit=true
+
+[Install]
+WantedBy=default.target

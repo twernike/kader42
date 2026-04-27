@@ -43,9 +43,9 @@ class Kader42Listener:
                     if ("{target}" === "org.kde.plasma.kickerdash") {{
                         newW.currentConfigGroup = ["General"];
                         newW.writeConfig("showCategories", false);
-                    }
-                }
-            }
+                    }}
+                }}
+            }}
         }}
         """
 

@@ -228,6 +228,7 @@ xdg-utils
 xfsprogs
 xl2tpd
 zsh
+jq
 
 # KDE / Plasma
 plasma-desktop

@@ -1,76 +1,117 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 import evdev
 from evdev import ecodes
-import subprocess
+import select
 import time
-import sys
+import subprocess
 
-def run_switcher(mode):
-    """
-    Executes the mode change.
-    mode 0 = Laptop (hardware returns 0)
-    mode 1 = Tablet (hardware returns 1)
-    """
+CHECK_INTERVAL = 1.5
+KEY_IDLE = 2.0
+STABLE_THRESHOLD = 3
+
+last_mode = None
+candidate = None
+stable_count = 0
+
+
+# ---------------- DEVICE FINDER ----------------
+def find_devices():
+    keyboards = []
+    touch = []
+
+    for path in evdev.list_devices():
+        dev = evdev.InputDevice(path)
+        caps = dev.capabilities()
+
+        # Keyboard heuristic (real input only)
+        if ecodes.EV_KEY in caps and ecodes.KEY_A in caps[ecodes.EV_KEY]:
+            keyboards.append(dev)
+
+        # Touch detection
+        if ecodes.EV_ABS in caps:
+            abs_caps = caps[ecodes.EV_ABS]
+            if ecodes.ABS_MT_POSITION_X in abs_caps:
+                touch.append(dev)
+
+    return keyboards, touch
+
+
+# ---------------- INPUT ACTIVITY ----------------
+def has_input(dev, timeout):
     try:
-        # We call the switcher directly with the mode value from the hardware
-        subprocess.run(["plasma-convertible-switcher", str(mode)], check=True)
-        status_text = "NOTEBOOK" if mode == 0 else "TABLET"
-        print(f"[✅][kader42-event-listener] Hardware status detected -> {status_text} (Value: {mode})")
-    except Exception as e:
-        print(f"[❌][kader42-event-listener] Error occurred while calling plasma-convertible-switcher: {e}", file=sys.stderr)
+        r, _, _ = select.select([dev.fd], [], [], timeout)
+        if r:
+            dev.read()
+            return True
+    except:
+        pass
+    return False
 
-def find_tablet_switch_device():
-    """
-    Scans all input devices for the SW_TABLET_MODE switch.
-    """
-    devices = [evdev.InputDevice(path) for path in evdev.list_devices()]
-    for device in devices:
-        caps = device.capabilities()
-        if ecodes.EV_SW in caps:
-            if ecodes.SW_TABLET_MODE in caps[ecodes.EV_SW]:
-                return device
-    return None
 
+def keyboard_used(keyboards):
+    return any(has_input(k, KEY_IDLE) for k in keyboards)
+
+
+def touch_used(touch):
+    return any(has_input(t, 0.5) for t in touch)
+
+
+# ---------------- DECISION ----------------
+def decide(kb, tc):
+    # hard rule: typing wins always
+    if kb:
+        return 0  # laptop
+
+    if tc:
+        return 1  # tablet
+
+    return 0  # safe default
+
+
+# ---------------- OUTPUT ----------------
+def apply_mode(mode):
+    global last_mode
+
+    if mode == last_mode:
+        return
+
+    last_mode = mode
+
+    subprocess.run(
+        ["plasma-convertible-switcher", str(mode)],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL
+    )
+
+    print("MODE:", "LAPTOP" if mode == 0 else "TABLET")
+
+
+# ---------------- MAIN LOOP ----------------
 def main():
-    print("Kader42 Event Listener started...")
-    
-    # Find the device (with a small retry buffer for the boot process)
-    device = None
-    for i in range(5):
-        device = find_tablet_switch_device()
-        if device:
-            break
-        print(f"[🔍][kader42-event-listener] Searching for Tablet Switch... (Attempt {i+1}/5)")
-        time.sleep(2)
+    global candidate, stable_count
 
-    if not device:
-        print("[❌][kader42-event-listener] Critical Error: No SW_TABLET_MODE device found!")
-        sys.exit(1)
+    keyboards, touch = find_devices()
 
-    print(f"[✅][kader42-event-listener] Monitoring active on: {device.name} ({device.path})")
+    print(f"[INIT] keyboards={len(keyboards)} touch={len(touch)}")
 
-    # --- INITIAL CHECK AT STARTUP ---
-    # We immediately read the current physical state
-    try:
-        current_switches = device.switches()
-        if ecodes.SW_TABLET_MODE in current_switches:
-            initial_val = current_switches[ecodes.SW_TABLET_MODE]
-            run_switcher(initial_val)
-    except Exception as e:
-        print(f"[⚠️][kader42-event-listener] Warning during initial check: {e}")
+    while True:
+        kb = keyboard_used(keyboards)
+        tc = touch_used(touch)
 
-    # --- EVENT LOOP ---
-    # Here we listen for hardware changes
-    for event in device.read_loop():
-        if event.type == ecodes.EV_SW and event.code == ecodes.SW_TABLET_MODE:
-            # This is where the “logic” takes place:
-            # event.value is 0 for a laptop (switch open)
-            # event.value is 1 for a tablet (switch closed)
-            run_switcher(event.value)
+        mode = decide(kb, tc)
+
+        # ---------------- STABILITY ----------------
+        if mode == candidate:
+            stable_count += 1
+        else:
+            candidate = mode
+            stable_count = 0
+
+        if stable_count >= STABLE_THRESHOLD:
+            apply_mode(mode)
+
+        time.sleep(CHECK_INTERVAL)
+
 
 if __name__ == "__main__":
-    try:
-        main()
-    except KeyboardInterrupt:
-        print("[➜]]\n[kader42-event-listener] Monitor closed. Exiting gracefully.")
-        sys.exit(0)
+    main()
