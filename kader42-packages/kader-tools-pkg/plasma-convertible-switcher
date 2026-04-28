@@ -7,50 +7,31 @@ export DBUS_SESSION_BUS_ADDRESS="unix:path=$XDG_RUNTIME_DIR/bus"
 
 switch_launcher(){
     local MODE=$1
-    [ "$MODE" != "0" ] && [ "$MODE" != "1" ] && exit 1
+    [[ "$MODE" != "0" && "$MODE" != "1" ]] && exit 1
 
-    # Status-Check (Debounce), um Mehrfachausführung zu verhindern
+    # Status-Check (Debounce)
     STATE_FILE="/tmp/plasma-convertible-state"
     [ -f "$STATE_FILE" ] && [ "$(cat "$STATE_FILE")" = "$MODE" ] && exit 0
     echo "$MODE" > "$STATE_FILE"
 
-    # Variablen für das JS
+    # Ziel-Plugin festlegen
     if [ "$MODE" = "1" ]; then
         TARGET="org.kde.plasma.kickerdash"
-        OLD="org.kde.plasma.kickoff"
-        IS_TABLET=true
     else
         TARGET="org.kde.plasma.kickoff"
-        OLD="org.kde.plasma.kickerdash"
-        IS_TABLET=false
     fi
 
-    # Das "chirurgische" JS-Skript
+    # Das JS-Script: Wir ändern nur den Typ, um die Position zu erhalten
     read -r -d '' JS <<EOF
-    var panelsList = panels();
-    for (var i = 0; i < panelsList.length; ++i) {
-        var p = panelsList[i];
-        var widgets = p.widgets();
-        for (var j = 0; j < widgets.length; ++j) {
-            var w = widgets[j];
-            
-            // Wir fassen NUR den Launcher an
-            if (w.type === "$OLD") {
-                var idx = w.index; // Position merken
-                w.remove();        // Nur den alten Launcher löschen
-                
-                var newW = p.addWidget("$TARGET");
-                newW.index = idx;  // An exakt dieselbe Stelle setzen
-                
-                // Config setzen
-                newW.currentConfigGroup = ["Shortcuts"];
-                newW.writeConfig("globalShortcut", "Alt+F1");
-                
-                if ("$TARGET" === "org.kde.plasma.kickerdash") {
-                    newW.currentConfigGroup = ["General"];
-                    newW.writeConfig("showCategories", false);
+    var allPanels = panels();
+    for (var i = 0; i < allPanels.length; i++) {
+        var widgets = allPanels[i].widgets();
+        for (var j = 0; j < widgets.length; j++) {
+            if (widgets[j].type === "org.kde.plasma.kickoff" || widgets[j].type === "org.kde.plasma.kickerdash") {
+                // Nur ändern, wenn es nicht schon der Zieltyp ist
+                if (widgets[j].type !== "$TARGET") {
+                    widgets[j].type = "$TARGET";
                 }
-                print("Launcher erfolgreich getauscht.");
             }
         }
     }
@@ -61,10 +42,13 @@ EOF
 
     # Benachrichtigung
     local icon="computer"; local title="Kader⁴² Hybrid Switch"; local msg=""
-    case "$SYSTEM_LANG" in
-        de) [ "$MODE" == "1" ] && msg="Tablet-Modus aktiviert" && icon="tablet" || msg="Notebook-Modus aktiviert" ;;
-        *)  [ "$MODE" == "1" ] && msg="Tablet mode activated" && icon="tablet" || msg="Laptop mode activated" ;;
-    esac
+    if [ "$MODE" == "1" ]; then
+        icon="tablet"
+        [ "$SYSTEM_LANG" == "de" ] && msg="Tablet-Modus aktiviert" || msg="Tablet mode activated"
+    else
+        icon="laptop"
+        [ "$SYSTEM_LANG" == "de" ] && msg="Notebook-Modus aktiviert" || msg="Laptop mode activated"
+    fi
 
     notify-send -u low -a "System" -i "$icon" "$title" "$msg"
 }

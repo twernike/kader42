@@ -1,117 +1,104 @@
-#!/usr/bin/env python3
-import evdev
-from evdev import ecodes
-import select
+import os
+import math
 import time
 import subprocess
 
-CHECK_INTERVAL = 1.5
-KEY_IDLE = 2.0
-STABLE_THRESHOLD = 3
+def find_sensors():
+    """
+    Sucht dynamisch nach Base- und Lid-Accelerometer.
+    Gibt ein Dict mit den Pfaden zurück oder None.
+    """
+    sensors = {'base': None, 'lid': None}
+    base_path = "/sys/bus/iio/devices/"
+    
+    if not os.path.exists(base_path):
+        return None
 
-last_mode = None
-candidate = None
-stable_count = 0
+    for dev in os.listdir(base_path):
+        full_path = os.path.join(base_path, dev)
+        label_file = os.path.join(full_path, "label")
+        
+        # Methode 1: Über das Label (Best Practice)
+        if os.path.exists(label_file):
+            with open(label_file, "r") as f:
+                label = f.read().strip().lower()
+                if "base" in label:
+                    sensors['base'] = full_path
+                elif "lid" in label or "display" in label:
+                    sensors['lid'] = full_path
+        
+        # Methode 2: Fallback über physikalische Position (falls Label fehlt)
+        # Viele Sensoren haben ein 'location' Attribut
+        loc_file = os.path.join(full_path, "location")
+        if not sensors['base'] or not sensors['lid']:
+            if os.path.exists(loc_file):
+                with open(loc_file, "r") as f:
+                    loc = f.read().strip().lower()
+                    if "base" in loc: sensors['base'] = full_path
+                    elif "lid" in loc: sensors['lid'] = full_path
 
+    return sensors if (sensors['base'] and sensors['lid']) else None
 
-# ---------------- DEVICE FINDER ----------------
-def find_devices():
-    keyboards = []
-    touch = []
-
-    for path in evdev.list_devices():
-        dev = evdev.InputDevice(path)
-        caps = dev.capabilities()
-
-        # Keyboard heuristic (real input only)
-        if ecodes.EV_KEY in caps and ecodes.KEY_A in caps[ecodes.EV_KEY]:
-            keyboards.append(dev)
-
-        # Touch detection
-        if ecodes.EV_ABS in caps:
-            abs_caps = caps[ecodes.EV_ABS]
-            if ecodes.ABS_MT_POSITION_X in abs_caps:
-                touch.append(dev)
-
-    return keyboards, touch
-
-
-# ---------------- INPUT ACTIVITY ----------------
-def has_input(dev, timeout):
+def read_accel(path):
+    """ Liest X, Y, Z Rohdaten eines IIO-Devices """
     try:
-        r, _, _ = select.select([dev.fd], [], [], timeout)
-        if r:
-            dev.read()
-            return True
+        vals = []
+        for axis in ['x', 'y', 'z']:
+            with open(f"{path}/in_accel_{axis}_raw", "r") as f:
+                vals.append(int(f.read().strip()))
+        return tuple(vals)
     except:
-        pass
-    return False
+        return None
 
+def calculate_angle(v1, v2):
+    """ Vektorgeometrie: Winkel zwischen zwei 3D-Vektoren """
+    dot = sum(a*b for a, b in zip(v1, v2))
+    mag1 = math.sqrt(sum(a**2 for a in v1))
+    mag2 = math.sqrt(sum(a**2 for a in v2))
+    
+    if mag1 == 0 or mag2 == 0: return 0
+    
+    # Cosinus-Wert begrenzen wegen Float-Präzision
+    cos_theta = max(-1.0, min(1.0, dot / (mag1 * mag2)))
+    return math.degrees(math.acos(cos_theta))
 
-def keyboard_used(keyboards):
-    return any(has_input(k, KEY_IDLE) for k in keyboards)
-
-
-def touch_used(touch):
-    return any(has_input(t, 0.5) for t in touch)
-
-
-# ---------------- DECISION ----------------
-def decide(kb, tc):
-    # hard rule: typing wins always
-    if kb:
-        return 0  # laptop
-
-    if tc:
-        return 1  # tablet
-
-    return 0  # safe default
-
-
-# ---------------- OUTPUT ----------------
-def apply_mode(mode):
-    global last_mode
-
-    if mode == last_mode:
+def main():
+    print("Kader⁴² Sensor-Discovery läuft...")
+    sensors = find_sensors()
+    
+    if not sensors:
+        print("Kritischer Fehler: Konnte nicht beide Beschleunigungssensoren finden!")
+        # Hier könnte man einen Fallback auf den (unzuverlässigen) SW_TABLET_MODE einbauen
         return
 
-    last_mode = mode
+    print(f"Sensoren gefunden:\n Base: {sensors['base']}\n Lid:  {sensors['lid']}")
 
-    subprocess.run(
-        ["plasma-convertible-switcher", str(mode)],
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL
-    )
-
-    print("MODE:", "LAPTOP" if mode == 0 else "TABLET")
-
-
-# ---------------- MAIN LOOP ----------------
-def main():
-    global candidate, stable_count
-
-    keyboards, touch = find_devices()
-
-    print(f"[INIT] keyboards={len(keyboards)} touch={len(touch)}")
-
+    last_state = -1
+    current_state = 0
+    
     while True:
-        kb = keyboard_used(keyboards)
-        tc = touch_used(touch)
+        v_base = read_accel(sensors['base'])
+        v_lid = read_accel(sensors['lid'])
 
-        mode = decide(kb, tc)
+        if v_base and v_lid:
+            angle = calculate_angle(v_base, v_lid)
+            
+            # Hysterese: 180 Grad ist flach, Tablet ist fast 360 Grad
+            # Achtung: Je nach Montage der Sensoren kann 'flach' 0 oder 180 sein.
+            # Das muss man einmalig am Framework auslesen.
+            if angle > 190:
+                new_state = 1
+            elif angle < 170:
+                new_state = 0
+            else:
+                new_state = current_state
 
-        # ---------------- STABILITY ----------------
-        if mode == candidate:
-            stable_count += 1
-        else:
-            candidate = mode
-            stable_count = 0
+            if new_state != last_state:
+                subprocess.run(["/usr/bin/plasma-convertible-switcher", str(new_state)])
+                last_state = new_state
+                print(f"Winkel: {angle:.1f}° | Mode: {'TABLET' if new_state == 1 else 'LAPTOP'}")
 
-        if stable_count >= STABLE_THRESHOLD:
-            apply_mode(mode)
-
-        time.sleep(CHECK_INTERVAL)
-
+        time.sleep(2)
 
 if __name__ == "__main__":
     main()

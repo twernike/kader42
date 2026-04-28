@@ -27,15 +27,31 @@ fi
 echo "[kader42-autorotation-fix] patching autoRotation..."
 
 # ---------------- SAFE JSON PATCH ----------------
-TMP="$(mktemp)"
+# TMP="$(mktemp)"
+
+# jq '
+# .outputs |= with_entries(
+#     .value.autoRotation = "always"
+# )
+# ' "$FILE" > "$TMP"
+
+# mv "$TMP" "$FILE"
 
 jq '
-.outputs |= with_entries(
-    .value.autoRotation = "always"
-)
-' "$FILE" > "$TMP"
-
-mv "$TMP" "$FILE"
+  map(
+    if (.data? | type == "array") then
+      .data |= map(
+        if (.autoRotation? != null) then
+          .autoRotation = "always"
+        else
+          .
+        end
+      )
+    else
+      .
+    end
+  )
+' kwinoutputconfig.json > tmp.json && mv tmp.json kwinoutputconfig.json
 
 echo "[kader42-autorotation-fix] reconfiguring KWin..."
 qdbus6 org.kde.KWin /KWin reconfigure
