@@ -23,14 +23,19 @@ switch_launcher(){
 
     # Das JS-Script: Wir ändern nur den Typ, um die Position zu erhalten
     read -r -d '' JS <<EOF
-    var allPanels = panels();
+var allPanels = panels();
     for (var i = 0; i < allPanels.length; i++) {
         var widgets = allPanels[i].widgets();
         for (var j = 0; j < widgets.length; j++) {
             if (widgets[j].type === "org.kde.plasma.kickoff" || widgets[j].type === "org.kde.plasma.kickerdash") {
-                // Nur ändern, wenn es nicht schon der Zieltyp ist
+                // Nur handeln, wenn der Typ sich wirklich ändern soll
                 if (widgets[j].type !== "$TARGET") {
-                    widgets[j].type = "$TARGET";
+                    var oldIndex = widgets[j].index; // Position merken
+                    widgets[j].remove();            // Den alten Launcher kicken
+                    
+                    // Neuen Launcher hinzufügen
+                    var newWidget = allPanels[i].addWidget("$TARGET");
+                    newWidget.index = oldIndex;      // An die alte Stelle schieben
                 }
             }
         }

@@ -1,104 +1,186 @@
-import os
-import math
-import time
+#!/usr/bin/env python3
+
+import evdev
+from evdev import ecodes
+import select
 import subprocess
+import time
+import logging
 
-def find_sensors():
-    """
-    Sucht dynamisch nach Base- und Lid-Accelerometer.
-    Gibt ein Dict mit den Pfaden zurück oder None.
-    """
-    sensors = {'base': None, 'lid': None}
-    base_path = "/sys/bus/iio/devices/"
-    
-    if not os.path.exists(base_path):
-        return None
+# ------------------------------------------------------------
+# CONFIG
+# ------------------------------------------------------------
 
-    for dev in os.listdir(base_path):
-        full_path = os.path.join(base_path, dev)
-        label_file = os.path.join(full_path, "label")
-        
-        # Methode 1: Über das Label (Best Practice)
-        if os.path.exists(label_file):
-            with open(label_file, "r") as f:
-                label = f.read().strip().lower()
-                if "base" in label:
-                    sensors['base'] = full_path
-                elif "lid" in label or "display" in label:
-                    sensors['lid'] = full_path
-        
-        # Methode 2: Fallback über physikalische Position (falls Label fehlt)
-        # Viele Sensoren haben ein 'location' Attribut
-        loc_file = os.path.join(full_path, "location")
-        if not sensors['base'] or not sensors['lid']:
-            if os.path.exists(loc_file):
-                with open(loc_file, "r") as f:
-                    loc = f.read().strip().lower()
-                    if "base" in loc: sensors['base'] = full_path
-                    elif "lid" in loc: sensors['lid'] = full_path
+SWITCHER = "/usr/bin/plasma-convertible-switcher"
 
-    return sensors if (sensors['base'] and sensors['lid']) else None
+MODE_LAPTOP = 0
+MODE_TABLET = 1
 
-def read_accel(path):
-    """ Liest X, Y, Z Rohdaten eines IIO-Devices """
+POLL_INTERVAL = 0.3
+
+TO_TABLET_DELAY = 2.0
+TO_LAPTOP_DELAY = 0.5
+
+DEVICE_RESYNC_INTERVAL = 10
+
+
+# ------------------------------------------------------------
+# LOGGING
+# ------------------------------------------------------------
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="[kader42] %(message)s"
+)
+
+log = logging.info
+
+
+# ------------------------------------------------------------
+# DEVICE DISCOVERY
+# ------------------------------------------------------------
+
+def find_internal_keyboards():
+    devices = []
+
+    for path in evdev.list_devices():
+
+        try:
+            dev = evdev.InputDevice(path)
+            caps = dev.capabilities()
+
+            if ecodes.EV_KEY not in caps:
+                continue
+
+            if ecodes.KEY_A not in caps[ecodes.EV_KEY]:
+                continue
+
+            name = dev.name.lower()
+
+            if "usb" in name or "bluetooth" in name:
+                continue
+
+            devices.append(dev)
+
+        except Exception:
+            continue
+
+    return devices
+
+
+# ------------------------------------------------------------
+# DEVICE STATE CHECK
+# ------------------------------------------------------------
+
+def device_alive(devices):
+    for dev in devices:
+        try:
+            r, _, _ = select.select([dev.fd], [], [], 0)
+
+            if r:
+                for e in dev.read():
+                    if e.type == ecodes.EV_KEY:
+                        return True
+
+        except Exception:
+            continue
+
+    return False
+
+
+# ------------------------------------------------------------
+# SAFE MODE SWITCH
+# ------------------------------------------------------------
+
+def set_mode(mode, current_mode):
+
+    # --------------------------------------------------------
+    # HARD GUARD (IMPORTANT FOR PRODUCTION)
+    # --------------------------------------------------------
+
+    if mode not in (MODE_LAPTOP, MODE_TABLET):
+        log(f"IGNORED invalid mode: {mode}")
+        return current_mode
+
+    # no change
+    if mode == current_mode:
+        return current_mode
+
     try:
-        vals = []
-        for axis in ['x', 'y', 'z']:
-            with open(f"{path}/in_accel_{axis}_raw", "r") as f:
-                vals.append(int(f.read().strip()))
-        return tuple(vals)
-    except:
-        return None
+        subprocess.run(
+            [SWITCHER, str(mode)],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            check=False
+        )
 
-def calculate_angle(v1, v2):
-    """ Vektorgeometrie: Winkel zwischen zwei 3D-Vektoren """
-    dot = sum(a*b for a, b in zip(v1, v2))
-    mag1 = math.sqrt(sum(a**2 for a in v1))
-    mag2 = math.sqrt(sum(a**2 for a in v2))
-    
-    if mag1 == 0 or mag2 == 0: return 0
-    
-    # Cosinus-Wert begrenzen wegen Float-Präzision
-    cos_theta = max(-1.0, min(1.0, dot / (mag1 * mag2)))
-    return math.degrees(math.acos(cos_theta))
+        log("LAPTOP" if mode == MODE_LAPTOP else "TABLET")
+
+    except Exception as e:
+        log(f"switch failed: {e}")
+
+    return mode
+
+
+# ------------------------------------------------------------
+# MAIN
+# ------------------------------------------------------------
 
 def main():
-    print("Kader⁴² Sensor-Discovery läuft...")
-    sensors = find_sensors()
-    
-    if not sensors:
-        print("Kritischer Fehler: Konnte nicht beide Beschleunigungssensoren finden!")
-        # Hier könnte man einen Fallback auf den (unzuverlässigen) SW_TABLET_MODE einbauen
-        return
 
-    print(f"Sensoren gefunden:\n Base: {sensors['base']}\n Lid:  {sensors['lid']}")
+    log("kader42 convertible listener started")
 
-    last_state = -1
-    current_state = 0
-    
+    keyboards = find_internal_keyboards()
+    last_resync = time.time()
+
+    current_mode = None
+
+    tablet_since = None
+    laptop_since = None
+
     while True:
-        v_base = read_accel(sensors['base'])
-        v_lid = read_accel(sensors['lid'])
 
-        if v_base and v_lid:
-            angle = calculate_angle(v_base, v_lid)
-            
-            # Hysterese: 180 Grad ist flach, Tablet ist fast 360 Grad
-            # Achtung: Je nach Montage der Sensoren kann 'flach' 0 oder 180 sein.
-            # Das muss man einmalig am Framework auslesen.
-            if angle > 190:
-                new_state = 1
-            elif angle < 170:
-                new_state = 0
-            else:
-                new_state = current_state
+        now = time.time()
 
-            if new_state != last_state:
-                subprocess.run(["/usr/bin/plasma-convertible-switcher", str(new_state)])
-                last_state = new_state
-                print(f"Winkel: {angle:.1f}° | Mode: {'TABLET' if new_state == 1 else 'LAPTOP'}")
+        # periodic rescan (important for suspend/dock)
+        if now - last_resync > DEVICE_RESYNC_INTERVAL:
+            keyboards = find_internal_keyboards()
+            last_resync = now
 
-        time.sleep(2)
+        alive = device_alive(keyboards)
+
+        # ----------------------------------------------------
+        # LAPTOP MODE
+        # ----------------------------------------------------
+
+        if alive:
+            tablet_since = None
+
+            if laptop_since is None:
+                laptop_since = now
+
+            if now - laptop_since > TO_LAPTOP_DELAY:
+                current_mode = set_mode(MODE_LAPTOP, current_mode)
+
+        # ----------------------------------------------------
+        # TABLET MODE
+        # ----------------------------------------------------
+
+        else:
+            laptop_since = None
+
+            if tablet_since is None:
+                tablet_since = now
+
+            if now - tablet_since > TO_TABLET_DELAY:
+                current_mode = set_mode(MODE_TABLET, current_mode)
+
+        time.sleep(POLL_INTERVAL)
+
+
+# ------------------------------------------------------------
+# ENTRYPOINT
+# ------------------------------------------------------------
 
 if __name__ == "__main__":
     main()

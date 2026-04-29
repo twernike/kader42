@@ -1,58 +1,218 @@
-#!/usr/bin/env bash
+#!/usr/bin/env python3
 
-set -euo pipefail
+import json
+import os
+import subprocess
+import sys
+import time
+from pathlib import Path
 
-FILE="$HOME/.config/kwinoutputconfig.json"
-LOCK="/tmp/kader42-kwin-lock"
+# ------------------------------------------------------------
+# CONFIG
+# ------------------------------------------------------------
 
-# ---------------- LOCK (wichtig gegen doppelte Starts) ----------------
-exec 9>"$LOCK"
-flock -n 9 || exit 0
+CONFIG_FILE = Path.home() / ".config" / "kwinoutputconfig.json"
 
-echo "[kader42-autorotation-fix] waiting for KWin config..."
+TARGET_VALUE = "always"
 
-# ---------------- WAIT FOR FILE (Race fix) ----------------
-for i in {1..30}; do
-    if [ -f "$FILE" ]; then
-        break
-    fi
-    sleep 1
-done
+WAIT_TIMEOUT = 30
+WAIT_INTERVAL = 1
 
-if [ ! -f "$FILE" ]; then
-    echo "[kader42] kwin config not found"
-    exit 0
-fi
 
-echo "[kader42-autorotation-fix] patching autoRotation..."
+# ------------------------------------------------------------
+# LOGGING
+# ------------------------------------------------------------
 
-# ---------------- SAFE JSON PATCH ----------------
-# TMP="$(mktemp)"
+def log(message):
+    print(f"[kader42-autorotation-fix] {message}")
 
-# jq '
-# .outputs |= with_entries(
-#     .value.autoRotation = "always"
-# )
-# ' "$FILE" > "$TMP"
 
-# mv "$TMP" "$FILE"
+# ------------------------------------------------------------
+# WAIT FOR CONFIG
+# ------------------------------------------------------------
 
-jq '
-  map(
-    if (.data? | type == "array") then
-      .data |= map(
-        if (.autoRotation? != null) then
-          .autoRotation = "always"
-        else
-          .
-        end
-      )
-    else
-      .
-    end
-  )
-' kwinoutputconfig.json > tmp.json && mv tmp.json kwinoutputconfig.json
+def wait_for_config():
+    log("Waiting for KWin config...")
 
-echo "[kader42-autorotation-fix] reconfiguring KWin..."
-qdbus6 org.kde.KWin /KWin reconfigure
-echo "[kader42-autorotation-fix] done"
+    for _ in range(WAIT_TIMEOUT):
+
+        if CONFIG_FILE.exists():
+            log(f"Found config: {CONFIG_FILE}")
+            return True
+
+        time.sleep(WAIT_INTERVAL)
+
+    return False
+
+
+# ------------------------------------------------------------
+# LOAD JSON
+# ------------------------------------------------------------
+
+def load_config():
+    try:
+        with open(CONFIG_FILE, "r", encoding="utf-8") as file:
+            return json.load(file)
+
+    except Exception as e:
+        log(f"Failed to load JSON: {e}")
+        sys.exit(1)
+
+
+# ------------------------------------------------------------
+# PATCH autoRotation
+# ------------------------------------------------------------
+
+def patch_autorotation(data):
+
+    changed = False
+
+    # --------------------------------------------------------
+    # Root is an ARRAY
+    # --------------------------------------------------------
+
+    for block in data:
+
+        # ----------------------------------------------------
+        # We only want the "outputs" section
+        # ----------------------------------------------------
+
+        if block.get("name") != "outputs":
+            continue
+
+        outputs = block.get("data", [])
+
+        # ----------------------------------------------------
+        # Patch every output
+        # ----------------------------------------------------
+
+        for output in outputs:
+
+            current = output.get("autoRotation")
+
+            # Skip entries without autoRotation
+            if current is None:
+                continue
+
+            # Already correct
+            if current == TARGET_VALUE:
+                continue
+
+            connector = output.get("connectorName", "unknown")
+
+            log(
+                f"Patching {connector}: "
+                f"{current} -> {TARGET_VALUE}"
+            )
+
+            output["autoRotation"] = TARGET_VALUE
+            changed = True
+
+    return changed
+
+
+# ------------------------------------------------------------
+# SAVE JSON
+# ------------------------------------------------------------
+
+def save_config(data):
+
+    try:
+        with open(CONFIG_FILE, "w", encoding="utf-8") as file:
+
+            json.dump(
+                data,
+                file,
+                indent=4
+            )
+
+        log("Config saved")
+
+    except Exception as e:
+        log(f"Failed to save JSON: {e}")
+        sys.exit(1)
+
+
+# ------------------------------------------------------------
+# RECONFIGURE KWIN
+# ------------------------------------------------------------
+
+def reconfigure_kwin():
+
+    log("Reconfiguring KWin...")
+
+    try:
+        subprocess.run(
+            [
+                "qdbus6",
+                "org.kde.KWin",
+                "/KWin",
+                "reconfigure"
+            ],
+            check=False,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL
+        )
+
+        log("KWin reconfigure signal sent")
+
+    except Exception as e:
+        log(f"Failed to reconfigure KWin: {e}")
+
+
+# ------------------------------------------------------------
+# MAIN
+# ------------------------------------------------------------
+
+def main():
+
+    # --------------------------------------------------------
+    # Wait for config file
+    # --------------------------------------------------------
+
+    if not wait_for_config():
+        log("KWin config not found")
+        sys.exit(0)
+
+    # --------------------------------------------------------
+    # Load JSON
+    # --------------------------------------------------------
+
+    data = load_config()
+
+    # --------------------------------------------------------
+    # Patch config
+    # --------------------------------------------------------
+
+    changed = patch_autorotation(data)
+
+    if not changed:
+        log("Nothing to patch")
+    else:
+        save_config(data)
+
+    # --------------------------------------------------------
+    # Tell KWin to reload
+    # --------------------------------------------------------
+
+    reconfigure_kwin()
+
+    log("Done")
+
+
+# ------------------------------------------------------------
+# ENTRYPOINT
+# ------------------------------------------------------------
+
+if __name__ == "__main__":
+
+    try:
+        main()
+
+    except KeyboardInterrupt:
+        log("Interrupted")
+        sys.exit(0)
+
+    except Exception as e:
+        log(f"Fatal error: {e}")
+        sys.exit(1)
