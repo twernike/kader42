@@ -1,0 +1,11 @@
+[Unit]
+Description=Kader42 KDE Rotation Sanity Fix
+After=graphical-session.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/kader-rotation-fix
+RemainAfterExit=no
+
+[Install]
+WantedBy=plasma-kwin_wayland.target

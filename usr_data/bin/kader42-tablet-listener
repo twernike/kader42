@@ -1,0 +1,56 @@
+import evdev
+from evdev import ecodes
+import subprocess
+import time
+import sys
+
+def find_tablet_switch():
+    """ Sucht ein Gerät mit SW_TABLET_MODE Capability """
+    for path in evdev.list_devices():
+        try:
+            dev = evdev.InputDevice(path)
+            if ecodes.EV_SW in dev.capabilities():
+                if ecodes.SW_TABLET_MODE in dev.capabilities()[ecodes.EV_SW]:
+                    return dev
+        except:
+            continue
+    return None
+
+def is_keyboard_present():
+    """ Fallback: Prüft ob eine Tastatur am Bus ist """
+    for path in evdev.list_devices():
+        try:
+            dev = evdev.InputDevice(path)
+            # Prüft auf typische Tastatur-Keys (ESC, Enter, etc.)
+            caps = dev.capabilities().get(ecodes.EV_KEY, [])
+            if ecodes.KEY_ESC in caps and ecodes.KEY_ENTER in caps:
+                return True
+        except:
+            continue
+    return False
+
+def main():
+    last_mode = -1
+    
+    while True:
+        mode = None
+        device = find_tablet_switch()
+        
+        if device:
+            # Primär: Echten Hardware-Schalter abfragen
+            mode = device.switches().get(ecodes.SW_TABLET_MODE)
+        else:
+            # Sekundär: Tastatur-Präsenz (für Framework-Schlaf-Modus)
+            # Falls Tastatur weg/schlafend -> Tablet (1), sonst Laptop (0)
+            mode = 0 if is_keyboard_present() else 1
+            
+        if mode is not None and mode != last_mode:
+            subprocess.run(["/usr/bin/plasma-convertible-switcher", str(mode)])
+            last_mode = mode
+            
+        # Wir pollen alle 2 Sekunden. Da evdev nur Dateideskriptoren 
+        # prüft, ist die Last für die CPU praktisch null.
+        time.sleep(2)
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,25 @@
+#!/bin/bash
+# Kader⁴² - Dynamic fix for the orientation race condition
+
+MAX_RETRIES=15
+COUNT=0
+
+# Wait until the module has loaded
+until qdbus6 org.kde.kded6 /kded org.kde.kded6.loadedModules | grep -q orientation; do
+    if [ $COUNT -eq $MAX_RETRIES ]; then
+        echo "[kader42-fix-rotation]Timeout: kded6 orientation module not found."
+        exit 1
+    fi
+    sleep 1
+    ((COUNT++))
+done
+
+# A small buffer to allow the hardware backends to settle
+sleep 2
+
+# The “Sanity Kick”: Reload the module to force tablet detection
+qdbus6 org.kde.kded6 /kded org.kde.kded6.unloadModule orientation
+sleep 1
+qdbus6 org.kde.kded6 /kded org.kde.kded6.loadModule orientation
+
+echo "[kader42-fix-rotation] Kader⁴² rotation fix successfully executed."

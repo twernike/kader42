@@ -1,0 +1,10 @@
+[Unit]
+Description=Kader42 Tablet Mode Listener (evdev)
+After=graphical-session.target
+
+[Service]
+ExecStart=/usr/bin/python3 /usr/bin/kader42-tablet-listener
+Restart=always
+
+[Install]
+WantedBy=plasma-kwin_wayland.target
