@@ -1,7 +1,7 @@
 # Maintainer: Thomas Wernike <support@kader42.de>
 pkgname=kader42-convertible-tools
 pkgver=1.0.1
-pkgrel=2
+pkgrel=4
 pkgdesc="An event listener and a launcher switcher that ensures you have the Dash menu in tablet mode and the standard Start menu in laptop mode."
 arch=('any')
 url="https://kader42.de"
@@ -9,18 +9,22 @@ license=('GPL')
 depends=('bash' 'dbus' )
 provides=('kader-tools')
 
-source=('kader42-event-listener.py'
+source=('kader42-keyboard-observer.service'
+        'kader42-keyboard-observer'
         'plasma-convertible-switcher'
-        'kader42-event-listener.service'
+        'kader42-displayctl'
+        'kader42-displayctl.service'
         )
-md5sums=('SKIP' 'SKIP' 'SKIP')
+md5sums=('SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP')
 
 package() {
   # 1. Create the directories in the package image ($pkgdir)
   # -D creates any missing parent directories; -m755 sets execution permissions
   
   # Skripte nach /usr/bin kopieren
-  install -Dm755 "${srcdir}/kader42-event-listener.py" "${pkgdir}/usr/bin/kader42-event-listener.py"
-  install -Dm755 "${srcdir}/kader42-event-listener.service" "${pkgdir}/usr/lib/systemd/user/kader42-event-listener.service"
+  install -Dm755 "${srcdir}/kader42-keyboard-observer" "${pkgdir}/usr/bin/kader42-keyboard-observer"
+  install -Dm755 "${srcdir}/kader42-keyboard-observer.service" "${pkgdir}/usr/lib/systemd/user/kader42-keyboard-observer.service"
   install -Dm755 "${srcdir}/plasma-convertible-switcher" "${pkgdir}/usr/bin/plasma-convertible-switcher"
+  install -Dm755 "${srcdir}/kader42-displayctl" "${pkgdir}/usr/bin/kader42-displayctl"
+  install -Dm755 "${srcdir}/kader42-displayctl.service" "${pkgdir}/usr/lib/systemd/user/kader42-displayctl.service"
 }

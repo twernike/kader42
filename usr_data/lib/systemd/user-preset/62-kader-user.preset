@@ -1,2 +1,2 @@
-enable kader42-autorotation.service
-enable kader42-event-listener.service
+enable kader42-displayctl.service
+enable kader42-keyboard-observer.service

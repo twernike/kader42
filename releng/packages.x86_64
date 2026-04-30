@@ -160,9 +160,11 @@ gpart
 gpm
 gptfdisk
 hdparm
+python
 python-yaml
 python-psutil
-python
+python-dbus
+python-gobject
 
 lsscsi
 lvm2

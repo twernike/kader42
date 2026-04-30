@@ -1,0 +1,22 @@
+#!/usr/bin/env python3
+import dbus
+
+def main():
+    bus = dbus.SessionBus()
+
+    obj = bus.get_object("org.kde.KScreen", "/")
+    iface = dbus.Interface(obj, "org.kde.KScreen")
+
+    config = iface.getConfig()
+
+    for output in config.get("outputs", []):
+        if "autoRotation" in output:
+            output["autoRotation"] = "Never"   # oder "Always"
+
+    iface.setConfig(config)
+
+    print("[kader42] autorotation updated once")
+
+
+if __name__ == "__main__":
+    main()

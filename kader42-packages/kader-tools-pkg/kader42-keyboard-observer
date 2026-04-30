@@ -1,0 +1,58 @@
+#!/usr/bin/env python3
+import time
+import subprocess
+
+CHECK_INTERVAL = 1.0
+last_mode = None
+
+
+# ---------------- KEYBOARD CHECK ----------------
+def keyboard_present():
+    try:
+        with open("/proc/bus/input/devices", "r") as f:
+            data = f.read()
+
+        # robust enough for most laptops + Framework
+        return "Handlers=kbd" in data or "kbd" in data
+    except:
+        return False
+
+
+# ---------------- MODE DECISION ----------------
+def decide_mode():
+    if keyboard_present():
+        return 0  # laptop
+    else:
+        return 1  # tablet
+
+
+# ---------------- APPLY MODE ----------------
+def apply_mode(mode):
+    global last_mode
+
+    if mode == last_mode:
+        return
+
+    last_mode = mode
+
+    subprocess.run(
+        ["plasma-convertible-switcher", str(mode)],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL
+    )
+
+    print(f"[kader42] mode -> {'LAPTOP' if mode == 0 else 'TABLET'}")
+
+
+# ---------------- MAIN LOOP ----------------
+def main():
+    print("[kader42] listener started")
+
+    while True:
+        mode = decide_mode()
+        apply_mode(mode)
+        time.sleep(CHECK_INTERVAL)
+
+
+if __name__ == "__main__":
+    main()
