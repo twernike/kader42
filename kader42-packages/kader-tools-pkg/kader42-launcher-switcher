@@ -10,8 +10,8 @@ switch_launcher() {
     local icon="computer"; local title="Plasma Hybrid"; local msg=""
 
     case "$SYSTEM_LANG" in
-        de) [ "$mode" == "tablet" ] && msg="Tablet-Modus aktiviert" && icon="tablet" || msg="Notebook-Modus aktiviert" ;;
-        *)  [ "$mode" == "tablet" ] && msg="Tablet mode activated" && icon="tablet" || msg="Laptop mode activated" ;;
+        de) [ "$mode" == "1" ] && msg="Tablet-Modus aktiviert" && icon="tablet" || msg="Notebook-Modus aktiviert" ;;
+        *)  [ "$mode" == "0" ] && msg="Tablet mode activated" && icon="tablet" || msg="Laptop mode activated" ;;
     esac
 
     notify-send -a "System" -i "$icon" "$title" "$msg"

@@ -4,8 +4,9 @@ After=graphical-session.target
 
 [Service]
 Type=oneshot
-ExecStart=/usr/bin/kader-rotation-fix
+ExecStart=/usr/bin/bash /usr/bin/kader-rotation-fix
 RemainAfterExit=no
+Restart=always
 
 [Install]
 WantedBy=plasma-kwin_wayland.target

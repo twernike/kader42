@@ -1,25 +1,52 @@
 #!/bin/bash
-# Kader⁴² - Dynamic fix for the orientation race condition
+# Kader⁴² - Robust Hardware Sync
 
-MAX_RETRIES=15
+MAX_RETRIES=30
 COUNT=0
+TARGET_MODULE="/modules/orientation"
+MODULE_FOUND=false
 
-# Wait until the module has loaded
-until qdbus6 org.kde.kded6 /kded org.kde.kded6.loadedModules | grep -q orientation; do
+echo "[kader42-fix] Suche nach Modul: $TARGET_MODULE..."
+
+# --- PHASE 1: Warten auf kded6 ---
+until qdbus6 org.kde.kded6 | grep -q "$TARGET_MODULE"; do
     if [ $COUNT -eq $MAX_RETRIES ]; then
-        echo "[kader42-fix-rotation]Timeout: kded6 orientation module not found."
-        exit 1
+        echo "[kader42-fix] WARNUNG: Modul $TARGET_MODULE nicht gefunden. Überspringe Modul-Reload."
+        break
     fi
+    
+    # Check, ob es im aktuellen Durchlauf gefunden wurde
+    if qdbus6 org.kde.kded6 | grep -q "$TARGET_MODULE"; then
+        MODULE_FOUND=true
+        echo "[kader42-fix] Modul gefunden!"
+        break
+    fi
+
     sleep 1
     ((COUNT++))
 done
 
-# A small buffer to allow the hardware backends to settle
-sleep 2
+# --- PHASE 2: Die Hardware-Pause ---
+# Wir warten in jedem Fall, damit Kernel/udev/iio-sensor-proxy bereit sind
+echo "[kader42-fix] Warte 15s auf Hardware-Stabilisierung..."
+sleep 15
 
-# The “Sanity Kick”: Reload the module to force tablet detection
-qdbus6 org.kde.kded6 /kded org.kde.kded6.unloadModule orientation
-sleep 1
-qdbus6 org.kde.kded6 /kded org.kde.kded6.loadModule orientation
+# --- PHASE 3: Recovery-Aktionen ---
 
-echo "[kader42-fix-rotation] Kader⁴² rotation fix successfully executed."
+# 3a. Modul-Reload nur, wenn das Modul auch existiert
+if [ "$MODULE_FOUND" = true ]; then
+    echo "[kader42-fix] Führe Modul-Reload (orientation) aus..."
+    qdbus6 org.kde.kded6 /kded org.kde.kded6.unloadModule orientation
+    sleep 1
+    qdbus6 org.kde.kded6 /kded org.kde.kded6.loadModule orientation
+fi
+
+# 3b. Der universelle Hardware-Reset (IMMER ausführen)
+# KWin wird gezwungen, alle Inputs (inkl. Tablet-Switch) neu zu bewerten
+echo "[kader42-fix] Trigger KWin Reconfigure (Universal-Fix)..."
+qdbus6 org.kde.KWin /org/kde/KWin org.kde.KWin.reconfigure
+
+# 3c. Optional: KDED global reconfig
+qdbus6 org.kde.kded6 /kded org.kde.kded6.reconfigure
+
+echo "[kader42-fix] Recovery-Versuch abgeschlossen."
