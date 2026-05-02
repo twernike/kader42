@@ -16,7 +16,7 @@ DISTRO_ICON = "/usr/share/pixmaps/kader42.png"
 translations = {
     'de_DE': {
         'title': 'Willkommen bei Kader⁴²',
-        'welcome_text': 'Hallo! Schön, dass du da bist.\n\nIch bin dein Begleiter für Kader⁴².\nDein System wurde für das Framework 12 und andere Convertibles optimiert.\n'
+        'welcome_text': 'Hi! Mein Name ist Mello! Schön, dass du da bist.\n\nIch bin dein Begleiter für Kader⁴².\nDein System wurde für das Framework 12 und andere Convertibles optimiert.\n'
         'Sollte die Display Rotation sporadisch nicht funktionieren, handelt es sich mit hoher Wahrscheinlichkeit um ein KDE Problem.\n'
         'Dieses Problem ist leider bekannt und wird hoffentlich bald behoben. Leider konnnten wir an dieser Stelle noch keine Lösung finden.\n'
         'Es hilft in den Systemeinstellungen unter "Anzeige und Monitor" die Option "Nur im Tablet Modus" zu deaktivieren.\n'
@@ -28,7 +28,7 @@ translations = {
     },
     'en_US': {
         'title': 'Welcome to Kader⁴²',
-        'welcome_text': 'Hi! Great to have you here.\n\nI am your companion for Kader⁴².\nYour system has been optimized for the Framework 12 and other convertibles.\n'
+        'welcome_text': 'Hi! My Name is Mello! Great to have you here.\n\nI am your companion for Kader⁴².\nYour system has been optimized for the Framework 12 and other convertibles.\n'
         'If display rotation is not working sporadically, it is most likely a KDE issue.\nThis issue is unfortunately known and hopefully will be fixed soon. Unfortunately, '
         'we have not been able to find a solution at this point.\nIt helps to disable the option "Only in tablet mode" in the system settings under "Display and Monitor".\n'
         'This way the display rotates all the time, even in notebook mode. It is not ideal, but at least a working interim solution.\n'
