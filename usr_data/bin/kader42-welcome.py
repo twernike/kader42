@@ -8,23 +8,32 @@ from PyQt6.QtCore import Qt
 
 # Pfade definieren
 CONFIG_FILE = os.path.expanduser("~/.config/distro-welcome-autostart")
-MASCOT_IMAGE = "/usr/share/pixmaps/dein-maskottchen.png" # PFAD ANPASSEN!
-DISTRO_ICON = "/usr/share/icons/hicolor/64x64/apps/distro-logo.png" # PFAD ANPASSEN!
+MASCOT_IMAGE = "/usr/share/pixmaps/mello-with-tablet.png" 
+DISTRO_ICON = "/usr/share/pixmaps/kader42.png" 
 
 # Übersetzungen (einfaches Beispiel)
 # Für ein echtes GitHub-Projekt nutzt man später .mo/.po Dateien.
 translations = {
     'de_DE': {
-        'title': 'Willkommen bei [Dein Distro-Name]',
-        'welcome_text': 'Hallo! Schön, dass du da bist.\n\nIch bin dein Begleiter für [Dein Distro-Name].\nDein System wurde für das Framework 12 optimiert.',
+        'title': 'Willkommen bei Kader⁴²',
+        'welcome_text': 'Hallo! Schön, dass du da bist.\n\nIch bin dein Begleiter für Kader⁴².\nDein System wurde für das Framework 12 und andere Convertibles optimiert.\n'
+        'Sollte die Display Rotation sporadisch nicht funktionieren, handelt es sich mit hoher Wahrscheinlichkeit um ein KDE Problem.\n'
+        'Dieses Problem ist leider bekannt und wird hoffentlich bald behoben. Leider konnnten wir an dieser Stelle noch keine Lösung finden.\n'
+        'Es hilft in den Systemeinstellungen unter "Anzeige und Monitor" die Option "Nur im Tablet Modus" zu deaktivieren.\n'
+        'Dadurch rotiert das Display immer, auch im Notebook Modus. Das ist zwar nicht optimal, aber zumindest eine funktionierende Übergangslösung.\n'
+        'Weitere Infrmationen findest du auf unserer Webseite "https://kader42.de".\n\n',
         'features': '✅ Display-Rotation & Sensoren geladen\n✅ Touch-Gesten aktiviert\n✅ Performance-Profil angepasst',
         'checkbox': 'Dieses Fenster beim nächsten Start nicht mehr anzeigen',
         'close': 'Schließen'
     },
     'en_US': {
-        'title': 'Welcome to [Dein Distro-Name]',
-        'welcome_text': 'Hi! Great to have you here.\n\nI am your companion for [Dein Distro-Name].\nYour system has been optimized for the Framework 12.',
-        'features': '✅ Display rotation & sensors loaded\n✅ Touch gestures enabled\n✅ Performance profile adjusted',
+        'title': 'Welcome to Kader⁴²',
+        'welcome_text': 'Hi! Great to have you here.\n\nI am your companion for Kader⁴².\nYour system has been optimized for the Framework 12 and other convertibles.\n'
+        'If display rotation is not working sporadically, it is most likely a KDE issue.\nThis issue is unfortunately known and hopefully will be fixed soon. Unfortunately, '
+        'we have not been able to find a solution at this point.\nIt helps to disable the option "Only in tablet mode" in the system settings under "Display and Monitor".\n'
+        'This way the display rotates all the time, even in notebook mode. It is not ideal, but at least a working interim solution.\n'
+        'For more information, please visit our website "https://kader42.de".\n\n',
+        'features': '✅ Display rotation & sensors loaded\n✅ Touch gestures enabled\n✅ Performance profile adjusted\n',
         'checkbox': "Don't show this window again on next start",
         'close': 'Close'
     }

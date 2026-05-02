@@ -1,0 +1,11 @@
+[Unit]
+Description=Kader42 Tablet Mode Listener
+After=graphical-session.target
+After=kader42-rotation-fix.service
+
+[Service]
+ExecStart=/usr/bin/bash /usr/bin/kader42-tablet-event-listener
+Restart=always
+
+[Install]
+WantedBy=plasma-kwin_wayland.target

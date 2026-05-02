@@ -30,7 +30,7 @@ monitor-sensor | while read -r line; do
     # Debounce
     if [ "$MODE" != "$LAST_MODE" ]; then
         echo "[Kader42 Tablet Event Listener] Mode changed → $MODE"
-        /usr/bin/kader42-launcher-switcher "$MODE"
+        /usr/bin/kader42-plasma-convertible-switcher "$MODE"
         LAST_MODE="$MODE"
     fi
 

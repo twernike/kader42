@@ -1,0 +1,124 @@
+#!/bin/bash
+# /usr/bin/plasma-convertible-switcher
+# Dynamically switches the launcher without restarting, depending on whether you want Kickoff 
+# in notebook mode or the Dashboard in tablet mode. 
+
+SYSTEM_LANG=$(echo $LANG | cut -c1-2)
+export XDG_RUNTIME_DIR="/run/user/$(id -u)"
+export DBUS_SESSION_BUS_ADDRESS="unix:path=$XDG_RUNTIME_DIR/bus"
+
+switch_launcher(){
+
+    local MODE=$1
+
+    [ "$MODE" != "0" ] && [ "$MODE" != "1" ] && exit 1
+
+if [ "$MODE" = "1" ]; then
+    IS_TABLET=true
+else
+    IS_TABLET=false
+fi
+
+STATE_FILE="/tmp/plasma-convertible-state"
+
+# Debounce
+[ -f "$STATE_FILE" ] && [ "$(cat "$STATE_FILE")" = "$MODE" ] && exit 0
+echo "$MODE" > "$STATE_FILE"
+
+# 🔥 WICHTIG: nur Launcher ersetzen
+read -r -d '' JS <<EOF
+var isTablet = ${IS_TABLET};
+var panelsList = panels();
+
+for (var i = 0; i < panelsList.length; ++i) {
+
+    var panel = panelsList[i];
+    var widgets = panel.widgets();
+
+    var newOrder = [];
+    var configs = [];
+    var changed = false;
+
+    // --- 1. Reihenfolge + Config speichern ---
+    for (var j = 0; j < widgets.length; ++j) {
+
+        var w = widgets[j];
+
+        var type = w.type;
+        var cfg = {};
+
+        // 👉 komplette Config sichern (wichtig!)
+        var groups = ["General", "Appearance", "Shortcuts"];
+
+        for (var g = 0; g < groups.length; ++g) {
+            w.currentConfigGroup = [groups[g]];
+            cfg[groups[g]] = w.readConfig("");
+        }
+
+        // Launcher ersetzen?
+        if (type === "org.kde.plasma.kickoff" ||
+            type === "org.kde.plasma.kickerdash") {
+
+            var target = isTablet
+                ? "org.kde.plasma.kickerdash"
+                : "org.kde.plasma.kickoff";
+
+            if (type !== target) {
+                changed = true;
+            }
+
+            type = target;
+        }
+
+        newOrder.push(type);
+        configs.push(cfg);
+    }
+
+    if (!changed) continue;
+
+    // --- 2. Widgets entfernen ---
+    for (var j = widgets.length - 1; j >= 0; --j) {
+        widgets[j].remove();
+    }
+
+    // --- 3. Widgets neu erstellen + Config zurück ---
+    for (var j = 0; j < newOrder.length; ++j) {
+
+        var w = panel.addWidget(newOrder[j]);
+
+        var cfg = configs[j];
+
+        for (var group in cfg) {
+            w.currentConfigGroup = [group];
+
+            // Achtung: leere configs vermeiden
+            if (cfg[group]) {
+                for (var key in cfg[group]) {
+                    w.writeConfig(key, cfg[group][key]);
+                }
+            }
+        }
+
+        // Spezialfall Dash
+        if (newOrder[j] === "org.kde.plasma.kickerdash") {
+            w.currentConfigGroup = ["General"];
+            w.writeConfig("showCategories", false);
+        }
+    }
+}
+EOF
+
+    qdbus6 org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell.evaluateScript "$JS"
+
+    local icon="computer"; local title="Kader⁴² hybrid switch"; local msg=""
+
+    case "$SYSTEM_LANG" in
+            de) [ "$MODE" == "1" ] && msg="Tablet-Modus aktiviert" && icon="tablet" || msg="Notebook-Modus aktiviert" ;;
+            *)  [ "$mode" == "1" ] && msg="Tablet mode activated" && icon="tablet" || msg="Laptop mode activated" ;;
+    esac
+
+    notify-send -a "System" -i "$icon" "$title" "$msg"
+    echo "[Kader42-Hybrid-Switch] Switched mode: $MODE ➡️ $msg"
+}
+
+switch_launcher $1

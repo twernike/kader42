@@ -1,7 +1,7 @@
 # Maintainer: Thomas Wernike <support@kader42.de>
 pkgname=kader42-convertible-tools
 pkgver=1.0.2
-pkgrel=1
+pkgrel=3
 pkgdesc="An event listener and a launcher switcher that ensures you have the Dash menu in tablet mode and the standard Start menu in laptop mode."
 arch=('any')
 url="https://kader42.de"
@@ -11,7 +11,7 @@ provides=('kader-tools')
 
 source=('kader42-tablet-listener.service'
         'kader42-tablet-event-listener'
-        'kader42-launcher-switcher'
+        'kader42-plasma-convertible-switcher'
         )
 md5sums=('SKIP' 'SKIP' 'SKIP')
 
@@ -21,6 +21,6 @@ package() {
   
   # Skripte nach /usr/bin kopieren
   install -Dm755 "${srcdir}/kader42-tablet-listener.service" "${pkgdir}/usr/bin/kader42-tablet-listener.service"
-  install -Dm755 "${srcdir}/kader42-tablet-event-listener" "${pkgdir}/usr/bin/kader42-tablet-event-listener"
-  install -Dm755 "${srcdir}/kader42-launcher-switcher" "${pkgdir}/usr/bin/kader42-launcher-switcher"
+  install -Dm755 "${srcdir}/kader42-tablet-event-listener" "${pkgdir}/usr/lib/systemd/user/kader42-tablet-event-listener"
+  install -Dm755 "${srcdir}/kader42-plasma-convertible-switcher" "${pkgdir}/usr/bin/kader42-plasma-convertible-switcher"
 }
