@@ -1,12 +1,15 @@
 import sys
 import os
 import subprocess
+import getpass
 from PyQt6.QtWidgets import (QApplication, QWidget, QHBoxLayout, QVBoxLayout, 
                              QLabel, QScrollArea, QPushButton, QFrame, QCheckBox)
 from PyQt6.QtGui import QPixmap, QIcon
 from PyQt6.QtCore import Qt, QSettings
 from PyQt6.QtWidgets import QFrame  # Make sure QFrame is imported
 
+current_user = getpass.getuser()
+is_live_system = current_user == "liveuser"
 
 translations = {
     'de_DE': {
@@ -114,6 +117,7 @@ class Kader42Welcome(QWidget):
             "Ich wünsche dir ganz viel Spaß mit <b>Kader⁴²</b>!"
             btn_text = "Anzeige-Einstellungen öffnen"
             btn_close_text = "Schließen"
+            btn_install_text = "Kader⁴² installieren"
             check_text = "Dieses Fenster beim nächsten Start nicht mehr anzeigen"
             window_title = "Kader⁴² - Willkommen!"
         else:
@@ -127,6 +131,7 @@ class Kader42Welcome(QWidget):
             "I hope you have a lot of fun with <b>Kader⁴²</b>!"
             btn_text = "Open Display Settings"
             btn_close_text = "Close"
+            btn_install_text = "Install Kader⁴²"
             check_text = "Don't show this window again on next start"
             window_title = "Kader⁴² - Welcome!"
 
@@ -166,7 +171,38 @@ class Kader42Welcome(QWidget):
         """)
         self.close_button.clicked.connect(self.close_application)
         right_container.addWidget(self.close_button)
+
+        if is_live_system:
+        # Button für die Installation
+            btn_install = QPushButton(
+            "Kader⁴² auf Festplatte installieren" if self.is_german else "Install Kader⁴² to Disk"
+        )
+        btn_install.setFixedHeight(50)
+        # Ein auffälliges Design (z.B. Grün), damit er sich abhebt
+        btn_install.setStyleSheet("""
+        QPushButton {
+            background-color: #27ae60;
+            color: white;
+            border-radius: 10px;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+        QPushButton:hover { background-color: #2ecc71; }
+        """)
+        btn_install.clicked.connect(self.run_calamares)
+        right_container.addWidget(btn_install)
+
         main_layout.addLayout(right_container, stretch=1)
+
+    def run_calamares(self):
+        # Wir starten dein Shell-Skript im Hintergrund
+        try:
+            # Popen sorgt dafür, dass das Welcome-Fenster nicht einfriert
+            subprocess.Popen(["/usr/bin/kader-install.sh"])
+            # Optional: Welcome-Screen schließen, damit nur noch der Installer da ist
+            self.close()
+        except Exception as e:
+            print(f"Error starting the installer: {e}")
 
     def update_settings(self, state):
         # When the checkbox is checked (Qt.CheckState.Checked = 2)
