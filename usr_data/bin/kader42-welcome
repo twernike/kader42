@@ -1,0 +1,199 @@
+import sys
+import os
+import subprocess
+from PyQt6.QtWidgets import (QApplication, QWidget, QHBoxLayout, QVBoxLayout, 
+                             QLabel, QScrollArea, QPushButton, QFrame, QCheckBox)
+from PyQt6.QtGui import QPixmap, QIcon
+from PyQt6.QtCore import Qt, QSettings
+from PyQt6.QtWidgets import QFrame  # Make sure QFrame is imported
+
+
+translations = {
+    'de_DE': {
+        'Title': "Kader⁴² - Willkommen",
+        'close': 'Schließen'
+    },
+    'en_US': {
+        'Title': "Kader⁴² - Welcome",
+        'close': 'Close'
+    }
+}
+
+class Kader42Welcome(QWidget):
+    def __init__(self):
+        super().__init__()
+
+        DISTRO_ICON = "/usr/share/pixmaps/kader42.png" 
+
+        # 1. Initialize QSettings (Saves to ~/.config/Kader42/Welcome.conf)
+        self.settings = QSettings("Kader42", "Welcome")
+        
+        # If the user has closed the window, we will immediately exit the programt
+        if self.settings.value("show_again") == "false":
+            sys.exit(0)
+
+        # 2. language detection
+        user_lang = os.getenv('LANG', 'en')
+        self.is_german = user_lang.startswith('de')
+
+        # 3. Window Settings
+        self.setMinimumSize(900, 600)
+        self.setStyleSheet("background-color: #232629; color: #eff0f1;")
+        self.setWindowIcon(QIcon(DISTRO_ICON))
+        self.init_ui()
+
+    def init_ui(self):
+        main_layout = QHBoxLayout(self)
+        main_layout.setContentsMargins(30, 30, 30, 30)
+        main_layout.setSpacing(0)
+
+        # --- LEFT SIDE: Mello ---
+        mello_container = QVBoxLayout()
+        self.mello_label = QLabel()
+        pix_path = "/usr/share/pixmaps/mello-with-tablet.png"
+        
+        if os.path.exists(pix_path):
+            pixmap = QPixmap(pix_path)
+            self.mello_label.setPixmap(pixmap.scaledToWidth(280, Qt.TransformationMode.SmoothTransformation))
+        else:
+            self.mello_label.setText("Mello")
+            self.mello_label.setFixedSize(280, 400)
+            self.mello_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            self.mello_label.setStyleSheet("border: 1px dashed #555;")
+
+        mello_container.addWidget(self.mello_label)
+        mello_container.addStretch()
+        main_layout.addLayout(mello_container)
+
+        lang = os.environ.get('LANG', 'en_US').split('.')[0]
+        t = translations.get(lang, translations['en_US']) # Fallback auf Englisch
+
+        # --- MITTE: Pfeil ---
+        arrow = QLabel("◀")
+        arrow.setStyleSheet("color: #ffffff; font-size: 25px; margin-right: -2px; margin-top: 50px;")
+        arrow.setAlignment(Qt.AlignmentFlag.AlignTop)
+        main_layout.addWidget(arrow)
+
+        # --- RECHTE SEITE: Sprechblase & Content ---
+        right_container = QVBoxLayout()
+
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QFrame.Shape.NoFrame) 
+        scroll.setStyleSheet("background: transparent;")
+
+        bubble = QFrame()
+        # WICHTIG: Auch hier für die Sprechblase das Shape setzen, 
+        # wobei das Stylesheet (border-radius) hier meist Vorrang hat.
+        bubble.setFrameShape(QFrame.Shape.StyledPanel)
+        bubble_layout = QVBoxLayout(bubble)
+        # In der init_ui Methode, wo das Stylesheet der Bubble definiert ist:
+        bubble.setStyleSheet("""
+            QFrame { background-color: #ffffff; border: 2px solid #3daee9; border-radius: 20px; }
+            QLabel { color: #232629; border: none; background: transparent; }
+            QCheckBox { 
+            color: #232629; 
+            background: transparent; 
+            padding-top: 10px;
+            font-weight: bold; 
+        }
+        """)
+
+        # Texte festlegen
+        if self.is_german:
+            title = "Hallo, ich bin Mello!"
+            body = "Schön, dass du da bist.\n\nIch bin dein Begleiter für <b>Kader⁴²</b>.<br> Dein System wurde für Convertible Notebooks wie das <b>Framework 12</b> optimiert.<br><br>" \
+            "Leider kann es sporadisch vorkommen, dass die Display Rotation nicht funktioniert.<br>" \
+            "Dies ist leider ein bekannter Fehler innerhalb von <b>KDE Plasma</b> bzw. <b>KWin</b>, der durch die Deaktivierung der Option <b><code>'Nur im Tablet-Modus'</code></b> in den <b>Anzeige-Einstellungen</b> behoben werden kann.<br><br>" \
+            "Durch diese Einstellung rotiert das Display immer, auch im Notebook Modus. Das ist zwar nicht optimal, aber zumindest eine funktionierende Übergangslösung." \
+            "Wir hoffen, dass dieses Problem in Zukunft behoben wird.<br>" \
+            "Weitere Informationen findest du auf unserer Webseite <b><a href='https://kader42.de'>https://kader42.de</a></b>.<br><br>" \
+            "Mit dem unteren Button gelangst du direkt zum genannten <b>Einstellungsdialog</b>.<br><br>" \
+            "Ein Feature in <b>Kader⁴²</b> ist es, dass je nach eingesetztem Modus der passende Launcher angeboten wird.<br>" \
+            "Wenn du also z.B. im Tablet Modus bist, erhältst du mit einer Wischgeste von unten nach oben den Tablet Launcher, im Notebook Modus hingegen den klassischen Desktop Launcher.<br><br>" \
+            "Ich wünsche dir ganz viel Spaß mit <b>Kader⁴²</b>!"
+            btn_text = "Anzeige-Einstellungen öffnen"
+            btn_close_text = "Schließen"
+            check_text = "Dieses Fenster beim nächsten Start nicht mehr anzeigen"
+            window_title = "Kader⁴² - Willkommen!"
+        else:
+            title = "Hi, I'm Mello!"
+            body = "Great to have you here. I am your guide for <b>Kader⁴²</b>.<br>"
+            "Your system has been optimized for convertible notebooks like the <b>Framework 12</b>. <br><br>" \
+            "Unfortunately, the display rotation may occasionally fail to work.<br> This is unfortunately a known bug in KDE that can be fixed by disabling the option <b><code>‘Tablet mode only’</code></b> in the <b>Display settings</b>.<br><br>" \
+            "With this setting, the display will always rotate, even in notebook mode. While this isn’t ideal, it’s at least a working temporary solution.<br> You can find more information on our <b><a href=‘https://kader42.de’>https://kader42.de</a></b>. <br><br>" \
+            "The button below takes you directly to the mentioned <b>settings dialog</b>.<br><br> A feature in <b>Kader⁴²</b> is that the appropriate launcher is offered depending on the mode in use. <br>" \
+            "So, for example, if you're in tablet mode, you can access the tablet launcher by swiping up from the bottom; in notebook mode, however, it brings up the classic desktop launcher.<br><br>"\
+            "I hope you have a lot of fun with <b>Kader⁴²</b>!"
+            btn_text = "Open Display Settings"
+            btn_close_text = "Close"
+            check_text = "Don't show this window again on next start"
+            window_title = "Kader⁴² - Welcome!"
+
+        self.setWindowTitle(window_title)
+        title_label = QLabel(f"<h1>{title}</h1>")
+        body_label = QLabel(body)
+        body_label.setWordWrap(True)
+        body_label.setTextFormat(Qt.TextFormat.RichText)
+        
+        bubble_layout.addWidget(title_label)
+        bubble_layout.addWidget(body_label)
+        bubble_layout.addStretch()
+
+        # --- CHECKBOX (In der Sprechblase) ---
+        self.show_again_cb = QCheckBox(check_text)
+        self.show_again_cb.stateChanged.connect(self.update_settings)
+        bubble_layout.addWidget(self.show_again_cb)
+
+        scroll.setWidget(bubble)
+        right_container.addWidget(scroll)
+
+        # --- BUTTON ---
+        self.btn_settings = QPushButton(btn_text)
+        self.btn_settings.setFixedHeight(50)
+        self.btn_settings.setStyleSheet("""
+            QPushButton { background-color: #3daee9; color: white; border-radius: 10px; font-weight: bold; margin-top: 10px; }
+            QPushButton:hover { background-color: #2980b9; }
+        """)
+        self.btn_settings.clicked.connect(self.open_settings)
+        right_container.addWidget(self.btn_settings)
+
+        self.close_button = QPushButton(btn_close_text)
+        self.close_button.setFixedHeight(50)
+        self.close_button.setStyleSheet("""
+            QPushButton { background-color: #3daee9; color: white; border-radius: 10px; font-weight: bold; margin-top: 10px; }
+            QPushButton:hover { background-color: #2980b9; }
+        """)
+        self.close_button.clicked.connect(self.close_application)
+        right_container.addWidget(self.close_button)
+        main_layout.addLayout(right_container, stretch=1)
+
+    def update_settings(self, state):
+        # When the checkbox is checked (Qt.CheckState.Checked = 2)
+        if state == 2:
+            self.settings.setValue("show_again", "false")
+        else:
+            self.settings.setValue("show_again", "true")
+
+    def open_settings(self):
+        subprocess.run(["systemsettings", "kcm_kscreen"])
+    
+    def close_application(self):
+        # Write the configuration file if the checkbox is NOT selected
+        if not self.show_again_cb.isChecked():
+            try:
+                with open(CONFIG_FILE, 'w') as f:
+                    f.write("false")
+            except Exception as e:
+                print(f"Error writing config: {e}")
+        self.close()
+
+if __name__ == "__main__":
+    app = QApplication(sys.argv)
+    # Quick fix: Ensuring QSettings always finds the correct path
+    app.setOrganizationName("Kader42")
+    app.setApplicationName("Welcome")
+    
+    window = Kader42Welcome()
+    window.show()
+    sys.exit(app.exec())
