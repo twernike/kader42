@@ -91,16 +91,18 @@ chmod +x /usr/local/bin/* || true
 chmod 755 /home/liveuser/*.sh || true
 chmod +x /home/liveuser/*.sh || true
 
-chmod 755 /etc/skel/autostart/*.sh || true
-chmod +x /etc/skel/autostart/*.sh || true
+chmod 755 /etc/skel/.config/autostart/*.sh || true
+chmod +x /etc/skel/.config/autostart/*.sh || true
 
 chmod 644 /etc/systemd/system/*.service || true
+chmod 644 /etc/systemd/user/*.service || true
+
 chown root:root /usr/bin/*
 
 chmod 4755 /usr/bin/sudo
 chmod 0644 /etc/sudo.conf
 chmod 0644 /etc/sudoers
-chmod +x /etc/skel/autostart/show-welcome-screen
+chmod +x /etc/skel/.config/autostart/show-welcome-screen
 
 chmod 777 /home/liveuser/Desktop/calamares.desktop
 

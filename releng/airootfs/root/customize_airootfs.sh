@@ -100,7 +100,7 @@ chown root:root /usr/bin/*
 chmod 4755 /usr/bin/sudo
 chmod 0644 /etc/sudo.conf
 chmod 0644 /etc/sudoers
-chmod +x /etc/xdg/autostart/
+chmod +x /etc/skel/autostart/show-welcome-screen
 
 chmod 777 /home/liveuser/Desktop/calamares.desktop
 
