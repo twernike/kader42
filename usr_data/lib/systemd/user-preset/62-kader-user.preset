@@ -1,2 +1,1 @@
-enable kader42-rotation-fix.service
 enable kader42-tablet-event-listener.service

@@ -1,7 +1,7 @@
 # Maintainer: Thomas Wernike <support@kader42.de>
 pkgname=kader42-convertible-tools
 pkgver=1.0.2
-pkgrel=4
+pkgrel=5
 pkgdesc="An event listener and a launcher switcher that ensures you have the Dash menu in tablet mode and the standard Start menu in laptop mode."
 arch=('any')
 url="https://kader42.de"
