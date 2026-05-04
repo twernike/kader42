@@ -4,6 +4,9 @@ PARENT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 CONTAINER_NAME="kaderbuilder"
 mkdir -p "$PARENT_DIR/data" "$PARENT_DIR/packages" "$PARENT_DIR/docker-work/work"
 
+sudo docker stop $CONTAINER_NAME 2>/dev/null || true
+sudo docker system prune -a -f 2>/dev/null || true
+
 if ! sudo docker ps -q -f name=kaderbuilder | grep -q .; then
     if sudo docker ps -aq -f name=kaderbuilder | grep -q .; then
         sudo docker start kaderbuilder
