@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import sys
 import os
 import subprocess
@@ -198,7 +200,7 @@ class Kader42Welcome(QWidget):
         # Wir starten dein Shell-Skript im Hintergrund
         try:
             # Popen sorgt dafür, dass das Welcome-Fenster nicht einfriert
-            subprocess.Popen(["/usr/bin/kader-install.sh"])
+            subprocess.Popen(["/usr/bin/bash","/usr/bin/kader-install.sh"])
             # Optional: Welcome-Screen schließen, damit nur noch der Installer da ist
             self.close()
         except Exception as e:

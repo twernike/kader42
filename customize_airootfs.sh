@@ -88,11 +88,11 @@ chmod +x /usr/bin/* || true
 chmod 755 /usr/local/bin/* || true
 chmod +x /usr/local/bin/* || true
 
-chmod 755 /home/liveuser/*.sh || true
-chmod +x /home/liveuser/*.sh || true
+chmod 755 /home/liveuser/* || true
+chmod +x /home/liveuser/* || true
 
-chmod 755 /etc/skel/.config/autostart/*.sh || true
-chmod +x /etc/skel/.config/autostart/*.sh || true
+chmod 777 /etc/skel/.config/autostart/* || true
+chmod +x /etc/skel/.config/autostart/* || true
 
 chmod 644 /etc/systemd/system/*.service || true
 chmod 644 /etc/systemd/user/*.service || true
@@ -102,8 +102,6 @@ chown root:root /usr/bin/*
 chmod 4755 /usr/bin/sudo
 chmod 0644 /etc/sudo.conf
 chmod 0644 /etc/sudoers
-chmod +x /etc/skel/.config/autostart/show-welcome-screen
-
 chmod 777 /home/liveuser/Desktop/calamares.desktop
 
 echo -e "\x1b[43m\e[38;5;20m 🧹 clean up calamares directories \e[0m"
