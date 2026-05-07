@@ -4,9 +4,11 @@ shareCalamares="/usr/share/calamares"
 modules="$shareCalamares/modules"
 branding="$shareCalamares/branding"
 qmlCalamares="$shareCalamares/qml"
+linuxPreset="$shareCalamares/linux-preset"
 calamaresScripts="$shareCalamares/scripts"
 tmpCalamares="/calamares-kader-config"
 tmpUsrLib="$tmpCalamares/usr_lib"
+tmpLinuxPreset="$tmpCalamares/linux-preset"
 tmpLibModules="$tmpUsrLib/modules"
 tmpBootloaderLib="$tmpLibModules/bootloader"
 tmpOneShotPreparer="$tmpLibModules/oneshot-preparer"
@@ -132,8 +134,8 @@ cp -r $tmpCalamares/branding/. $branding
 cp -r $tmpCalamares/qml/. $qmlCalamares
 cp -r $tmpCalamares/scripts/. $calamaresScripts
 cp -r $tmpCalamares/settings.conf /usr/share/calamares
-cp -r $tmpBootloaderLib/* $bootloaderLib
-cp -r $tmpBootloaderLib/* $bootloaderLib
+cp -R $tmpLinuxPreset $shareCalamares
+# cp -r $tmpBootloaderLib/* $bootloaderLib
 cp -r $tmpOneShotPreparer/* $oneShotPreparerLib
 cp -R $tmpEtc/* /etc
 
@@ -153,6 +155,7 @@ echo -e "\x1b[43m\e[38;5;20m ############################### \e[0m"
 # Dienste aktivieren
 systemctl enable iio-sensor-proxy.service
 systemctl enable bluetooth.service
+systemctl --user enable --now kader42-tablet-event-listener.service
 
 echo -e "\x1b[43m\e[38;5;20m ############################### \e[0m"
 echo -e "\x1b[43m\e[38;5;20m # ⚙️ | Reindex HWDB...        # \e[0m"
@@ -186,9 +189,10 @@ chmod +x /etc/profile.d/flatpak-paths.sh
 pacman -Sy                  # Synchronisiert die pacman-Datenbanken
 appstreamcli refresh-cache --force  # Baut die grafische Datenbank für Pamac/Discover
 
-# mkdir -p /usr/lib/systemd/user/graphical-session.target.wants/
-# ln -sf /usr/lib/systemd/user/kader42-watcher.service \
-#        /usr/lib/systemd/user/graphical-session.target.wants/kader42-watcher.service
+mkdir -p /usr/lib/systemd/user/default.target.wants/
+
+ln -sf /usr/lib/systemd/user/kader42-tablet-event-listener.service \
+       /usr/lib/systemd/user/default.target.wants/kader42-tablet-event-listener.service
 
 echo
 echo -e "\x1b[44m\e[1;118m  ##################################\e[0m"

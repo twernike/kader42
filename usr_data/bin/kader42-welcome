@@ -9,9 +9,14 @@ from PyQt6.QtWidgets import (QApplication, QWidget, QHBoxLayout, QVBoxLayout,
 from PyQt6.QtGui import QPixmap, QIcon
 from PyQt6.QtCore import Qt, QSettings
 from PyQt6.QtWidgets import QFrame  # Make sure QFrame is imported
+import os
 
 current_user = getpass.getuser()
 is_live_system = current_user == "liveuser"
+HOME_DIR = os.path.expanduser("~")
+CONFIG_DIR = os.path.join(HOME_DIR, ".config")
+AUTOSTART_DIR = os.path.join(HOME_DIR, ".config", "autostart")
+DELETE_DESKTOP_FILE = os.path.join(AUTOSTART_DIR, "kader42-welcome.desktop")
 
 translations = {
     'de_DE': {
@@ -148,14 +153,17 @@ class Kader42Welcome(QWidget):
         bubble_layout.addStretch()
 
         # --- CHECKBOX (In der Sprechblase) ---
-        self.show_again_cb = QCheckBox(check_text)
-        self.show_again_cb.stateChanged.connect(self.update_settings)
-        bubble_layout.addWidget(self.show_again_cb)
+        self.show_not_again_cb = QCheckBox(check_text)
+        self.show_not_again_cb.stateChanged.connect(self.update_settings)
+        # bubble_layout.addWidget(self.show_again_cb)
 
         scroll.setWidget(bubble)
         right_container.addWidget(scroll)
 
         # --- BUTTON ---
+
+        right_container.addWidget(self.show_not_again_cb)
+
         self.btn_settings = QPushButton(btn_text)
         self.btn_settings.setFixedHeight(50)
         self.btn_settings.setStyleSheet("""
@@ -174,26 +182,28 @@ class Kader42Welcome(QWidget):
         self.close_button.clicked.connect(self.close_application)
         right_container.addWidget(self.close_button)
 
+        btn_install = None
+        # --- INSTALLER BUTTON (Nur im Live-System) ---
         if is_live_system:
-        # Button für die Installation
-            btn_install = QPushButton(
-            "Kader⁴² auf Festplatte installieren" if self.is_german else "Install Kader⁴² to Disk"
-        )
-        btn_install.setFixedHeight(50)
-        # Ein auffälliges Design (z.B. Grün), damit er sich abhebt
-        btn_install.setStyleSheet("""
-        QPushButton {
-            background-color: #27ae60;
-            color: white;
-            border-radius: 10px;
-            font-weight: bold;
-            margin-top: 5px;
-        }
-        QPushButton:hover { background-color: #2ecc71; }
-        """)
-        btn_install.clicked.connect(self.run_calamares)
-        right_container.addWidget(btn_install)
+            # Hier war ein Syntaxfehler (Klammer zu viel / Text nicht abgeschlossen)
+            btn_install_label = "Kader⁴² auf Festplatte installieren" if self.is_german else "Install Kader⁴² to Disk"
+            btn_install = QPushButton(btn_install_label)
+            
+            btn_install.setFixedHeight(50)
+            btn_install.setStyleSheet("""
+                QPushButton {
+                    background-color: #27ae60;
+                    color: white;
+                    border-radius: 10px;
+                    font-weight: bold;
+                    margin-top: 5px;
+                }
+                QPushButton:hover { background-color: #2ecc71; }
+            """)
+            btn_install.clicked.connect(self.run_calamares)
+            right_container.addWidget(btn_install)
 
+        # Das schließt nun den main_layout Bereich korrekt ab
         main_layout.addLayout(right_container, stretch=1)
 
     def run_calamares(self):
@@ -217,13 +227,14 @@ class Kader42Welcome(QWidget):
         subprocess.run(["systemsettings", "kcm_kscreen"])
     
     def close_application(self):
-        # Write the configuration file if the checkbox is NOT selected
-        if not self.show_again_cb.isChecked():
+        # Delete the autostart desktop file if the user doesn't want to see the welcome screen again
+        if self.show_not_again_cb.isChecked():
             try:
-                with open(CONFIG_FILE, 'w') as f:
-                    f.write("false")
+                if os.path.exists(DELETE_DESKTOP_FILE):
+                    os.remove(DELETE_DESKTOP_FILE)
+                    print(f"Deleted autostart desktop file: {DELETE_DESKTOP_FILE}")
             except Exception as e:
-                print(f"Error writing config: {e}")
+                print(f"Error deleting autostart file: {e}")
         self.close()
 
 if __name__ == "__main__":
