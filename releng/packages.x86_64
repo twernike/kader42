@@ -44,6 +44,9 @@ alsa-ucm-conf
 libnotify
 evtest
 python-evdev
+noto-fonts
+noto-fonts-cjk
+noto-fonts-emoji
 
 #######################################################
 # Needed packages for convertible
@@ -118,6 +121,8 @@ krita
 okular
 rnote
 xournalpp
+obsidian
+bitwarden
 kate
 haruna
 gala
