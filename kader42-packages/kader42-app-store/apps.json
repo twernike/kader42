@@ -1,0 +1,77 @@
+{
+  "categories": [
+    {
+        "id": "kader42-tools",
+        "icon": "/usr/share/icons/mello.png",
+        "label": { "de": "Kader⁴² Tools", "en": "Kader⁴² Tools" }
+    },
+    {
+      "id": "internet",
+      "icon": "network-workgroup",
+      "label": { "de": "Internet", "en": "Web" }
+    },
+    {
+      "id": "multimedia",
+      "icon": "applications-multimedia",
+      "label": { "de": "Multimedia", "en": "Media" }
+    },
+    {
+      "id": "dev",
+      "icon": "applications-development",
+      "label": { "de": "Entwicklertools", "en": "Development Tools" }
+    },
+    {
+      "id": "graphic",
+      "icon": "applications-graphics-symbolic",
+      "label": { "de": "Graphik-Tools", "en": "Graphic tools" }
+    }
+  ],
+  "apps": {
+    "internet": [
+      { "name": "Firefox", "package": "firefox","desc": {
+          "de": "Der unabhängige Browser der Mozilla Foundation.",
+          "en": "The Mozilla Foundation's independent browser."
+        } }
+    ],
+    "dev": [
+      { "name": "Visual Studio Code", "package": "visual-studio-code-bin", "desc": {
+          "de": "Der mächtigste Editor für moderne Web-Entwicklung.",
+          "en": "The most powerful editor for modern web development."
+        } }
+    ],
+    "multimedia": [
+        { "name": "VLC media player", "package": "vlc", "desc": {
+          "de": "Ein Multimedia-Player, der wirklich jedes Format abspielen kann.",
+          "en": "A multimedia player that can play virtually any format."
+        }}
+    ],
+    "kader42-tools": [
+        { "name": "Kader⁴² Convertible Tools", "package": "kader42-convertible-tools", "desc": {
+          "de": "Tools, dass jedes Convertible Notebook gebrauchen kann. Dieses Package enthält den Launcher Switcher.",
+          "en": "Tools that every convertible laptop can use. This package includes the Launcher Switcher."
+        }},
+        { "name": "Kader⁴² HWDB", "package": "kader42-hwdb", "desc": {
+          "de": "Dieses Paket enthält HWDB Definitionen für Convertible Notebooks wie dem Framework 12.",
+          "en": "This package contains HWDB definitions for convertible notebooks such as the Framework 12."
+        }},
+        { "name": "Kader⁴² Icons", "package": "kader42-icons", "desc": {
+          "de": "Das Standard Kader⁴² Icon Paket.",
+          "en": "The Standard Kader⁴² Icon Package."
+        }},
+        { "name": "Kader⁴² Plasma Theme", "package": "kader42-plasma-theme", "desc": {
+          "de": "Das Standard Kader⁴² Theme Paket für den KDE Plasma Desktop.",
+          "en": "The Standard Kader⁴² theme package for the KDE Plasma desktop."
+        }}
+    ],
+    "graphic": [
+        { "name": "OpenBoard", "package": "openboard", "desc": {
+          "de": "Software für interaktive Whiteboards für Schulen und Hochschulen",
+          "en": "Interactive whiteboard software for schools and universities"
+        }},
+        { "name": "Gimp", "package": "gimp", "desc": {
+          "de": "Ein mächtiges Graphik-Bearbeitungsprogramm für Profis und die welche werden wollen.",
+          "en": "A powerful graphics editing program for professionals and those who aspire to become one."
+        }}
+    ]
+  }
+}

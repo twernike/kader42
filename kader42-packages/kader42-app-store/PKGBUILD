@@ -1,0 +1,24 @@
+# Maintainer: Thomas Wernike <support@kader42.de>
+pkgname=kader42-app-store
+pkgver=1.0.0
+pkgrel=1
+pkgdesc="The app store of Kader⁴²"
+arch=('any')
+url="https://kader42.de"
+license=('GPL')
+depends=('python' 'python-evdev' 'pyside6')
+
+source=('Kader42-App-Store'
+        'kader42-app-store.png'
+        'Kader42-App-Store.desktop'
+        )
+md5sums=('SKIP' 'SKIP' 'SKIP')
+
+package() {
+  # 1. Create the directories in the package image ($pkgdir)
+  # -D creates any missing parent directories; -m755 sets execution permissions
+  
+  install -Dm755 "${srcdir}/Kader42-App-Store" "${pkgdir}/usr/bin/Kader42-App-Store"
+  install -Dm755 "${srcdir}/kader42-app-store.png" "${pkgdir}/usr/share/icons/kader42-app-store.png"
+  install -Dm755 "${srcdir}/Kader42-App-Store.desktop" "${pkgdir}/usr/share/applications/Kader42-App-Store.desktop"
+}

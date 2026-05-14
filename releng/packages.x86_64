@@ -31,8 +31,6 @@ grml-zsh-config
 mesa
 vulkan-intel
 memtest86+-efi
-flatpak
-flatpak-kcm
 archlinux-appstream-data
 libhandy
 libadwaita
@@ -47,6 +45,8 @@ python-evdev
 noto-fonts
 noto-fonts-cjk
 noto-fonts-emoji
+pyside6
+kdesu
 
 #######################################################
 # Needed packages for convertible
@@ -239,7 +239,6 @@ jq
 
 # KDE / Plasma
 plasma-desktop
-discover
 kpackage
 ark
 libinput-tools
