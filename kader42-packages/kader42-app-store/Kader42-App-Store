@@ -1,20 +1,21 @@
 import sys
 import subprocess
 import requests
+import os
 from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, 
                              QHBoxLayout, QLabel, QLineEdit, QPushButton, 
                              QListWidget, QListWidgetItem, QScrollArea, QFrame)
-from PySide6.QtCore import Qt, QSize, QProcess
+from PySide6.QtCore import Qt, QSize, QProcess, QTimer
 from PySide6.QtGui import QFont, QIcon, QPixmap
 
+# ==========================================================
+# 1. DIE APP-KARTE (Silent & Robust)
+# ==========================================================
 class AppCard(QFrame):
     def __init__(self, name, description, pkg_name, icon_name=None):
         super().__init__()
         self.pkg_name = pkg_name
-        self.process = None
         self.setObjectName("AppCard")
-        
-        # Prüft den Status: 0=Nicht da, 1=Installiert, 2=Update wartet
         self.status = self.check_status()
         
         self.setStyleSheet("""
@@ -29,7 +30,7 @@ class AppCard(QFrame):
         
         # Icon
         icon_label = QLabel()
-        icon = QIcon.fromTheme(icon_name if icon_name else pkg_name, QIcon.fromTheme("package-x-generic"))
+        icon = QIcon.fromTheme(icon_name if icon_name else "package-x-generic", QIcon.fromTheme("package-x-generic"))
         icon_label.setPixmap(icon.pixmap(QSize(48, 48)))
         layout.addWidget(icon_label)
         
@@ -37,293 +38,188 @@ class AppCard(QFrame):
         text_layout = QVBoxLayout()
         name_label = QLabel(name)
         name_label.setFont(QFont("Cantarell", 12, QFont.Weight.Bold))
-        name_label.setStyleSheet("color: white;")
+        name_label.setStyleSheet("color: white; border: none; background: transparent;")
         
-        desc_label = QLabel(description)
-        desc_label.setStyleSheet("color: #bbb; font-size: 11px;")
+        # Beschreibung (Sprachen-Check)
+        desc_text = description
+        if isinstance(description, dict):
+            desc_text = description.get("de", description.get("en", "Keine Beschreibung"))
+
+        desc_label = QLabel(desc_text)
+        desc_label.setStyleSheet("color: #bbb; font-size: 11px; border: none; background: transparent;")
         desc_label.setWordWrap(True)
         
         self.status_label = QLabel("")
-        self.status_label.setStyleSheet("font-size: 10px; font-weight: bold; color: #3daee9;")
+        self.status_label.setStyleSheet("font-size: 10px; font-weight: bold; color: #3daee9; border: none;")
         
         text_layout.addWidget(name_label)
         text_layout.addWidget(desc_label)
         text_layout.addWidget(self.status_label)
         layout.addLayout(text_layout)
         
-        # Button Container
+        # Buttons
         self.btn_container = QWidget()
+        self.btn_container.setStyleSheet("border: none; background: transparent;")
         self.btn_layout = QHBoxLayout(self.btn_container)
         self.render_ui()
         layout.addWidget(self.btn_container)
 
     def check_status(self):
-        """Prüft: 0 = Nicht installiert, 1 = Aktuell, 2 = Update verfügbar"""
-        # 1. Ist es überhaupt installiert?
-        check = subprocess.run(['pacman', '-Qq', self.pkg_name], capture_output=True)
-        if check.returncode != 0:
-            return 0
-        
-        # 2. Gibt es ein Update? (yay -Qu gibt Zeilen nur für Updates aus)
-        # Wir greifen gezielt nach dem Paketnamen in der Update-Liste
-        updates = subprocess.run(['yay', '-Qu', self.pkg_name], capture_output=True, text=True)
-        if self.pkg_name in updates.stdout:
-            return 2
-        
-        return 1
+        try:
+            check = subprocess.run(['pacman', '-Qq', self.pkg_name], capture_output=True)
+            if check.returncode != 0: return 0
+            upd = subprocess.run(['yay', '-Qu', self.pkg_name], capture_output=True, text=True)
+            return 2 if self.pkg_name in upd.stdout else 1
+        except: return 0
 
     def render_ui(self):
-        # Alle alten Buttons entfernen
-        for i in reversed(range(self.btn_layout.count())): 
-            self.btn_layout.itemAt(i).widget().setParent(None)
+        while self.btn_layout.count():
+            item = self.btn_layout.takeAt(0)
+            if item.widget(): item.widget().deleteLater()
         
-        # 1. FALL: App ist nicht installiert
         if self.status == 0:
-            self.add_action_button("list-add", "#3daee9", "install")
-            self.status_label.setText("")
-
-        # 2. FALL: App ist installiert (Status 1 oder 2)
+            self.add_action_button("list-add", "#3daee9", "install", "Installieren")
         else:
-            # Wenn Update verfügbar (Status 2), zeige zusätzlich den Update-Button
             if self.status == 2:
-                self.add_action_button("system-software-update", "#f39c12", "install")
+                self.add_action_button("system-software-update", "#f39c12", "update", "Update")
                 self.status_label.setText("⭐ Update verfügbar!")
             else:
                 self.status_label.setText("✓ Aktuell")
-            
-            # Der Remove-Button wird IMMER angezeigt, wenn die App installiert ist
-            self.add_action_button("edit-delete", "#e74c3c", "uninstall")
+            self.add_action_button("edit-delete", "#e74c3c", "remove", "Entfernen")
 
-    def add_action_button(self, icon, color, mode):
-        """Hilfsfunktion, um Buttons schnell zum Layout hinzuzufügen"""
+    def add_action_button(self, icon, color, mode, tooltip):
         btn = QPushButton()
         btn.setIcon(QIcon.fromTheme(icon))
         btn.setFixedSize(40, 40)
         btn.setCursor(Qt.PointingHandCursor)
         btn.setStyleSheet(f"background-color: {color}; border-radius: 20px; border: none;")
-        btn.clicked.connect(lambda: self.run_action(mode))
+        btn.clicked.connect(lambda: self.run_action_silent(mode))
         self.btn_layout.addWidget(btn)
 
-    def run_action(self, mode):
+    def run_action_silent(self, mode):
         self.btn_container.setEnabled(False)
-        self.status_label.setText("⌛")
-        self.process = QProcess()
+        self.status_label.setText("⌛ Authentifizierung...")
+
+        # Flag-Logik
         flag = "-S" if mode == "install" else "-Rns"
-        cmd = "kdesu"
-        args = ["-c", f"yay {flag} --noconfirm {self.pkg_name}"]
-        self.process.finished.connect(self.on_finished)
-        self.process.start(cmd, args)
+        if mode == "update": flag = "-Syuu"
+        cmd_core = f"yay {flag} --noconfirm {self.pkg_name}"
+
+        # Wir nutzen direkt pkexec statt kdesu
+        # pkexec ist unter Arch/Plasma 6 deutlich zuverlässiger für sudo-User
+        args = ["pkexec", "bash", "-c", cmd_core]
+        
+        try:
+            proc = subprocess.Popen(args)
+            def check_loop():
+                if proc.poll() is None:
+                    QTimer.singleShot(2000, check_loop)
+                else:
+                    self.on_finished()
+            check_loop()
+        except Exception as e:
+            print(f"Fehler: {e}")
+            self.btn_container.setEnabled(True)
 
     def on_finished(self):
-        self.is_installed = self.check_installed()
-        self.status_label.setText("✅" if self.is_installed else "❌")
+        self.status = self.check_status()
         self.btn_container.setEnabled(True)
         self.render_ui()
-    
 
-    def install_or_update(self):
-        pkg_name = self.app_data.get("package")
-        if not pkg_name:
-            return
-
-        # Wir nutzen ein Terminal (z.B. konsole), damit der User den Fortschritt sieht
-        # und ggf. sein Passwort eingeben kann.
-        cmd = [
-            "konsole", "-e", 
-            "bash", "-c", 
-            f"yay -Syuu --noconfirm {pkg_name}; echo 'Fertig! Drücke Enter zum Schließen.'; read"
-        ]
-    
-        try:
-            subprocess.Popen(cmd)
-        except Exception as e:
-            print(f"Fehler beim Starten des Updates: {e}")
-
+# ==========================================================
+# 2. DAS HAUPTFENSTER (Mit Sidebar & Kategorie-Fix)
+# ==========================================================
 class KaderStore(QMainWindow):
-
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Kader⁴² App Store")
-        self.setWindowIcon(QIcon.fromTheme("system-software-install", QIcon("pfad/zu/deinem/logo.png")))
         self.resize(1150, 850)
         self.setStyleSheet("background-color: #1e1e1e; color: white;")
-        self.current_lang = "de" 
         
-        # Daten laden
-        self.remote_data = self.fetch_remote_config()
+        self.apps_data = {"categories": [], "apps": {}}
+        self.fetch_data()
 
-        main_widget = QWidget()
-        self.setCentralWidget(main_widget)
-        # Das Hauptlayout, das alles untereinander stapelt
-        self.root_layout = QVBoxLayout(main_widget)
-        self.root_layout.setContentsMargins(20, 20, 20, 20)
-        self.root_layout.setSpacing(10)
+        # Layout Setup
+        central = QWidget()
+        self.setCentralWidget(central)
+        self.root = QVBoxLayout(central)
         
-        # --- 1. HEADER (SUCHE) ---
-        header_widget = QWidget()
-        header_layout = QHBoxLayout(header_widget)
-        header_layout.setContentsMargins(0, 10, 0, 20)
+        # Header
+        header = QHBoxLayout()
+        logo = QLabel()
+        l_path = "/usr/share/icons/kader42-app-store.png"
+        if os.path.exists(l_path):
+            logo.setPixmap(QPixmap(l_path).scaled(100, 100, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+        header.addWidget(logo)
         
-        logo_path = "/usr/share/icons/kader42-app-store.png"
-        self.logo_label = QLabel()
-        pixmap = QPixmap(logo_path)
+        self.search = QLineEdit()
+        self.search.setPlaceholderText("Apps suchen...")
+        self.search.setFixedHeight(40)
+        self.search.setStyleSheet("background: #2b2b2b; border-radius: 10px; padding: 5px; color: white;")
+        header.addWidget(self.search)
+        self.root.addLayout(header)
 
-        # Wir sagen dem Label: "Du bist genau 128x128 groß, egal was das System sagt."
-        self.logo_label.setFixedSize(128, 128)
-
-        # Wir skalieren das Pixmap vorsichtshalber auf die Zielgröße, 
-        # falls die Datei doch mal leicht abweicht
-        self.logo_label.setPixmap(pixmap.scaled(
-        128, 128, 
-        Qt.KeepAspectRatio, 
-        Qt.SmoothTransformation
-        ))
-
-        # WICHTIG: Damit das Logo nicht matschig wird, schalten wir das automatische Skalieren aus
-        self.logo_label.setScaledContents(False)
-        header_layout.addWidget(self.logo_label)
-        self.search_input = QLineEdit()
-        # Fügt ein Lupen-Icon an den Anfang des Suchfeldes
-        self.search_input.addAction(QIcon.fromTheme("edit-find"), QLineEdit.ActionPosition.LeadingPosition)
-        # self.search_input.setPlaceholderText("Apps suchen (AUR & Repo)...")
-        self.search_input.setFixedHeight(45)
-        self.search_input.setStyleSheet("""
-            QLineEdit {
-                background: #2b2b2b; 
-                border-radius: 12px; 
-                padding: 0 15px; 
-                border: 1px solid #333; 
-                color: white;
-                font-size: 14px;
-            }
-            QLineEdit:focus { border: 1px solid #3daee9; }
-        """)
-        self.search_input.returnPressed.connect(self.do_search)
-        
-        header_layout.addWidget(self.search_input)
-        self.root_layout.addWidget(header_widget) # Header zum Hauptlayout hinzufügen
-
-        # --- 3. CONTENT AREA ---
-        content_widget = QWidget()
-        content_layout = QHBoxLayout(content_widget)
-        content_layout.setContentsMargins(0, 0, 0, 0)
-        
-        # Sidebar
+        # Content mit Sidebar
+        content = QHBoxLayout()
         self.sidebar = QListWidget()
-        self.sidebar.setFixedWidth(200)
-        self.sidebar.setStyleSheet("""
-            QListWidget { background: transparent; border: none; font-size: 14px; outline: none; color: white; }
-            QListWidget::item { padding: 15px; border-radius: 10px; margin-bottom: 5px; }
-            QListWidget::item:selected { background-color: #3daee9; color: white; font-weight: bold; }
-        """)
+        self.sidebar.setFixedWidth(220)
+        self.sidebar.setStyleSheet("QListWidget { background: transparent; border: none; } QListWidget::item { padding: 12px; } QListWidget::item:selected { background: #3daee9; border-radius: 8px; }")
         self.sidebar.currentRowChanged.connect(self.load_category)
-        content_layout.addWidget(self.sidebar)
         
-        # App Scroll Area
         self.scroll = QScrollArea()
         self.scroll.setWidgetResizable(True)
-        self.scroll.setStyleSheet("border: none; background: transparent;")
-        
+        self.scroll.setStyleSheet("border: none;")
         self.list_widget = QWidget()
         self.list_layout = QVBoxLayout(self.list_widget)
         self.list_layout.setAlignment(Qt.AlignTop)
         self.scroll.setWidget(self.list_widget)
         
-        content_layout.addWidget(self.scroll)
-        self.root_layout.addWidget(content_widget) # Content Bereich hinzufügen
+        content.addWidget(self.sidebar)
+        content.addWidget(self.scroll)
+        self.root.addLayout(content)
         
-        # Initialisierung
-        self.setup_dynamic_sidebar()
+        self.setup_sidebar()
 
-    def fetch_remote_config(self):
-        url = "https://kader42.de/repo/apps.json"
+    def fetch_data(self):
         try:
-            r = requests.get(url, timeout=5)
-            return r.json() if r.status_code == 200 else {}
+            r = requests.get("https://kader42.de/repo/apps.json", timeout=5)
+            raw = r.json()
+            
+            # DER FIX: Wenn es eine Liste ist, baue ein Fake-Kategorien-Dict
+            if isinstance(raw, list):
+                self.apps_data = {
+                    "categories": [{"id": "main", "label": {"de": "Alle Apps", "en": "All Apps"}, "icon": "package-x-generic"}],
+                    "apps": {"main": raw}
+                }
+            else:
+                self.apps_data = raw
         except:
-            print("Server nicht erreichbar, nutze leere Konfiguration.")
-            return {}
+            pass
 
-    def setup_banner(self):
-        banner_info = self.remote_data.get("featured", {
-            "title": "Willkommen bei Kader⁴²",
-            "desc": "Dein optimiertes System für das Framework 12."
-        })
-        
-        banner = QFrame()
-        banner.setFixedHeight(220)
-        banner.setStyleSheet("""
-            QFrame {
-                background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #1e3c72, stop:1 #2a5298);
-                border-radius: 20px; margin: 10px 0; border: 1px solid #333;
-            }
-        """)
-        layout = QVBoxLayout(banner)
-        layout.setContentsMargins(40, 40, 40, 40)
-        
-        title = QLabel(banner_info["title"])
-        title.setFont(QFont("Cantarell", 24, QFont.Bold))
-        desc = QLabel(banner_info["desc"])
-        desc.setStyleSheet("color: #ddd; font-size: 14px;")
-        
-        layout.addWidget(title)
-        layout.addWidget(desc)
-        layout.addStretch()
-        self.root_layout.addWidget(banner)
-
-    def setup_dynamic_sidebar(self):
+    def setup_sidebar(self):
         self.sidebar.clear()
-        categories = self.remote_data.get("categories", [])
-        for cat in categories:
-            label = cat["label"].get(self.current_lang, cat["label"]["en"])
-            item = QListWidgetItem(QIcon.fromTheme(cat["icon"]), label)
-            item.setData(Qt.UserRole, cat["id"])
+        cats = self.apps_data.get("categories", [])
+        for c in cats:
+            name = c["label"].get("de", c["label"].get("en", "Apps"))
+            item = QListWidgetItem(QIcon.fromTheme(c.get("icon", "package-x-generic")), name)
+            item.setData(Qt.UserRole, c["id"])
             self.sidebar.addItem(item)
-        
-        if self.sidebar.count() > 0:
-            self.sidebar.setCurrentRow(0)
+        if self.sidebar.count() > 0: self.sidebar.setCurrentRow(0)
 
     def load_category(self):
-        self.clear_list()
-        item = self.sidebar.currentItem()
-        if not item: return
-        
-        cat_id = item.data(Qt.UserRole)
-        apps = self.remote_data.get("apps", {}).get(cat_id, [])
-        
-        for app in apps:
-            # --- MEHRSPRACHIGKEITS-LOGIK ---
-            desc_data = app.get('desc', {})
-            # Versuche Deutsch zu laden, sonst Englisch, sonst den ersten Wert, sonst Standard-String
-            description = desc_data.get(self.current_lang, 
-                          desc_data.get("en", 
-                          next(iter(desc_data.values())) if desc_data else "Keine Beschreibung verfügbar"))
+        while self.list_layout.count():
+            item = self.list_layout.takeAt(0)
+            if item.widget(): item.widget().deleteLater()
             
-            self.list_layout.addWidget(
-                AppCard(app['name'], description, app['package'], app.get('icon'))
-            )
-
-    def do_search(self):
-        query = self.search_input.text()
-        if not query: return
-        self.clear_list()
-        self.sidebar.clearSelection() # Suche ist unabhängig von Kategorien
-        
-        res = subprocess.run(['yay', '-Ss', query], capture_output=True, text=True)
-        lines = res.stdout.splitlines()
-        for i in range(0, len(lines), 2):
-            if i+1 < len(lines):
-                pkg_full = lines[i].split(' ')[0]
-                pkg_name = pkg_full.split('/')[-1]
-                self.list_layout.addWidget(AppCard(pkg_name, lines[i+1].strip(), pkg_name))
-
-    def clear_list(self):
-        for i in reversed(range(self.list_layout.count())): 
-            self.list_layout.itemAt(i).widget().setParent(None)
+        cur = self.sidebar.currentItem()
+        if not cur: return
+        cat_id = cur.data(Qt.UserRole)
+        apps = self.apps_data.get("apps", {}).get(cat_id, [])
+        for a in apps:
+            self.list_layout.addWidget(AppCard(a['name'], a.get('desc', ''), a['package'], a.get('icon')))
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    QIcon.setThemeName("breeze-dark")
     window = KaderStore()
     window.show()
     sys.exit(app.exec())

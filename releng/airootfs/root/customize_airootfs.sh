@@ -194,6 +194,10 @@ mkdir -p /usr/lib/systemd/user/default.target.wants/
 ln -sf /usr/lib/systemd/user/kader42-tablet-event-listener.service \
        /usr/lib/systemd/user/default.target.wants/kader42-tablet-event-listener.service
 
+echo 'polkit.addAdminRule(function(action, subject) {
+    return ["unix-group:wheel"];
+});' | sudo tee /etc/polkit-1/rules.d/49-wheel-group.rules
+
 echo
 echo -e "\x1b[44m\e[1;118m  ##################################\e[0m"
 echo -e "\x1b[44m\e[1;118m  # customize_airootfs.sh DONE! ✅️ #\e[0m"
