@@ -1,0 +1,62 @@
+# /usr/lib/initcpio/hooks/kader42-rollback
+
+run_hook() {
+    # 1. Dynamically read the EFI UUID from the target system's fstab (/new_root)
+    # We look for the line with the mount point ‘/boot’ and extract the UUID value
+    EFI_UUID=$(awk '$2 == "/boot" {print $1}' /new_root/etc/fstab | cut -d= -f2)
+
+    # Fallback in case the installer used ‘/efi’ instead of '/boot'
+    if [ -z "$EFI_UUID" ]; then
+        EFI_UUID=$(awk '$2 == "/efi" {print $1}' /new_root/etc/fstab | cut -d= -f2)
+    fi
+
+    # 2. Mount the EFI partition temporarily if a UUID is found
+    if [ -n "$EFI_UUID" ]; then
+        mkdir -p /tmp/boot
+        mount -o ro "/dev/disk/by-uuid/$EFI_UUID" /tmp/boot 2>/dev/null
+    else
+        echo ":: [Kader⁴² Rollback]: The EFI UUID could not be determined automatically."
+        return 0
+    fi
+
+    # 3. Check whether the rollback flag exists
+    if [ -f /tmp/boot/kader42-rollback.trigger ]; then
+        echo ":::::::::::::::::::::::::::::::::::::::::::::::::::::::::"
+        echo ":: KADER⁴² Rollback: Failed update detected!           ::"
+        echo ":: Start automatic offline rollback...                 ::"
+        echo ":::::::::::::::::::::::::::::::::::::::::::::::::::::::::"
+
+        # Remount the boot partition as writable so that you can remove the flag later
+        mount -o remount,rw /tmp/boot
+
+        # Determine the current kernel version
+        # (Since we are booting into the old, working kernel, `uname -r` returns the backup version)
+        RUNNING_VER=$(uname -r)
+        BACKUP_PATH="/tmp/boot/kader42-backups/${RUNNING_VER}"
+
+        if [ -d "$BACKUP_PATH" ]; then
+            echo "-> Restore kernel modules to /usr/lib/modules/${RUNNING_VER}..."
+            mkdir -p "/new_root/usr/lib/modules/${RUNNING_VER}"
+            cp -a "$BACKUP_PATH/modules/${RUNNING_VER}/"* "/new_root/usr/lib/modules/${RUNNING_VER}/"
+
+            echo "-> Clean up corrupted boot files..."
+            cp -a "$BACKUP_PATH/vmlinuz-linux-${RUNNING_VER}" /tmp/boot/vmlinuz-linux
+            cp -a "$BACKUP_PATH/initramfs-linux-${RUNNING_VER}" /tmp/boot/initramfs-linux.img
+
+            echo "$(date): Rollback for version ${RUNNING_VER} completed successfully." >> /tmp/boot/kader42-backup-history.log
+            
+            # Clear the flag to prevent boot loops
+            rm /tmp/boot/kader42-rollback.trigger
+            echo "✅ Rollback complete! The system is now booting normally."
+            
+            # Give the user 3 seconds to read the success message
+            sleep 3
+        else
+            echo "❌ ERROR: No matching backup directory found at ${BACKUP_PATH}!"
+            sleep 5
+        fi
+    fi
+
+    # Properly unmount before the system actually boots
+    umount /tmp/boot 2>/dev/null
+}

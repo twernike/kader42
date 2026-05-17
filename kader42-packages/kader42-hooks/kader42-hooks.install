@@ -1,0 +1,17 @@
+post_install() {
+    echo "[Kader⁴² rollback hook] Enabling automatic offline rollback safety net..."
+    echo “[Kader⁴² rollback hook] -> Drop-in configuration created in /etc/mkinitcpio.conf.d/.”
+    echo “[Kader⁴² rollback hook] -> Regenerating Initramfs image...”
+    mkinitcpio -P
+}
+
+post_upgrade() {
+    post_install
+}
+
+post_remove() {
+    echo "[Kader⁴² rollback hook]: Disable rollback safety net..."
+    echo "[Kader⁴² rollback hook]: -> Remove drop-in configuration."
+    echo "[Kader⁴² rollback hook]: -> Regenerate Initramfs image...”
+    mkinitcpio -P
+}

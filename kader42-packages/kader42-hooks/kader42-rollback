@@ -1,0 +1,20 @@
+#!/bin/bash
+# /usr/lib/initcpio/install/kader42-rollback
+
+build() {
+    # Benötigte Binaries für das dynamische Auslesen und Kopieren bereitstellen
+    add_binary awk
+    add_binary cp
+    add_binary rm
+    add_binary cut
+    
+    # Das Runtime-Skript registrieren
+    add_runscript
+}
+
+help() {
+    cat <<HELPEOF
+Kader42 Offline-Rollback Hook: Fängt fehlgeschlagene Core-Updates
+während des Bootvorgangs ab und stellt Kernel sowie Module wieder her.
+HELPEOF
+}

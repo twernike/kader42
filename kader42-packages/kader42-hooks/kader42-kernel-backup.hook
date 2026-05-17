@@ -1,0 +1,17 @@
+[Trigger]
+Operation = Upgrade
+Operation = Install
+Type = Package
+# Hier listen wir die System-Lebensadern auf:
+Target = linux
+Target = linux-firmware
+Target = intel-ucode
+Target = amd-ucode
+Target = glibc
+Target = systemd
+Target = mkinitcpio
+
+[Action]
+Description = Kader42: Kritische Systemkomponenten werden aktualisiert. Erstelle Backup...
+When = PreTransaction
+Exec = /usr/share/kader42/kader42-pre-backup.sh
