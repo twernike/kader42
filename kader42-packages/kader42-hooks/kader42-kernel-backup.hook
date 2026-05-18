@@ -2,7 +2,7 @@
 Operation = Upgrade
 Operation = Install
 Type = Package
-# Hier listen wir die System-Lebensadern auf:
+# Here is a list of the system's lifelines:
 Target = linux
 Target = linux-firmware
 Target = intel-ucode
@@ -12,6 +12,6 @@ Target = systemd
 Target = mkinitcpio
 
 [Action]
-Description = Kader42: Kritische Systemkomponenten werden aktualisiert. Erstelle Backup...
+Description = Kader42: Critical system components are being updated. Create a backup...
 When = PreTransaction
-Exec = /usr/share/kader42/kader42-pre-backup.sh
+Exec = /usr/share/kader42/kader42-kernel-backup.sh
