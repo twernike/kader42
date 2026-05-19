@@ -20,7 +20,7 @@ cp /boot/initramfs-linux.img "$BACKUP_DIR/initramfs-linux.img"
 MODULES_BACKUP_DIR="/usr/share/kader42/modules-fallback"
 mkdir -p "$MODULES_BACKUP_DIR/modules/${KERNEL_VER}"
 
-rsync -a --delete "/usr/lib/modules/${KERNEL_VER}/" "$MODULES_BACKUP_DIR/modules/${KERNEL_VER}/"
+rsync -rtL --delete "/usr/lib/modules/${KERNEL_VER}/" "$MODULES_BACKUP_DIR/modules/${KERNEL_VER}/"
 
 # 4. Create a static systemd boot entry (this will simply be overwritten with every update)
 ROOT_UUID=$(blkid -s UUID -o value /dev/nvme0n1p2)

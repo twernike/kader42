@@ -1,7 +1,7 @@
 # Maintainer: Thomas Wernike <support@kader42.de>
 pkgname=kader42-hooks
 pkgver=1.0.0
-pkgrel=3
+pkgrel=4
 pkgdesc="A safety net to address the lack of transaction safety in Pacman."
 arch=('any')
 depends=('bash' 'rsync' 'awk' 'mkinitcpio')
