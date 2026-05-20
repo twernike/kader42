@@ -1,6 +1,6 @@
 # /usr/lib/initcpio/hooks/kader42-rollback
 
-run_hook() {
+run_latehook() {
     # 1. Dynamically read the EFI UUID from the target system's fstab (/new_root)
     # We look for the line with the mount point ‘/boot’ and extract the UUID value
     EFI_UUID=$(awk '$2 == "/boot" {print $1}' /new_root/etc/fstab | cut -d= -f2)

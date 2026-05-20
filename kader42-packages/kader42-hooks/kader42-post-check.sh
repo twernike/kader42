@@ -2,39 +2,60 @@
 # /usr/share/kader42/kader42-post-check.sh
 
 # 1. Retrieve the target version from the Pacman database
-# On Arch, this returns the following format by default: “7.0.8.arch1-1”
 PKG_VERSION=$(pacman -Q linux | awk '{print $2}')
 
-# 2. Extract the actual version from the kernel configuration file
-# Returns the following format in the kernel: “7.0.8-arch1-1”
+# 2. Extract the actual version from the kernel file
 if [ -f /boot/vmlinuz-linux ]; then
     FILE_VERSION=$(file -b /boot/vmlinuz-linux | grep -oP 'version \K[0-9]+\.[0-9]+\.[0-9]+-[a-zA-Z0-9.-]+')
 else
+    echo "⚠️  [Kader⁴² Post Check] Couldn't determine the file version of the kernel image!"
     FILE_VERSION="missing"
 fi
 
-# 3. Sicherheitsnetz: Wenn das Initramfs fehlt oder leer ist, ist es sowieso ein Fehlschlag
+# 3. Fallback: If the initramfs is missing or empty, abort immediately
 if [ ! -s /boot/initramfs-linux.img ]; then
-    FILE_VERSION="corrupt"
+    echo "⚠️ [Kader⁴² Post Check] CRITICAL: initramfs-linux.img ist korrupt oder fehlt!"
+    touch /boot/kader42-rollback.trigger
+    exit 0
 fi
 
-# 4. The key: Normalization for the perfect string comparison
-# Since Arch uses a period (“.arch”) in the package name but 
-# a hyphen (“-arch”) in the kernel itself, we simply remove all periods and hyphens.
-# “7.0.8.arch1-1” and “7.0.8-arch1-1” both become “708arch11”
-NORM_PKG=$(echo "$PKG_VERSION" | tr -d '.-')
-NORM_FILE=$(echo "$FILE_VERSION" | tr -d '.-')
+if [ "$FILE_VERSION" != "missing" ] && [ "$FILE_VERSION" != "corrupt" ]; then
+    MODULES_DIR="/usr/lib/modules/${FILE_VERSION}"
+    
+    if [ ! -d "$MODULES_DIR" ]; then
+        echo "⚠️  [Kader⁴² Post Check] The module directory for version $FILE_VERSION is completely missing!"
+        touch /boot/kader42-rollback.trigger
+        exit 0
 
-# 5. The Real Version Comparison
-if [ "$NORM_PKG" != "$NORM_FILE" ]; then
-    echo "========================================================================="
-    echo "⚠️  CRITICAL UPDATE ERROR DETECTED!"
-    echo "   The kernel file on the disk ($FILE_VERSION) does not match"
-    echo "   the installed package version ($PKG_VERSION)!"
-    echo "========================================================================="
-    echo "[Kader⁴² Post Check] Set the rollback flag for the next boot..."
-    touch /boot/kader42-rollback.trigger
-else
-    echo "✅ [Kader⁴² Post Check] Integrity check successful."
-    rm -f /boot/kader42-rollback.trigger
+    elif [ ! -f "$MODULES_DIR/modules.dep" ] || [ ! -s "$MODULES_DIR/modules.dep" ]; then
+        echo "⚠️  [Kader⁴² Post Check] Module dependencies (modules.dep) are corrupted or empty!"
+        touch /boot/kader42-rollback.trigger
+        exit 0
+    else
+        # Höchste installierte Modulversion ermitteln
+        MODULES_VER=$(ls -1 /usr/lib/modules/ | sort -V | tail -n 1)
+        echo "[Kader⁴² Post Check] The kernel modules version is $MODULES_VER"    
+    fi
+
+    # 4. Normalization for the perfect three-way string comparison
+    NORM_PKG=$(echo "$PKG_VERSION" | tr -d '.-')
+    NORM_FILE=$(echo "$FILE_VERSION" | tr -d '.-')
+    NORM_MODULE=$(echo "$MODULES_VER" | tr -d '.-')
+
+    # 5.  The Real Three-Way Version Comparison
+    # Bash-Syntax korrigiert: Entweder mit '||' zwischen zwei [ ] oder '-o' innerhalb von [ ]
+    if [ "$NORM_PKG" != "$NORM_FILE" ] || [ "$NORM_FILE" != "$NORM_MODULE" ]; then
+        echo "========================================================================="
+        echo "⚠️  CRITICAL UPDATE ERROR DETECTED!"
+        echo "   The versions on the system are asynchronous:"
+        echo "   Pacman Package: $PKG_VERSION"
+        echo "   Kernel Image:   $FILE_VERSION"
+        echo "   Kernel Modules: $MODULES_VER"
+        echo "========================================================================="
+        echo "[Kader⁴² Post Check] Set the rollback flag for the next boot..."
+        touch /boot/kader42-rollback.trigger
+    else
+        echo "✅ [Kader⁴² Post Check] Integrity check successful. All 3 stages match."
+        rm -f /boot/kader42-rollback.trigger
+    fi
 fi
