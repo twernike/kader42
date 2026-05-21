@@ -6,6 +6,7 @@ build() {
     add_binary cp
     add_binary rm
     add_binary cut
+    add_binary blkid
     
     # Das Runtime-Skript registrieren
     add_runscript
