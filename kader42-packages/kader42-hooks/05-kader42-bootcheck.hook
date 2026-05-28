@@ -1,0 +1,16 @@
+[Trigger]
+Operation = Upgrade
+Operation = Install
+Type = Package
+Target = linux
+Target = linux-firmware
+Target = intel-ucode
+Target = amd-ucode
+Target = systemd
+Target = mkinitcpio
+
+[Action]
+Description = Kader42: Check whether /boot is mounted correctly...
+When = PreTransaction
+Exec = /usr/share/kader42/kader42-bootcheck.sh
+AbortOnFail

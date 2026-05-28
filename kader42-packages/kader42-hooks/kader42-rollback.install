@@ -1,14 +1,14 @@
 # /usr/lib/initcpio/install/kader42-rollback
 
 build() {
-    # Benötigte Binaries für das dynamische Auslesen und Kopieren bereitstellen
+    # Provide the necessary binaries for dynamic reading and copying
     add_binary awk
     add_binary cp
     add_binary rm
     add_binary cut
     add_binary blkid
     
-    # Das Runtime-Skript registrieren
+    # Register the runtime script
     add_runscript
 }
 

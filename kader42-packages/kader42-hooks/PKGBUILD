@@ -1,7 +1,7 @@
 # Maintainer: Thomas Wernike <support@kader42.de>
 pkgname=kader42-hooks
-pkgver=1.0.1
-pkgrel=3
+pkgver=1.0.2
+pkgrel=5
 pkgdesc="A safety net to address the lack of transaction safety in Pacman."
 arch=('any')
 depends=('bash' 'rsync' 'awk' 'mkinitcpio')
@@ -9,32 +9,43 @@ url="https://kader42.de"
 license=('GPL')
 install=kader42-hooks.install
 
-source=('kader42-kernel-backup.hook'
+source=('05-kader42-bootcheck.hook'
+        'kader42-bootcheck.sh'
+        '06-kader42-kernel-backup.hook'
         'kader42-kernel-backup.sh'
-        'kader42-post-check.hook'
+        '06-kader42-rollback.hook'
+        '07-kader42-post-check.hook'
         'kader42-post-check.sh'
-        'kader42-rollback'
-        'kader42-rollback.hook' # initcpio Hook!
+        'kader42-hooks.conf'
+        'kader42-rollback.install'
+        'kader42-rollback.hook'
+        'kader42-mountcheck.install'
+        'kader42-mountcheck.hook'
         )
-md5sums=('SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP')
+
+md5sums=('SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP')
 
 package() {
-    # With ‘install -D’, we kill three birds with one stone:
-    # 1. Any missing folders in the package root ($pkgdir) are created on the fly
-    # 2. The file is copied
-    # 3. The file permissions (mode) are immediately set exactly
+    # 1. Pacman hooks (placed in /etc/pacman.d/hooks/ and set to 644)
+    install -D -m 644 "$srcdir/05-kader42-bootcheck.hook"     "$pkgdir/etc/pacman.d/hooks/05-kader42-bootcheck.hook"
+    install -D -m 644 "$srcdir/06-kader42-kernel-backup.hook" "$pkgdir/etc/pacman.d/hooks/06-kader42-pre-backup.hook"
+    install -D -m 644 "$srcdir/06-kader42-rollback.hook"      "$pkgdir/etc/pacman.d/hooks/06-kader42-rollback.hook"
+    install -D -m 644 "$srcdir/07-kader42-post-check.hook"    "$pkgdir/etc/pacman.d/hooks/07-kader42-post-check.hook"
 
-    # 1. Pacman Hooks (Not executable by default, 644)
-    install -D -m 644 "$srcdir/kader42-kernel-backup.hook" "$pkgdir/etc/pacman.d/hooks/kader42-pre-backup.hook"
-    install -D -m 644 "$srcdir/kader42-post-check.hook" "$pkgdir/etc/pacman.d/hooks/kader42-post-check.hook"
-
-    # 2. The backup scripts to be run (MUST be executable, 755)
+    # 2. The Bash scripts to be executed (MUST be executable, 755)
     install -D -m 755 "$srcdir/kader42-kernel-backup.sh"     "$pkgdir/usr/share/kader42/kader42-pre-backup.sh"
-    install -D -m 755 "$srcdir/kader42-post-check.sh"    "$pkgdir/usr/share/kader42/kader42-post-check.sh"
+    install -D -m 755 "$srcdir/kader42-post-check.sh"        "$pkgdir/usr/share/kader42/kader42-post-check.sh"
+    install -D -m 755 "$srcdir/kader42-bootcheck.sh"         "$pkgdir/usr/share/kader42-bootcheck.sh"
 
     # 3. The mkinitcpio hooks
-    # The install script MUST be executable (755), but the runtime hook in the RAM disk image MUST NOT be (644)
-    install -D -m 755 "$srcdir/kader42-rollback"   "$pkgdir/usr/lib/initcpio/install/kader42-rollback"
-    install -D -m 644 "$srcdir/kader42-rollback"     "$pkgdir/usr/lib/initcpio/hooks/kader42-rollback"
-    install -D -m 644 "$srcdir/kader42-rollback.conf" "$pkgdir/etc/mkinitcpio.conf.d/kader42-rollback.conf"
+    # Here, we take the unique source files and copy them to their respective system subdirectories
+    # using the correct (identical) names:
+    install -D -m 755 "$srcdir/kader42-rollback.install"     "$pkgdir/usr/lib/initcpio/install/kader42-rollback"
+    install -D -m 644 "$srcdir/kader42-rollback.hook"        "$pkgdir/usr/lib/initcpio/hooks/kader42-rollback"
+    
+    install -D -m 755 "$srcdir/kader42-mountcheck.install"   "$pkgdir/usr/lib/initcpio/install/kader42-mountcheck"
+    install -D -m 644 "$srcdir/kader42-mountcheck.hook"      "$pkgdir/usr/lib/initcpio/hooks/kader42-mountcheck"
+    
+    # 4. Configuration for mkinitcpio.conf.d
+    install -D -m 644 "$srcdir/kader42-hooks.conf"           "$pkgdir/etc/mkinitcpio.conf.d/kader42-hooks.conf"
 }

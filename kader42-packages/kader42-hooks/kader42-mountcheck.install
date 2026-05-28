@@ -1,0 +1,22 @@
+#!/bin/bash
+# /usr/lib/initcpio/install/kader42-mountcheck
+
+build() {
+    add_binary blkid
+    add_binary findmnt
+    add_binary mount
+    add_binary umount
+    
+    # Make sure the FAT32 kernel module is loaded
+    add_module vfat
+    
+    # Register the actual boot script
+    add_runscript
+}
+
+help() {
+    cat <<HELPEOF
+Kader42 Early Mount Check: Verifies and forces the correct 
+vfat mount to /boot before systemd takes over to prevent D-Bus deadlocks.
+HELPEOF
+}

@@ -84,8 +84,7 @@ echo -e  "\x1b[43m\e[38;5;20m # ✍🏼 | and set read/write/execute permissions
 echo -e  "\x1b[43m\e[38;5;20m #########################################################\e[0m"
 echo 
 
-chmod 755 /usr/bin/* || true
-chmod +x /usr/bin/* || true
+find /usr/bin/ -type f ! -perm /6000 -exec chmod 755 {} +
 
 chmod 755 /usr/local/bin/* || true
 chmod +x /usr/local/bin/* || true
@@ -197,6 +196,13 @@ ln -sf /usr/lib/systemd/user/kader42-tablet-event-listener.service \
 echo 'polkit.addAdminRule(function(action, subject) {
     return ["unix-group:wheel"];
 });' | sudo tee /etc/polkit-1/rules.d/49-wheel-group.rules
+
+
+# Ganz unten im Skript vor dem Ausgang:
+if id plasmalogin &>/dev/null; then
+    usermod -aG video,render plasmalogin
+fi
+
 
 echo
 echo -e "\x1b[44m\e[1;118m  ##################################\e[0m"

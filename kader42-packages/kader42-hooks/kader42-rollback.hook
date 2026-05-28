@@ -1,60 +1,76 @@
+#!/bin/sh
 # /usr/lib/initcpio/hooks/kader42-rollback
 
-run_latehook() {
-    # 1. Dynamically find the EFI partition via universal GPT label (fstab-independent!)
-    local EFI_DEV
-    EFI_DEV=$(blkid -t PARTLABEL="EFI System Partition" -o device | head -n 1)
+run_hook() {
+    echo ":: [Kader42-Rollback] Check the status of the latest system update..."
 
-    # Fallback for alternative partition labels
-    if [ -z "$EFI_DEV" ]; then
-        EFI_DEV=$(blkid -o device | grep -E "nvme[0-9]n1p1|sd[a-z]1" | head -n 1)
-    fi
+    # In the initramfs, your hard drive's root partition is mounted at /new_root.
+    # We first look for the EFI partition to check for the rollback trigger.
+    local efi_dev
+    efi_dev=$(blkid -t TYPE=vfat -o device | grep -E "nvme|sd" | head -n 1)
 
-    if [ -z "$EFI_DEV" ]; then
-        echo ":: [Kader⁴² Rollback]: No EFI System Partition found automatically."
-        return 0
-    fi
-
-    # 2. Mount the EFI partition temporarily (Directly rw to avoid remount issues)
-    mkdir -p /tmp/boot
-    if ! mount -o rw "$EFI_DEV" /tmp/boot 2>/dev/null; then
-        echo ":: [Kader⁴² Rollback]: Failed to mount EFI partition ($EFI_DEV)."
-        return 0
-    fi
-
-    # 3. Check whether the rollback flag exists
-    if [ -f /tmp/boot/kader42-rollback.trigger ]; then
-        echo ":::::::::::::::::::::::::::::::::::::::::::::::::::::::::"
-        echo ":: KADER⁴² Rollback: Failed update detected!           ::"
-        echo ":: Start automatic offline rollback...                 ::"
-        echo ":::::::::::::::::::::::::::::::::::::::::::::::::::::::::"
-
-        # Determine the current backup version based on the booted kernel
-        RUNNING_VER=$(uname -r)
-        BACKUP_PATH="/tmp/boot/kader42-backups/${RUNNING_VER}"
-
-        if [ -d "$BACKUP_PATH" ]; then
-            echo "-> Restore kernel modules to /new_root/usr/lib/modules/${RUNNING_VER}..."
-            mkdir -p "/new_root/usr/lib/modules/${RUNNING_VER}"
-            cp -a "$BACKUP_PATH/modules/${RUNNING_VER}/"* "/new_root/usr/lib/modules/${RUNNING_VER}/"
-
-            echo "-> Clean up corrupted boot files..."
-            cp -a "$BACKUP_PATH/vmlinuz-linux-${RUNNING_VER}" /tmp/boot/vmlinuz-linux
-            cp -a "$BACKUP_PATH/initramfs-linux-${RUNNING_VER}" /tmp/boot/initramfs-linux.img
-
-            echo "$(date): Rollback for version ${RUNNING_VER} completed successfully." >> /tmp/boot/kader42-backup-history.log
+    if [ -n "$efi_dev" ]; then
+        # Create a temporary mount point on the RAM disk
+        mkdir -p /tmp_efi
+        
+        # For now, just attach it in read-only mode (ro) to look for the trigger
+        if mount -t vfat -o ro "$efi_dev" /tmp_efi 2>/dev/null; then
             
-            # Clear the flag to prevent boot loops
-            rm -f /tmp/boot/kader42-rollback.trigger
-            echo "✅ Rollback complete! The system is now booting normally."
-            sleep 3
-        else
-            echo "❌ ERROR: No matching backup directory found at ${BACKUP_PATH}!"
-            sleep 5
+            # # Did the Pacman post-hook leave behind the trigger file?
+            if [ -f "/tmp_efi/kader42-rollback.trigger" ]; then
+                echo "===================================================="
+                echo “⚠️  [Kader42-Rollback] FAILED UPDATE DETECTED!”
+                echo “:: Starting automatic offline rollback...”
+                echo "===================================================="
+                
+                # Switch the partition to read-write (rw) mode for repair
+                mount -o remount,rw /tmp_efi
+                
+                # --------------------------------------------------
+                # 1. REPLACE KERNEL BINARIES ON THE EFI PARTITION
+                # --------------------------------------------------
+                echo ":: Wiederherstellung der Haupt-Bootdateien..."
+                cp /tmp_efi/kader42-fallback/vmlinuz-linux /tmp_efi/vmlinuz-linux
+                cp /tmp_efi/kader42-fallback/initramfs-linux.img /tmp_efi/initramfs-linux.img
+                
+                if [ -f /tmp_efi/kader42-fallback/intel-ucode.img ]; then
+                    cp /tmp_efi/kader42-fallback/intel-ucode.img /tmp_efi/intel-ucode.img
+                fi
+                if [ -f /tmp_efi/kader42-fallback/amd-ucode.img ]; then
+                    cp /tmp_efi/kader42-fallback/amd-ucode.img /tmp_efi/amd-ucode.img
+                fi
+                
+                # --------------------------------------------------
+                # 2. RESTORE KERNEL MODULES IN /new_root
+                # --------------------------------------------------
+                echo ":: Wiederherstellung der Kernel-Module..."
+                
+                # We iterate through the backup module directory. 
+                # ${mod_dir##*/} extracts the folder name (the kernel version) without the path.
+                for mod_dir in /tmp_efi/kader42-fallback/modules/*; do
+                    if [ -d "$mod_dir" ]; then
+                        local version="${mod_dir##*/}"
+                        echo "   -> Stelle Module für Version [ $version ] wieder her..."
+                        
+                        # Create the destination folder in the actual system and copy the modules
+                        mkdir -p "/new_root/usr/lib/modules/$version"
+                        cp -a "$mod_dir/." "/new_root/usr/lib/modules/$version/"
+                    fi
+                done
+                
+                # --------------------------------------------------
+                # 3. DELETE TRIGGER (Important to prevent infinite loops!)
+                # --------------------------------------------------
+                rm -f /tmp_efi/kader42-rollback.trigger
+                
+                echo "----------------------------------------------------"
+                echo “✅ [Kader42-Rollback] Rollback successful!”
+                echo “:: The system will now boot safely using the stable version.”
+                echo "===================================================="
+            fi
+            
+            # Safely unmount the EFI partition
+            umount /tmp_efi
         fi
     fi
-
-    # 4. GUARANTEED UNMOUNT: This MUST be outside the if-block to prevent ghost mounts!
-    umount /tmp/boot 2>/dev/null
-    rmdir /tmp/boot 2>/dev/null
 }

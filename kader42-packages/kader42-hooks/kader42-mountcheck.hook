@@ -1,0 +1,46 @@
+#!/bin/sh
+# /usr/lib/initcpio/hooks/kader42-mountcheck
+
+run_hook() {
+    echo ":: [Kader42 Mount Check] Start early boot memory check..."
+
+    # Since we are in the unencrypted/unlocked root directory,
+    # we check whether fstab or the kernel already recognizes /boot correctly.
+    # If /boot is an empty directory on the root partition, we intervene.
+    
+    if ! findmnt -n -o FSTYPE /new_root/boot | grep -q "vfat"; then
+        echo "⚠️ [Kader42-Mount-Check] /boot is not mounted as a vfat in the root filesystem!"
+        echo ":: Starte autonomen Reparaturversuch vor dem Systemstart..."
+
+        # 1. Isolate local ghost files (if any) to prevent overwriting
+        if [ -d "/new_root/boot" ] && [ "$(ls -A /new_root/boot 2>/dev/null)" ]; then
+            echo "⚠️ [Kader42-Mount-Check] Ghost files detected in /boot. Clean up mount point..."
+            # Carefully delete the files in the initramfs to free up space
+            rm -rf /new_root/boot/*
+        fi
+
+        # 2. Locate the EFI partition directly on the hardware using blkid
+        # We are looking for the FAT file system (type vfat)
+        local efi_partition
+        efi_partition=$(blkid -t TYPE=vfat -o device | grep -E "nvme|sd" | head -n 1)
+
+        if [ -n "$efi_partition" ]; then
+            echo "✅ [Kader42 Mount Check] EFI hardware partition found: $efi_partition"
+            echo ":: Mount to /boot..."
+            
+            # Create a folder if it is deleted from the root image
+            mkdir -p /new_root/boot
+            
+            # Force mount
+            if mount -t vfat -o rw,noatime "$efi_partition" /new_root/boot; then
+                echo "✅ [Kader42-Mount-Check] Self-healing successful! /boot has been mounted successfully."
+            else
+                echo "❌ [Kader42-Mount-Check] ERROR: Failed to mount the $efi_partition!"
+            fi
+        else
+            echo "❌ [Kader42-Mount-Check] CRITICAL: No vfat EFI partition found on the NVMe!"
+        fi
+    else
+        echo "✅ [Kader42-Mount-Check] /boot is already mounted correctly as a vfat partition."
+    fi
+}
