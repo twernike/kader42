@@ -1,0 +1,36 @@
+# Maintainer: Thomas <thomas@kader42.de>
+pkgname=kader42-core
+pkgver=1.0.1
+pkgrel=3
+pkgdesc="Core configurations of Kader⁴²"
+arch=('any')
+replaces=('kader42-hwdb')
+# source=('etc')
+
+# sha256sums=('SKIP')
+
+package() {
+    # sudo rm -rf /etc/pacman.conf
+    # sudo rm -rf /etc/pamac.conf
+    # sudo rm -rf /etc/vconsole.conf
+    # sudo rm -rf /etc/pacman.d/mirrorlist
+    # sudo rm -rf /etc/os-release
+
+    cp -R -f "${startdir}/etc" "${pkgdir}/etc"
+    cp -R -f "${startdir}/usr" "${pkgdir}/usr"
+
+}
+
+post_install() {
+  echo "--- 🧠 Update hardware database (Matrix)... ---"
+  systemd-hwdb update
+  udevadm trigger
+}
+
+post_upgrade() {
+  post_install
+}
+
+post_remove() {
+  post_install
+}

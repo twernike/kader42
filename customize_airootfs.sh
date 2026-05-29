@@ -126,7 +126,6 @@ cp -r $tmpCalamares/qml/. $qmlCalamares
 cp -r $tmpCalamares/scripts/. $calamaresScripts
 cp -r $tmpCalamares/settings.conf /usr/share/calamares
 cp -R $tmpLinuxPreset $shareCalamares
-# cp -r $tmpBootloaderLib/* $bootloaderLib
 cp -r $tmpOneShotPreparer/* $oneShotPreparerLib
 cp -R $tmpEtc/* /etc
 
@@ -143,7 +142,7 @@ echo -e "\x1b[43m\e[38;5;20m ############################### \e[0m"
 echo -e "\x1b[43m\e[38;5;20m # ⚙️ | Enable needed services # \e[0m"
 echo -e "\x1b[43m\e[38;5;20m ############################### \e[0m"
 
-# Dienste aktivieren
+# Activate services
 systemctl enable iio-sensor-proxy.service
 systemctl enable bluetooth.service
 systemctl --user enable --now kader42-tablet-event-listener.service
@@ -152,7 +151,7 @@ echo -e "\x1b[43m\e[38;5;20m ############################### \e[0m"
 echo -e "\x1b[43m\e[38;5;20m # ⚙️ | Reindex HWDB...        # \e[0m"
 echo -e "\x1b[43m\e[38;5;20m ############################### \e[0m"
 
-# HWDB neu indizieren (WICHTIG für die Rotation!)
+# Reindex HWDB (IMPORTANT for rotation!)
 systemd-hwdb update
 udevadm trigger
 
