@@ -303,7 +303,6 @@ vlc-plugin-inflate
 vlc-plugin-jack
 vlc-plugin-journal
 vlc-plugin-kate
-vlc-plugin-kwallet
 vlc-plugin-libsecret
 vlc-plugin-lirc
 vlc-plugin-live555
@@ -322,7 +321,6 @@ vlc-plugin-ogg
 vlc-plugin-opus
 vlc-plugin-png
 vlc-plugin-pulse
-vlc-plugin-quicksync
 vlc-plugin-samplerate
 vlc-plugin-sdl
 vlc-plugin-sftp

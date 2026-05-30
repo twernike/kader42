@@ -84,12 +84,6 @@ echo -e  "\x1b[43m\e[38;5;20m # ✍🏼 | and set read/write/execute permissions
 echo -e  "\x1b[43m\e[38;5;20m #########################################################\e[0m"
 echo 
 
-chmod 755 /usr/bin/* || true
-chmod +x /usr/bin/* || true
-
-chmod 755 /usr/local/bin/* || true
-chmod +x /usr/local/bin/* || true
-
 chmod 755 /home/liveuser/* || true
 chmod +x /home/liveuser/* || true
 
@@ -99,9 +93,6 @@ chmod +x /etc/skel/.config/autostart/* || true
 chmod 644 /etc/systemd/system/*.service || true
 chmod 644 /etc/systemd/user/*.service || true
 
-chown root:root /usr/bin/*
-
-chmod 4755 /usr/bin/sudo
 chmod 0644 /etc/sudo.conf
 chmod 0644 /etc/sudoers
 chmod 777 /home/liveuser/Desktop/calamares.desktop
@@ -135,7 +126,6 @@ cp -r $tmpCalamares/qml/. $qmlCalamares
 cp -r $tmpCalamares/scripts/. $calamaresScripts
 cp -r $tmpCalamares/settings.conf /usr/share/calamares
 cp -R $tmpLinuxPreset $shareCalamares
-# cp -r $tmpBootloaderLib/* $bootloaderLib
 cp -r $tmpOneShotPreparer/* $oneShotPreparerLib
 cp -R $tmpEtc/* /etc
 
@@ -152,7 +142,7 @@ echo -e "\x1b[43m\e[38;5;20m ############################### \e[0m"
 echo -e "\x1b[43m\e[38;5;20m # ⚙️ | Enable needed services # \e[0m"
 echo -e "\x1b[43m\e[38;5;20m ############################### \e[0m"
 
-# Dienste aktivieren
+# Activate services
 systemctl enable iio-sensor-proxy.service
 systemctl enable bluetooth.service
 systemctl --user enable --now kader42-tablet-event-listener.service
@@ -161,7 +151,7 @@ echo -e "\x1b[43m\e[38;5;20m ############################### \e[0m"
 echo -e "\x1b[43m\e[38;5;20m # ⚙️ | Reindex HWDB...        # \e[0m"
 echo -e "\x1b[43m\e[38;5;20m ############################### \e[0m"
 
-# HWDB neu indizieren (WICHTIG für die Rotation!)
+# Reindex HWDB (IMPORTANT for rotation!)
 systemd-hwdb update
 udevadm trigger
 
@@ -172,22 +162,8 @@ echo -e "\x1b[43m\e[38;5;20m |===================================|\e[0m"
 systemctl preset-all
 echo
 
-# Add flathub repo system-wide
-flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
-
-# Download only the metadata (AppStream) without installing any apps
-# This fills /var/lib/flatpak/appstream in the image
-flatpak update --appstream
-
-cat <<EOF > /etc/profile.d/flatpak-paths.sh
-if [ -d /var/lib/flatpak/exports/share ]; then
-    export XDG_DATA_DIRS="/var/lib/flatpak/exports/share:\$XDG_DATA_DIRS"
-fi
-EOF
-chmod +x /etc/profile.d/flatpak-paths.sh
-
-pacman -Sy                  # Synchronisiert die pacman-Datenbanken
-appstreamcli refresh-cache --force  # Baut die grafische Datenbank für Pamac/Discover
+pacman -Sy                  
+appstreamcli refresh-cache --force  # Builds the graphical database for Pamac/Discover
 
 mkdir -p /usr/lib/systemd/user/default.target.wants/
 
@@ -197,6 +173,12 @@ ln -sf /usr/lib/systemd/user/kader42-tablet-event-listener.service \
 echo 'polkit.addAdminRule(function(action, subject) {
     return ["unix-group:wheel"];
 });' | sudo tee /etc/polkit-1/rules.d/49-wheel-group.rules
+
+
+if id plasmalogin &>/dev/null; then
+    usermod -aG video,render plasmalogin
+fi
+
 
 echo
 echo -e "\x1b[44m\e[1;118m  ##################################\e[0m"
