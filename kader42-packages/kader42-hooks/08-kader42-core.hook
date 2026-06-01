@@ -1,0 +1,13 @@
+[Trigger]
+Operation = Install
+Operation = Upgrade
+Type = Package
+Target = filesystem
+Target = pacman-mirrorlist
+Target = plasma-workspace
+Target = kader42-core
+
+[Action]
+Description = Apply Kader4² system overlays...
+When = PostTransaction
+Exec = /usr/bin/bash -c 'cp -Rf /usr/share/kader42/upstream-overrides/* / 2>/dev/null || true'

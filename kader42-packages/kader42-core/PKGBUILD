@@ -1,20 +1,36 @@
 # Maintainer: Thomas Wernike <support@kader42.de>
 pkgname=kader42-core
 pkgver=1.0.1
-pkgrel=4
-pkgdesc="Core configurations of Kader⁴²"
+pkgrel=8
+pkgdesc="Core configurations and systemd units for Kader42"
 arch=('any')
-replaces=('kader42-hwdb')
+depends=('bash' 'dbus' 'kader42-hooks')
 install=kader42-core.install
 
 package() {
-    # sudo rm -rf /etc/pacman.conf
-    # sudo rm -rf /etc/pamac.conf
-    # sudo rm -rf /etc/vconsole.conf
-    # sudo rm -rf /etc/pacman.d/mirrorlist
-    # sudo rm -rf /etc/os-release
+    local tmp_overlay="${pkgdir}/usr/share/kader42/core-overlay"
+    local perm_overrides="${pkgdir}/usr/share/kader42/upstream-overrides"
+    
+    mkdir -p "$tmp_overlay" "$perm_overrides"
 
-    cp -R -f "${startdir}/etc" "${pkgdir}/etc"
-    cp -R -f "${startdir}/usr" "${pkgdir}/usr"
+    # 1. Bulk-Copy deines Repositories in den temporären Ordner
+    if [ -d "${startdir}/etc" ]; then cp -R "${startdir}/etc" "$tmp_overlay/"; fi
+    if [ -d "${startdir}/usr" ]; then cp -R "${startdir}/usr" "$tmp_overlay/"; fi
 
+    # Bereinigung der dynamischen Dateien
+    rm -f "$tmp_overlay/etc/pacman.conf"
+    rm -f "$tmp_overlay/etc/pacman.d/mirrorlist"
+
+    # 2. Kritische Systemdateien für die Hooks in den permanenten Ordner VERSCHIEBEN
+    local system_conflicts=(
+        "etc/os-release"
+        "etc/pam.d/kde"
+    )
+
+    for file in "${system_conflicts[@]}"; do
+        if [ -f "$tmp_overlay/$file" ]; then
+            mkdir -p "$perm_overrides/$(dirname "$file")"
+            mv "$tmp_overlay/$file" "$perm_overrides/$file"
+        fi
+    done
 }

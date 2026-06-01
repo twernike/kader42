@@ -1,7 +1,7 @@
 # Maintainer: Thomas Wernike <support@kader42.de>
 pkgname=kader42-hooks
 pkgver=1.0.2
-pkgrel=5
+pkgrel=7
 pkgdesc="A safety net to address the lack of transaction safety in Pacman."
 arch=('any')
 depends=('bash' 'rsync' 'awk' 'mkinitcpio')
@@ -21,16 +21,18 @@ source=('05-kader42-bootcheck.hook'
         'kader42-rollback.hook'
         'kader42-mountcheck.install'
         'kader42-mountcheck.hook'
+        '08-kader42-core.hook'
         )
 
-md5sums=('SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP')
+md5sums=('SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP')
 
 package() {
     # 1. Pacman hooks (placed in /etc/pacman.d/hooks/ and set to 644)
     install -D -m 644 "$srcdir/05-kader42-bootcheck.hook"     "$pkgdir/etc/pacman.d/hooks/05-kader42-bootcheck.hook"
     install -D -m 644 "$srcdir/06-kader42-kernel-backup.hook" "$pkgdir/etc/pacman.d/hooks/06-kader42-pre-backup.hook"
-    install -D -m 644 "$srcdir/06-kader42-rollback.hook"      "$pkgdir/etc/pacman.d/hooks/06-kader42-rollback.hook"
     install -D -m 644 "$srcdir/07-kader42-post-check.hook"    "$pkgdir/etc/pacman.d/hooks/07-kader42-post-check.hook"
+    install -D -m 644 "$srcdir/08-kader42-core.hook"          "$pkgdir/etc/pacman.d/hooks/08-kader42-core.hook"
+
 
     # 2. The Bash scripts to be executed (MUST be executable, 755)
     install -D -m 755 "$srcdir/kader42-kernel-backup.sh"     "$pkgdir/usr/share/kader42/kader42-pre-backup.sh"
