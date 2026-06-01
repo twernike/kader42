@@ -1,34 +1,100 @@
 #!/bin/bash
-
 export DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/$(id -u)/bus"
 
-echo "[Kader42 Tablet Event Listener] Sensor-based TabletMode started..."
+echo "[Kader42 Tablet Event Listener] Service started..."
+
+# Read the chassis type from the system BIOS
+CHASSIS_TYPE=$(cat /sys/class/dmi/id/chassis_type 2>/dev/null)
+echo "[Kader42 Tablet Event Listener] Detected Chassis Type: ${CHASSIS_TYPE:-unknown}"
 
 LAST_MODE=""
+STATE_FILE="/run/kader42/chassis_state"
 
-   # Accelerometer orientation changed: right-up
-  #  Tilt changed: face-down
+# HELPER FUNCTION: Counts real, physical keyboards in the system (filters out power buttons, etc.)
+count_real_keyboards() {
+    awk '/Name/{name=$0} /Handlers=.*kbd/{print name}' /proc/bus/input/devices | \
+        grep -ivE "button|bus|camera|headset|mouse|switches" | \
+        wc -l
+}
 
-
-monitor-sensor | while read -r line; do
-
-    if echo "$line" | grep -q "Accelerometer orientation changed"; then
-        
-        if echo "$line" | grep -q "normal"; then
-            MODE=0
-        else
-            MODE=1
-        fi
-        
+# HELPER FUNCTION: Converts keyboard count to mode (0=Laptop, 1=Tablet)
+get_mode_by_keyboard_count() {
+    if [ "$(count_real_keyboards)" -gt 0 ]; then
+        echo 0
     else
-        continue
+        echo 1
     fi
+}
 
-    # Debounce
-    if [ "$MODE" != "$LAST_MODE" ]; then
-        echo "[Kader42 Tablet Event Listener] Mode changed → $MODE"
+case "$CHASSIS_TYPE" in
+    31)
+        # --- CONVERTIBLE MODE (convertible devices) ---
+        echo "[Kader42 Tablet Event Listener] Convertible detected. Launching sensor-based monitoring..."
+        
+        monitor-sensor | while read -r line; do
+            if echo "$line" | grep -q "Accelerometer orientation changed"; then
+                if echo "$line" | grep -q "normal"; then
+                    MODE=0
+                else
+                    MODE=1
+                fi
+            else
+                continue
+            fi
+
+            # Debounce & Switch
+            if [ "$MODE" != "$LAST_MODE" ]; then
+                echo "[Kader42 Tablet Event Listener] Mode changed → $MODE"
+                /usr/bin/kader42-plasma-convertible-switcher "$MODE"
+                LAST_MODE="$MODE"
+            fi
+        done
+        ;;
+
+    32)
+        # --- DETACHABLE MODE (Detachable Devices) ---
+        echo "[Kader42 Tablet Event Listener] Detachable detected. Launching dynamic counting logic..."
+        
+        mkdir -p "$(dirname "$STATE_FILE")"
+        touch "$STATE_FILE"
+
+        # Determine initial state at service startup
+        MODE=$(get_mode_by_keyboard_count)
+        echo "[Kader42 Tablet Event Listener] Initial Detachable Mode → $MODE (Keyboards: $(count_real_keyboards))"
         /usr/bin/kader42-plasma-convertible-switcher "$MODE"
         LAST_MODE="$MODE"
-    fi
 
-done
+        # Event loop: Wait for the udev signal in the state file in a resource-efficient manner
+        if command -v inotifywait >/dev/null 2>&1; then
+            echo "[Kader42 Tablet Event Listener] Using inotifywait for event triggering."
+            while inotifywait -q -e modify "$STATE_FILE" >/dev/null; do
+                MODE=$(get_mode_by_keyboard_count)
+                if [ "$MODE" != "$LAST_MODE" ]; then
+                    echo "[Kader42 Tablet Event Listener] Detachable mode changed → $MODE"
+                    /usr/bin/kader42-plasma-convertible-switcher "$MODE"
+                    LAST_MODE="$MODE"
+                fi
+            done
+        else
+            # Fallback if inotify-tools are missing
+            echo "[Kader42 Tablet Event Listener] WARNING: 'inotifywait' not found! Falling back to 1s polling..."
+            while true; do
+                MODE=$(get_mode_by_keyboard_count)
+                if [ "$MODE" != "$LAST_MODE" ]; then
+                    echo "[Kader42 Tablet Event Listener] Detachable mode changed (polling) → $MODE"
+                    /usr/bin/kader42-plasma-convertible-switcher "$MODE"
+                    LAST_MODE="$MODE"
+                fi
+                sleep 1
+            done
+        fi
+        ;;
+
+    *)
+        # --- PASSIVE FALLBACK (Standard Laptops / Desktops) ---
+        # The device does not require tablet optimizations. 
+        # The service exits gracefully immediately and uses 0% of resources.
+        echo "[Kader42 Tablet Event Listener] Chassis Type '${CHASSIS_TYPE:-unknown}' does not require tablet mode. Exiting gracefully."
+        exit 0
+        ;;
+esac

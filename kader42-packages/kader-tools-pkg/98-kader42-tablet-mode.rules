@@ -1,0 +1,12 @@
+# /usr/lib/udev/rules.d/98-kader42-tablet-mode.rules
+# Kader42: Universal keyboard detection (ONLY for true detachables)
+
+# Exclude fixed chassis types (9, 10 = laptop) and clamshell devices (31 = convertible) directly
+ATTR{[dmi/id]chassis_type}=="9", GOTO="kader42_end"
+ATTR{[dmi/id]chassis_type}=="10", GOTO="kader42_end"
+ATTR{[dmi/id]chassis_type}=="31", GOTO="kader42_end"
+
+# If it is a different chassis (e.g., 32 = detachable), trigger on every keyboard event
+ACTION=="add|remove", SUBSYSTEM=="input", ENV{ID_INPUT_KEYBOARD}=="1", RUN+="/usr/bin/bash -c '/usr/bin/mkdir -p /run/kader42 && /usr/bin/echo check > /run/kader42/chassis_state'"
+
+LABEL="kader42_end"
