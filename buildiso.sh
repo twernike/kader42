@@ -61,15 +61,6 @@ echo -e "\e[1;92m ████████████████████�
  It is not necessary to pass any parameters. 
  However, you can optionally set the following parameters if desired:\e[0m"
     echo 
-    echo -e "\e[1;92m build-custom   ➤
- ============  
-    Builds the packages from the AUR that were specified in build_packages.sh 
-    and makes them available in a custom repository for the live system. 
-    This makes it possible to simply list the packages in packages.x86_64, 
-    allowing mkarchiso to install them into airootfs via pacman.
-    The custom repository is intended only for the live system 
-    and is not included in an installation. 
-    However, the installed packages are, of course, copied over. \e[0m"
     echo
     echo -e "\e[1;92m create-build-user ➤
     Creates a user named 'builduser' with passwordless sudo rights for building 
@@ -364,32 +355,9 @@ mkdir -p "$airootfs/home/liveuser/.config"
 mkdir -p "$airootfs/home/liveuser/.config/autostart"
 
 
-if [[ $1 == build-custom || $2 == build-custom || $3 == build-custom ]]; then
-    echo -e "\e[1;92m | ⬇️ ⚒️|-------------------------------------------------------------|\e[0m"
-    echo -e "\e[1;92m | ⬇️ ⚒️| Download AUR packages and build packages for custom repo... |\e[0m"
-    echo -e "\e[1;92m | ⬇️ ⚒️|-------------------------------------------------------------|\e[0m"
-
-    chown -R $builduser "$LOCAL_PACKAGES"
-    chmod -R 777 build
-    chmod -R 777 /packages
-
-    mkdir -p $BUILD_DIR
-    chown -R $builduser:$builduser $BUILD_DIR
-    # su $builduser ./build_packages.sh > build_packages.log
-    su $builduser -c "./build_packages.sh 2>&1 | tee build_packages_$(date +%Y%m%d_%H%M%S).log"
-    cp -R /packages "$airootfs"
-    pacman -Syyu --noconfirm
-fi
-
-echo -e "\e[1;92m Copy pacman.conf to container... \e[0m"
-cp $releng/pacman.conf /etc/pacman.conf
-cp $os_release $os_release_tmp
-
-if [[ ! -f "$REPO_DB" ]]; then
-    echo "custom repo DB missing - create it now..."
-    repo-add "$REPO_DB" "$LOCAL_REPO"/*.pkg.tar.*
-    pacman -Syyu --noconfirm
-fi
+# echo -e "\e[1;92m Copy pacman.conf to container... \e[0m"
+# cp $releng/pacman.conf /etc/pacman.conf
+# cp $os_release $os_release_tmp
 
 if [[ $1 == generate-icons || $2 == generate-icons || $3 == generate-icons ]]; then
     echo 
