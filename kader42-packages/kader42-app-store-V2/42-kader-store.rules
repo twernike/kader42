@@ -1,0 +1,10 @@
+/* /usr/share/polkit-1/rules.d/42-kader-store.rules */
+polkit.addRule(function(action, subject) {
+    // Wenn die Aktion von pacman (über yay) aufgerufen wird, um Pakete zu modifizieren
+    if ((action.id === "org.archlinux.pkexec.pacman" || 
+         action.id === "org.freedesktop.packagekit.package-install" ||
+         action.id === "org.freedesktop.packagekit.package-remove") &&
+        subject.isInGroup("wheel") && subject.active) {
+        return polkit.Result.YES;
+    }
+});

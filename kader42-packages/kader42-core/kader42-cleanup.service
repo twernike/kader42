@@ -1,0 +1,17 @@
+# /usr/lib/systemd/system/kader42-cleanup.service
+[Unit]
+Description=Kader42 Cleanup Service (removes the user liveuser)
+After=systemd-user-sessions.service
+
+# IMPORTANT: If this directory exists (live system), the service will be ignored!
+ConditionPathExists=!/run/archiso
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/bash -c 'if id "liveuser" &>/dev/null; then userdel -r -f liveuser; fi'
+# It deactivates itself after a successful run so that it doesn't run every time the system boots up
+ExecStartPost=/usr/bin/systemctl disable kader42-cleanup.service
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

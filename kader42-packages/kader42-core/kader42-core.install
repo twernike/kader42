@@ -1,3 +1,25 @@
+_cleanup_liveuser_legacy() {
+    # IMPORTANT: If we are on the Live ISO, stop immediately!
+    # We don't want to damage the Live user on the installation media.
+    if [ -d /run/archiso ]; then
+        return 0
+    fi
+
+    echo ":: Kader⁴² Legacy Cleanup executed..."
+
+    # 1. Die sysusers-Konfiguration löschen, damit der Fehler NIE wieder auftritt
+    if [ -f /etc/sysusers.d/liveuser.conf ]; then
+        echo "--> Remove orphaned Liveuser configuration file..."
+        rm -f /etc/sysusers.d/liveuser.conf
+    fi
+
+    # 2. Den durch den Xorg-Hook bereits wieder angelegten User endgültig löschen
+    if id "liveuser" &>/dev/null; then
+        echo "--> Remove the ‘liveuser’ account that was incorrectly restored..."
+        userdel -r -f liveuser 2>/dev/null
+    fi
+}
+
 _deploy_overlay() {
     echo "--- 🚀 Deploying Kader42 Configuration Overlays... ---"
     
@@ -56,11 +78,13 @@ EOF
 }
 
 post_install() {
+    _cleanup_liveuser_legacy
     _deploy_overlay
     systemd-hwdb update
     udevadm trigger 2>/dev/null || true
     _update_pacman_conf
     _update_mirrorlist
+    sudo systemctl enable --now /usr/lib/systemd/system/kader42-cleanup.service
 }
 
 post_upgrade() {

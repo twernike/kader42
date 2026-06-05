@@ -1,11 +1,15 @@
 # Maintainer: Thomas Wernike <support@kader42.de>
 pkgname=kader42-core
-pkgver=1.0.1
-pkgrel=8
+pkgver=1.0.2
+pkgrel=3
 pkgdesc="Core configurations and systemd units for Kader42"
 arch=('any')
 depends=('bash' 'dbus' 'kader42-hooks')
 install=kader42-core.install
+source=('kader42-cleanup.service')
+
+md5sums=('SKIP')
+
 
 package() {
     local tmp_overlay="${pkgdir}/usr/share/kader42/core-overlay"
@@ -13,15 +17,15 @@ package() {
     
     mkdir -p "$tmp_overlay" "$perm_overrides"
 
-    # 1. Bulk-Copy deines Repositories in den temporären Ordner
+    # 1. Copy your repository to the temporary folder
     if [ -d "${startdir}/etc" ]; then cp -R "${startdir}/etc" "$tmp_overlay/"; fi
     if [ -d "${startdir}/usr" ]; then cp -R "${startdir}/usr" "$tmp_overlay/"; fi
 
-    # Bereinigung der dynamischen Dateien
+    # Cleaning up dynamic files
     rm -f "$tmp_overlay/etc/pacman.conf"
     rm -f "$tmp_overlay/etc/pacman.d/mirrorlist"
 
-    # 2. Kritische Systemdateien für die Hooks in den permanenten Ordner VERSCHIEBEN
+    # 2. MOVE critical system files for the hooks to the permanent folder
     local system_conflicts=(
         "etc/os-release"
         "etc/pam.d/kde"
@@ -33,4 +37,11 @@ package() {
             mv "$tmp_overlay/$file" "$perm_overrides/$file"
         fi
     done
+
+    # Copy service
+    install -Dm644 "kader42-cleanup.service" "${pkgdir}/usr/lib/systemd/system/kader42-cleanup.service"
+    
+    # Create a symlink equivalent to “systemctl enable”
+    mkdir -p "${pkgdir}/usr/lib/systemd/system/multi-user.target.wants"
+    ln -s "../kader42-cleanup.service" "${pkgdir}/usr/lib/systemd/system/multi-user.target.wants/kader42-cleanup.service"
 }
