@@ -5,7 +5,7 @@ import subprocess
 import locale
 from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, 
                              QHBoxLayout, QLabel, QLineEdit, QPushButton, 
-                             QListWidget, QListWidgetItem, QScrollArea, QFrame, QGridLayout)
+                             QListWidget, QListWidgetItem, QScrollArea, QFrame, QGridLayout, QSizePolicy)
 from PySide6.QtCore import Qt, QSize, QTimer, QUrl
 from PySide6.QtGui import QFont, QIcon, QPixmap
 from PySide6.QtNetwork import QNetworkAccessManager, QNetworkRequest, QNetworkReply
@@ -26,22 +26,25 @@ if SYSTEM_LANG not in ["de", "en"]:
 
 TRANSLATIONS = {
     "de": {
-        "search_placeholder": "🔎 Durchsuche Repositories und das AUR...",
+        "search_placeholder": "🔎 Suche nach Apps...",
         "install": "Installieren",
         "remove": "Entfernen",
-        "status_installed": "✓ Installiert",
+        "status_installed": "Installierte Pakete",
         "status_available": "Verfügbar",
         "status_checking": "Prüfe...",
-        "status_queue": "⌛ In Warteschlange..."
+        "status_queue": "⌛ In Warteschlange...",
+        "update_state": "⚠️ Update verfügbar!"
     },
     "en": {
-        "search_placeholder": "🔎 Search repositories and AUR...",
+        "search_placeholder": "🔎 Search for apps...",
         "install": "Install",
         "remove": "Remove",
-        "status_installed": "✓ Installed",
+        "status_installed": "Installed packages",
         "status_available": "Available",
         "status_checking": "Checking...",
-        "status_queue": "⌛ Queued..."
+        "status_queue": "⌛ Queued...",
+        "update_state": "⚠️ Update available!"
+
     }
 }
 
@@ -52,7 +55,8 @@ def _(key):
 # 1. DIE APP-KACHEL
 # ==========================================================
 class AppCard(QFrame):
-    def __init__(self, name, description, pkg_name, icon_name=None, source="repo", flatpak_id=None):
+    # 1. Ändere die Definition der __init__, um den Status zu empfangen (ca. Zeile 46)
+    def __init__(self, name, description, pkg_name, icon_name=None, source="repo", flatpak_id=None, status="available"):
         super().__init__()
         self.pkg_name = pkg_name
         self.source = source
@@ -85,7 +89,7 @@ class AppCard(QFrame):
         name_label.setAlignment(Qt.AlignCenter)
         layout.addWidget(name_label)
         
-        # Beschreibung (Zweisprachig aus dem JSON-Dict extrahiert)
+        # Beschreibung
         desc_text = ""
         if isinstance(description, dict):
             desc_text = description.get(SYSTEM_LANG, description.get("de", ""))
@@ -117,7 +121,33 @@ class AppCard(QFrame):
         if self.flatpak_id and self.flatpak_id.strip():
             self.load_flathub_icon()
             
-        QTimer.singleShot(10, self.update_status_local)
+        # NEU: Kein QTimer-Pfadcheck mehr! Wir setzen direkt den Status der API
+        self.initial_status = status
+        self.update_status_local()
+
+    # 2. Ersetze die update_status_local Methode (ca. Zeile 116) komplett:
+    def update_status_local(self, status_override=None):
+        status = status_override if status_override else getattr(self, "initial_status", "available")
+        
+        if status == "update_available":
+            self.status_label.setText(_("update_state"))
+            self.status_label.setStyleSheet("font-size: 10px; color: #e67e22; font-weight: bold;")
+            self.btn.setText("Update")
+            self.btn.setStyleSheet("background-color: #2ecc71; border-radius: 8px; color: white; border: none;")
+            self.action_mode = "install"
+        elif status == "installed":
+            self.status_label.setText(_("status_installed"))
+            self.status_label.setStyleSheet("font-size: 10px; color: #2ecc71; font-weight: bold;")
+            self.btn.setText(_("remove"))
+            self.btn.setStyleSheet("background-color: #e74c3c; border-radius: 8px; color: white; border: none;")
+            self.action_mode = "remove"
+        else:
+            self.status_label.setText(_("status_available"))
+            self.status_label.setStyleSheet("font-size: 10px; color: #00f0ff; font-weight: bold;")
+            self.btn.setText(_("install"))
+            self.btn.setStyleSheet("background-color: #3daee9; border-radius: 8px; color: white; border: none;")
+            self.action_mode = "install"
+        self.btn.setEnabled(True)
 
     def set_system_fallback_icon(self):
         # Erkennt, ob ein absoluter Pfad (wie /usr/share/icons/mello.png) oder ein Theme-Name angegeben ist
@@ -141,22 +171,6 @@ class AppCard(QFrame):
             if pixmap.loadFromData(self.reply.readAll()):
                 self.icon_label.setPixmap(pixmap.scaled(64, 64, Qt.KeepAspectRatio, Qt.SmoothTransformation))
         self.reply.deleteLater()
-
-    def update_status_local(self):
-        is_installed = os.path.exists(f"/usr/bin/{self.pkg_name}") or \
-                       os.path.exists(f"/usr/bin/{self.pkg_name.split('-')[0]}")
-        
-        if is_installed:
-            self.status_label.setText(_("status_installed"))
-            self.btn.setText(_("remove"))
-            self.btn.setStyleSheet("background-color: #e74c3c; border-radius: 8px; color: white; border: none;")
-            self.action_mode = "remove"
-        else:
-            self.status_label.setText(_("status_available"))
-            self.btn.setText(_("install"))
-            self.btn.setStyleSheet("background-color: #3daee9; border-radius: 8px; color: white; border: none;")
-            self.action_mode = "install"
-        self.btn.setEnabled(True)
 
     def trigger_api_action(self):
         self.btn.setEnabled(False)
@@ -217,14 +231,10 @@ class AppCard(QFrame):
 class KaderStore(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Kader⁴² App Store")
-        self.resize(1240, 900)  # Höhe minimal erhöht für den Banner
+        self.setWindowTitle("Kader⁴² Software Center")
+        self.resize(1240, 900) 
         self.setStyleSheet("background-color: #0b0f19; color: white;")
         
-        # ==========================================================
-        # NEU: ANWENDUNGS-ICON ZUWEISEN
-        # ==========================================================
-        # Pfad zu deinem Logo (wähle einen der beiden Ansätze):
         app_icon_path = "/usr/share/icons/mello.png" 
         if os.path.exists(app_icon_path):
             self.setWindowIcon(QIcon(app_icon_path))
@@ -275,37 +285,48 @@ class KaderStore(QMainWindow):
         self.sidebar.itemClicked.connect(self.on_sidebar_clicked)
         content.addWidget(self.sidebar)
         
-        # Rechter Bereich: Aufgeteilt in Banner (oben) + Scroll-Grid (unten)
+        # Right-hand side: Divided into a banner (top) and a scrollable grid (bottom)
         right_layout = QVBoxLayout()
         right_layout.setSpacing(15)
         
         # ==========================================================
-        # NEU: HERO-BANNER MIT AUTOMATISCHEM FALLBACK
+        # HERO-BANNER (ZENTRIERT & TRANSPARENT - NATIV 1:1)
         # ==========================================================
         self.banner_label = QLabel()
-        self.banner_label.setFixedHeight(160)
-        self.banner_label.setAlignment(Qt.AlignCenter)
+        self.banner_label.setFixedWidth(376)
+        self.banner_label.setFixedHeight(210)
+        self.banner_label.setScaledContents(True)
         
-        # Pfad zu deiner zukünftigen Banner-Grafik
-        banner_path = "/usr/share/kader42/kader-store-banner.png"
+        banner_path = "/usr/share/kader42/software-center-banner.png"
         
         if os.path.exists(banner_path):
-            # Wenn deine Grafik existiert, laden und skalieren wir sie
+            # Da es ein PNG mit transparentem Hintergrund ist, laden wir es 1:1
             banner_pixmap = QPixmap(banner_path)
-            self.banner_label.setPixmap(banner_pixmap.scaled(920, 160, Qt.KeepAspectRatioByExpanding, Qt.SmoothTransformation))
-            self.banner_label.setStyleSheet("border-radius: 14px; background: #131926;")
+            self.banner_label.setPixmap(banner_pixmap)
+            
+            # WICHTIG: Keine Rahmen, kein Hintergrund – absolute Transparenz!
+            self.banner_label.setStyleSheet("""
+                QLabel {
+                    background: transparent;
+                    border: none;
+                }
+            """)
         else:
-            # Fallback: Ein schicker CSS-Farbverlauf, bis deine Grafik fertig ist
-            self.banner_label.setText("<h2>Kader⁴² Software Hub</h2><p style='color: #8fa0c4;'>Entdecke handverlesene Apps und Tools für dein Convertible.</p>")
+            # Schlichter, ausgerichteter Fallback, falls das Bild fehlt
+            self.banner_label.setText("<h2>Kader4² Software Center</h2>")
+            self.banner_label.setAlignment(Qt.AlignCenter)
             self.banner_label.setStyleSheet("""
                 QLabel { 
                     background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #1a233a, stop:1 #131926);
                     border: 1px solid #232e48;
                     border-radius: 14px;
-                    padding-left: 30px;
+                    color: white;
                 }
             """)
-        right_layout.addWidget(self.banner_label)
+            
+        # Hier ist die Magie: Qt.AlignCenter sorgt dafür, dass das transparente Kunstwerk
+        # immer exakt in der Mitte des rechten Bereichs schwebt.
+        right_layout.addWidget(self.banner_label, 0, Qt.AlignCenter)
         
         # Scroll-Bereich für das Kachel-Grid
         self.scroll = QScrollArea()
@@ -329,32 +350,52 @@ class KaderStore(QMainWindow):
 
         self.fetch_data()
     def fetch_data(self):
-        url = QUrl("https://kader42.de/repo/apps.json")
+        url = QUrl(f"{API_URL}/categories")
         self.network_manager.get(QNetworkRequest(url))
 
     def on_json_loaded(self, reply):
         if reply.error() == QNetworkReply.NoError:
             try:
-                self.apps_data = json.loads(reply.readAll().data().decode())
-                self.setup_sidebar()
+                raw_data = reply.readAll().data().decode()
+                data = json.loads(raw_data)
+                url_str = reply.url().toString()
+                
+                if "/categories" in url_str:
+                    # Füttert die Sidebar dynamisch aus der API
+                    self.apps_data = {"categories": data}
+                    self.setup_sidebar()
+                # HIER DIE KORREKTUR: Wir fangen AUCH /installed ab!
+                elif "/apps" in url_str or "/installed" in url_str:
+                    # Zeigt die Apps im Grid an
+                    self.render_category_apps(data)
+                    
             except Exception as e:
-                print(f"JSON Parse Fehler: {e}")
+                print(f"JSON Parse Fehler in GUI: {e}")
+        else:
+            print(f"Netzwerkfehler in GUI: {reply.errorString()}")
         reply.deleteLater()
 
     def setup_sidebar(self):
         self.sidebar.clear()
+        
+        # 1. Der feste "Installiert"-Eintrag ganz oben bekommt ein schickes System-Häkchen
+        installed_icon = QIcon.fromTheme("emblem-success-symbolic", QIcon.fromTheme("software-installed-panel"))
+        installed_item = QListWidgetItem(installed_icon, _("status_installed"))
+        installed_item.setData(Qt.UserRole, "kader_installed_view")
+        self.sidebar.addItem(installed_item)
+        
+        # 2. Die dynamischen Kategorien aus der API laden
         cats = self.apps_data.get("categories", [])
         for c in cats:
-            # Holt den übersetzten Kategorie-Namen (de oder en) aus der JSON
-            name = c["label"].get(SYSTEM_LANG, c["label"].get("de", "Apps"))
+            name = c.get(SYSTEM_LANG, c.get("de", "Apps"))
             
-            # Icon-Zuweisung (Unterstützt Pfade wie für mello.png und System-Themes)
-            icon_path = c.get("icon", "package-x-generic")
-            if os.path.isabs(icon_path) and os.path.exists(icon_path):
-                icon = QIcon(icon_path)
-            else:
-                icon = QIcon.fromTheme(icon_path, QIcon.fromTheme("package-x-generic"))
-                
+            # Wir holen den Icon-Namen aus der API. Falls keiner definiert ist, 
+            # nehmen wir "package-x-generic" als Fallback.
+            icon_name = c.get("icon", "package-x-generic")
+            
+            # Qt sucht das Icon jetzt live im aktiven KDE-Design
+            icon = QIcon.fromTheme(icon_name, QIcon.fromTheme("package-x-generic"))
+            
             item = QListWidgetItem(icon, name)
             item.setData(Qt.UserRole, c["id"])
             self.sidebar.addItem(item)
@@ -375,27 +416,35 @@ class KaderStore(QMainWindow):
         if not cur: return
         
         cat_id = cur.data(Qt.UserRole)
-        apps = self.apps_data.get("apps", {}).get(cat_id, [])
         
+        # NEU: Wenn die installierten Apps geklickt wurden, lade vom neuen Endpunkt
+        if cat_id == "kader_installed_view":
+            url = QUrl(f"{API_URL}/installed")
+            self.network_manager.get(QNetworkRequest(url))
+        else:
+            # Deine bestehende Logik für die normalen Kategorien
+            url = QUrl(f"{API_URL}/apps?category={cat_id}")
+            self.network_manager.get(QNetworkRequest(url))
+
+    def render_category_apps(self, apps):
         columns = 3
         for index, a in enumerate(apps):
             row = index // columns
             col = index % columns
             
-            # Heuristik für Flathub-Icons bei bekannten Standard-Apps
             flat_id = None
-            if a['package'] == "firefox": flat_id = "org.mozilla.firefox"
-            elif a['package'] == "vlc": flat_id = "org.videolan.VLC"
-            elif a['package'] == "gimp": flat_id = "org.gimp.GIMP"
-            elif a['package'] == "openboard": flat_id = "ch.openboard.OpenBoard"
+            pkg_lower = a['package_name'].lower()
+            if "firefox" in pkg_lower: flat_id = "org.mozilla.firefox"
+            elif "vlc" in pkg_lower: flat_id = "org.videolan.VLC"
             
             card = AppCard(
                 a['name'], 
-                a.get('desc', ''), 
-                a['package'], 
-                icon_name=a.get('icon'), 
-                source=a.get('source', 'repo'),
-                flatpak_id=flat_id
+                a['description'], 
+                a['package_name'], 
+                icon_name="package-x-generic", 
+                source=a['source'],
+                flatpak_id=flat_id,
+                status=a['status']
             )
             self.grid_layout.addWidget(card, row, col)
 
