@@ -71,24 +71,26 @@ def execute_package_action(job):
     pkg_name = job['package_name']
     action = job['action']
     
-    # Sicherheits-Check
     if not pkg_name.isalnum() and not any(c in pkg_name for c in ['-', '_', '+', '.']):
         raise ValueError("Ungültiger Paketname!")
 
-    if action == "install":
+    if action in ["install", "update"]:
         update_progress(job_id, "installing", 20)
-        # yay läuft direkt im Kontext des Users. 
-        # --sudoloop hält das sudo-Echtzeittoken warm, falls der Build länger dauert.
-        cmd = ["yay", "-Sy", "--noconfirm", "--sudoloop", pkg_name]
+        # Bleibt so: yay baut im User-Kontext, sudoloop hält es offen
+        cmd = ["/usr/bin/yay", "-Sy", "--noconfirm", "--sudoloop", pkg_name]
             
     elif action == "remove":
         update_progress(job_id, "removing", 20)
-        cmd = ["yay", "-Rns", "--noconfirm", pkg_name]
+        # pkexec öffnet das native, wunderschöne KDE-Polkit-Passwortfenster.
+        # Da drunter rufen wir direkt yay auf, das dann sofort die nötigen Rechte hat!
+        cmd = ["/usr/bin/pkexec", "/usr/bin/yay", "-Rns", "--noconfirm", pkg_name]
+    else:
+        return
 
-    # Befehl ausführen
-    process = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    process = subprocess.run(cmd, capture_output=True, text=True)
     
     if process.returncode != 0:
+        print(f"Worker-Fehler bei {action} von {pkg_name}: {process.stderr}")
         raise Exception(f"Fehler bei {action}: {process.stderr if process.stderr else process.stdout}")
 
 def recovery_on_startup():

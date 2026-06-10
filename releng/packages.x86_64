@@ -36,6 +36,7 @@ libhandy
 libadwaita
 archlinux-keyring
 cups
+system-config-printer
 pambase
 bolt
 alsa-ucm-conf

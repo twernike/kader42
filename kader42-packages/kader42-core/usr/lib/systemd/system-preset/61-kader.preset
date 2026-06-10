@@ -2,3 +2,4 @@ enable sddm.service
 enable NetworkManager.service
 enable iio-sensor-proxy.service
 enable bluetooth.service
+enable cups.service

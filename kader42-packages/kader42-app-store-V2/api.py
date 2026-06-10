@@ -27,19 +27,18 @@ class StoreAPIHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         url_parts = urllib.parse.urlparse(self.path)
         query_params = urllib.parse.parse_qs(url_parts.query)
+        path_str = url_parts.path
         
         # 1. ENDPOINT: Kategorien abrufen
-        if url_parts.path == "/categories":
+        if path_str == "/categories":
             self._set_headers(200)
             self.wfile.write(json.dumps(CATEGORY_DEFINITIONS).encode('utf-8'))
 
         # 2. ENDPOINT: Apps einer Kategorie ODER freie Suche
-        elif url_parts.path == "/apps":
+        elif path_str == "/apps":
             search_term = ""
-            # WICHTIG: Hier prüfen wir, ob die Kategorie angefragt wurde
             if "category" in query_params:
                 cat_id = query_params["category"][0]
-                # Suche die passende Kategorie-Definition
                 cat = next((c for c in CATEGORY_DEFINITIONS if c["id"] == cat_id), None)
                 if cat:
                     search_term = cat["query"]
@@ -51,15 +50,33 @@ class StoreAPIHandler(BaseHTTPRequestHandler):
                 self._set_headers(200)
                 self.wfile.write(json.dumps(results).encode('utf-8'))
             else:
-                # Falls nichts gefunden wurde, leeres Array statt 400er Fehler, 
-                # damit das UI nicht abstürzt
                 self._set_headers(200)
                 self.wfile.write(json.dumps([]).encode('utf-8'))
-        # 4. ENDPOINT: Installierte Apps & Updates abrufen (In do_GET einbauen)
-        elif url_parts.path == "/installed":
+
+        # 3. ENDPOINT: Installierte Apps & Updates abrufen
+        elif path_str == "/installed":
             results = self.get_installed_apps_and_updates()
             self._set_headers(200)
             self.wfile.write(json.dumps(results).encode('utf-8'))
+
+        # ==========================================================
+        # NEU: HIER WAR DAS LOCH! ENDPOINT: Job-Status abfragen (/job/<id>)
+        # ==========================================================
+        elif path_str.startswith("/job/"):
+            try:
+                # Schneidet das "/job/" ab, um die ID als Zahl zu bekommen
+                job_id_str = path_str.split("/")[-1]
+                job_id = int(job_id_str)
+                
+                # Holt den Status direkt aus der SQLite-Datenbank
+                status_data = self.get_job_status(job_id)
+                
+                self._set_headers(200)
+                self.wfile.write(json.dumps(status_data).encode('utf-8'))
+            except Exception as e:
+                print(f"API Fehler beim Job-Polling: {e}")
+                self._set_headers(400)
+                self.wfile.write(json.dumps({"error": "Invalid Job ID"}).encode('utf-8'))
 
     def do_POST(self):
         if self.path == "/job":
@@ -78,105 +95,106 @@ class StoreAPIHandler(BaseHTTPRequestHandler):
                 
             job_id = self.queue_job(pkg_name, source, action)
             self._set_headers(201)
-            self.wfile.write(json.dumps({"job_id": job_id, "status": "queued"}).encode('utf-8'))
+            self.wfile.write(json.dumps({"id": job_id, "status": "queued"}).encode('utf-8'))
 
     def search_via_yay(self, query):
         apps_found = []
-        is_category = " " in query
-        
-        # ==========================================================
-        # BLITZSCHNELLE KATEGORIE-ERKENNUNG (MILLISEKUNDEN-TAKT)
-        # ==========================================================
-        if is_category:
-            terms = [t.strip() for t in query.split(" ") if t.strip()]
-            
-            # Einmaliger Check, welche der gängigen VS Code Varianten auf dem Framework installiert ist
-            aliases = ["code", "visual-studio-code-bin", "vscodium-bin"]
-            installed_vs_code = None
-            for x in aliases:
-                if os.path.exists(f"/var/lib/pacman/local") and any(d.startswith(f"{x}-") for d in os.listdir("/var/lib/pacman/local")):
-                    installed_vs_code = x
-                    break
+        query = query.strip().lower()
+        if not query:
+            return []
 
-            for term in terms:
-                # Wir ermitteln den Status, indem wir direkt im lokalen Pacman-Verzeichnis nachsehen
-                # Das ist unendlich viel schneller als ein subprocess-Aufruf!
-                is_installed = False
-                if os.path.exists("/var/lib/pacman/local"):
-                    # Schaut nach, ob ein Ordner mit dem Paketnamen im lokalen Repo existiert
-                    is_installed = any(d.startswith(f"{term}-") for d in os.listdir("/var/lib/pacman/local"))
-                
-                source_type = "repo"
-                pkg_name = term
-                status_type = "installed" if is_installed else "available"
-
-                # Spezifischer VS-Code Matcher
-                if term == "code" and installed_vs_code:
-                    pkg_name = installed_vs_code
-                    status_type = "installed"
-                    if installed_vs_code == "visual-studio-code-bin":
-                        source_type = "aur"
-                elif term == "visual-studio-code-bin" and installed_vs_code == "visual-studio-code-bin":
-                    status_type = "installed"
-                    source_type = "aur"
-
-                # Schöne, saubere Standardbeschreibungen für die Core-Apps deiner Distribution
-                descriptions = {
-                    "code": "Offizieller Open-Source Build von Visual Studio Code.",
-                    "visual-studio-code-bin": "Microsoft Visual Studio Code (Binärversion aus dem AUR).",
-                    "vscodium-bin": "Telemetriefreier Community-Build von VS Code.",
-                    "firefox": "Sicherer und flexibler Open-Source Webbrowser.",
-                    "chromium": "Die Open-Source Basis hinter Google Chrome.",
-                    "gimp": "Professionelles Programm zur Bildbearbeitung und Manipulation.",
-                    "vlc": "Universeller Medienabspieler für nahezu alle Formate.",
-                    "libreoffice-fresh": "Umfangreiche und freie Office-Suite (Aktuellster Zweig).",
-                    "openboard": "Interaktive Whiteboard-Software für den Bildungsbereich."
-                }
-                desc = descriptions.get(pkg_name, f"System-Paket aus Kader⁴² ({source_type.upper()}).")
-
-                apps_found.append({
-                    "name": pkg_name.replace("-bin", "").capitalize(),
-                    "package_name": pkg_name,
-                    "description": desc,
-                    "source": source_type,
-                    "status": status_type,
-                    "icon_path": "/usr/share/pixmaps/nobody.png"
-                })
-            return apps_found
-
-        # ==========================================================
-        # NORMALE LIVE-SUCHE (Bleibt bei yay für freie Suchen im Suchfeld)
-        # ==========================================================
-        cmd = ["yay", "-Ss", "--noconfirm", query]
+        # 1. ROBUSTER LOKALER STATUS-CACHE (Allgemeingültig für Arch Linux)
+        installed_packages = set()
+        updates_available = set()
         try:
-            res = subprocess.run(cmd, capture_output=True, text=True)
+            if os.path.exists("/var/lib/pacman/local"):
+                for d in os.listdir("/var/lib/pacman/local"):
+                    if not d or "-" not in d: continue
+                    
+                    # Arch-Ordner-Logik: [paketname]-[version]-[release]
+                    # Wir gehen von hinten durch den Ordnernamen, um den Start der Version zu finden
+                    parts = d.split("-")
+                    # Die Version beginnt im Regelfall mit einer Zahl (z.B. "126.0")
+                    # Wir suchen das erste Element von hinten, das mit einer Ziffer startet
+                    for i in range(len(parts) - 1, 0, -1):
+                        if parts[i] and parts[i][0].isdigit():
+                            # Alles vor diesem Element ist der echte Paketname!
+                            pkg_name = "-".join(parts[:i])
+                            installed_packages.add(pkg_name)
+                            break
+
+            # Updates via yay holen
+            res_upd = subprocess.run("yay -Qu", shell=True, capture_output=True, text=True)
+            for line in res_upd.stdout.split("\n"):
+                if line.strip():
+                    updates_available.add(line.split(" ")[0].strip())
+        except Exception as e:
+            print(f"API Such-Vorbehandlung Fehler: {e}")
+
+        # 2. SUCHE AUSFÜHREN
+        is_category = " " in query
+        cmd = f"yay -Ss {query}" if not is_category else f"yay -Ss {' '.join(query.split())}"
+        
+        try:
+            res = subprocess.run(cmd, shell=True, capture_output=True, text=True)
             lines = res.stdout.split("\n")
-        except Exception:
+            
+            current_pkg = None
+            for line in lines:
+                line_stripped = line.strip()
+                if not line_stripped: continue
+                
+                if "/" in line_stripped and not line_stripped.startswith("http"):
+                    try:
+                        parts = line_stripped.split("/")
+                        repo = parts[0].strip()
+                        pkg_name = parts[1].split(" ")[0].strip()
+                        source_type = "aur" if repo.lower() == "aur" else "repo"
+                        
+                        current_pkg = {
+                            "package_name": pkg_name,
+                            "name": pkg_name.replace("-bin", "").replace("-git", "").capitalize(),
+                            "source": source_type,
+                            "description": ""
+                        }
+                    except:
+                        current_pkg = None
+                
+                elif current_pkg and not line_stripped.startswith("    "):
+                    current_pkg["description"] = line_stripped
+                    p_name = current_pkg["package_name"]
+                    
+                    # Status-Zuweisung greift jetzt perfekt auf das Set zu!
+                    if p_name in updates_available:
+                        current_pkg["status"] = "update_available"
+                    elif p_name in installed_packages:
+                        current_pkg["status"] = "installed"
+                    else:
+                        current_pkg["status"] = "available"
+                    
+                    # Core-Beschreibungen (Token)
+                    core_descriptions = {
+                        "code": "desc_core_code", "visual-studio-code-bin": "desc_core_vscode_bin",
+                        "vscodium-bin": "desc_core_vscodium", "firefox": "desc_core_firefox",
+                        "chromium": "desc_core_chromium", "gimp": "desc_core_gimp",
+                        "vlc": "desc_core_vlc", "libreoffice-fresh": "desc_core_libreoffice",
+                        "openboard": "desc_core_openboard"
+                    }
+                    if p_name in core_descriptions:
+                        current_pkg["description"] = core_descriptions[p_name]
+                    elif is_category:
+                        current_pkg["description"] = "desc_generic_system"
+
+                    apps_found.append(current_pkg)
+                    current_pkg = None
+                    
+                if len(apps_found) >= 15:
+                    break
+                    
             return apps_found
-
-        # (Hier läuft deine bestehende yay-Suchschleife für das freie Suchfeld weiter...)
-        # ... ab hier unverändert wie vorher ...
-        for i in range(0, len(lines) - 1, 2):
-            if not lines[i].strip(): continue
-            meta = lines[i].split("/")
-            if len(meta) < 2: continue
-            repo_source = meta[0].strip()
-            pkg_name = meta[1].split(" ")[0].strip()
-            desc = lines[i+1].strip() if i+1 < len(lines) else ""
-            source_type = "aur" if repo_source.lower() == "aur" else "repo"
-            status_type = "installed" if "(installiert" in lines[i].lower() or "[installed" in lines[i].lower() else "available"
-
-            apps_found.append({
-                "name": pkg_name.capitalize(),
-                "package_name": pkg_name,
-                "description": desc,
-                "source": source_type,
-                "status": status_type,
-                "icon_path": "/usr/share/pixmaps/nobody.png"
-            })
-            if len(apps_found) >= 15: break
-
-        return apps_found
+        except Exception as e:
+            print(f"Fehler bei API-Suche: {e}")
+            return []
     
     def queue_job(self, pkg_name, source, action):
         with sqlite3.connect(DB_PATH, timeout=20.0) as conn:
@@ -266,7 +284,7 @@ class StoreAPIHandler(BaseHTTPRequestHandler):
             apps.append({
                 "name": pkg.replace("-bin", "").replace("-git", "").capitalize(),
                 "package_name": pkg,
-                "description": desc_key, # Hier wandert jetzt der Key rein!
+                "description": desc_key, # This is where the key goes!
                 "source": source_type,
                 "status": status_type,
                 "icon_path": "/usr/share/pixmaps/nobody.png"

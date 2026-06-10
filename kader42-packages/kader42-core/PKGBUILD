@@ -1,10 +1,10 @@
 # Maintainer: Thomas Wernike <support@kader42.de>
 pkgname=kader42-core
 pkgver=1.0.2
-pkgrel=3
+pkgrel=4
 pkgdesc="Core configurations and systemd units for Kader42"
 arch=('any')
-depends=('bash' 'dbus' 'kader42-hooks')
+depends=('bash' 'dbus' 'kader42-hooks' 'system-config-printer' 'cups')
 install=kader42-core.install
 source=('kader42-cleanup.service')
 
