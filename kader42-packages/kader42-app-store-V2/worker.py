@@ -77,7 +77,9 @@ def execute_package_action(job):
     if action in ["install", "update"]:
         update_progress(job_id, "installing", 20)
         # Bleibt so: yay baut im User-Kontext, sudoloop hält es offen
-        cmd = ["/usr/bin/yay", "-Sy", "--noconfirm", "--sudoloop", pkg_name]
+        # cmd = ["/usr/bin/yay", "-Sy", "--noconfirm", "--sudoloop", pkg_name]
+        cmd = ["/usr/bin/pkexec", "/usr/bin/yay", "-Sy", "--noconfirm", pkg_name]
+
             
     elif action == "remove":
         update_progress(job_id, "removing", 20)

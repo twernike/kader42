@@ -103,27 +103,20 @@ class StoreAPIHandler(BaseHTTPRequestHandler):
         if not query:
             return []
 
-        # 1. ROBUSTER LOKALER STATUS-CACHE (Allgemeingültig für Arch Linux)
+        # 1. ROBUSTER LOKALER STATUS-CACHE
         installed_packages = set()
         updates_available = set()
         try:
             if os.path.exists("/var/lib/pacman/local"):
                 for d in os.listdir("/var/lib/pacman/local"):
                     if not d or "-" not in d: continue
-                    
-                    # Arch-Ordner-Logik: [paketname]-[version]-[release]
-                    # Wir gehen von hinten durch den Ordnernamen, um den Start der Version zu finden
                     parts = d.split("-")
-                    # Die Version beginnt im Regelfall mit einer Zahl (z.B. "126.0")
-                    # Wir suchen das erste Element von hinten, das mit einer Ziffer startet
                     for i in range(len(parts) - 1, 0, -1):
                         if parts[i] and parts[i][0].isdigit():
-                            # Alles vor diesem Element ist der echte Paketname!
                             pkg_name = "-".join(parts[:i])
                             installed_packages.add(pkg_name)
                             break
 
-            # Updates via yay holen
             res_upd = subprocess.run("yay -Qu", shell=True, capture_output=True, text=True)
             for line in res_upd.stdout.split("\n"):
                 if line.strip():
@@ -131,24 +124,39 @@ class StoreAPIHandler(BaseHTTPRequestHandler):
         except Exception as e:
             print(f"API Such-Vorbehandlung Fehler: {e}")
 
-        # 2. SUCHE AUSFÜHREN
-        is_category = " " in query
-        cmd = f"yay -Ss {query}" if not is_category else f"yay -Ss {' '.join(query.split())}"
+        # 2. WEICHE: KATEGORIE (Exakte Paketliste) vs. FREIE SUCHE
+        # Wir prüfen, ob die Query aus den CATEGORY_DEFINITIONS stammt
+        is_category = any(c["query"] == query for c in CATEGORY_DEFINITIONS) or " " in query
+
+        if is_category:
+            # Bei Kategorien fragen wir die exakten Pakete direkt via info (-Si) ab
+            package_list = query.split()
+            # Um das AUR nicht zu überlasten, nutzen wir pacman/yay effizient
+            cmd = f"yay -Si {' '.join(package_list)}"
+        else:
+            # Bei der freien Suche nutzen wir weiterhin die reguläre Suche (-Ss)
+            cmd = f"yay -Ss {query}"
         
         try:
             res = subprocess.run(cmd, shell=True, capture_output=True, text=True)
             lines = res.stdout.split("\n")
             
             current_pkg = None
-            for line in lines:
-                line_stripped = line.strip()
-                if not line_stripped: continue
+            
+            if is_category:
+                # PARSER FÜR 'yay -Si' (Kategorien)
+                repo = "repo"  # Sicherer Fallback-Wert vorab initialisiert!
                 
-                if "/" in line_stripped and not line_stripped.startswith("http"):
-                    try:
-                        parts = line_stripped.split("/")
-                        repo = parts[0].strip()
-                        pkg_name = parts[1].split(" ")[0].strip()
+                for line in lines:
+                    line_stripped = line.strip()
+                    if not line_stripped: continue
+                    
+                    # Erkennt Repository oder Datenbank (egal ob DE oder EN)
+                    if any(line_stripped.startswith(x) for x in ["Repository", "Datenbank", "Database"]):
+                        repo = line_stripped.split(":")[-1].strip()
+                        
+                    elif any(line_stripped.startswith(x) for x in ["Name", "Package Name"]):
+                        pkg_name = line_stripped.split(":")[-1].strip()
                         source_type = "aur" if repo.lower() == "aur" else "repo"
                         
                         current_pkg = {
@@ -157,40 +165,85 @@ class StoreAPIHandler(BaseHTTPRequestHandler):
                             "source": source_type,
                             "description": ""
                         }
-                    except:
-                        current_pkg = None
-                
-                elif current_pkg and not line_stripped.startswith("    "):
-                    current_pkg["description"] = line_stripped
-                    p_name = current_pkg["package_name"]
-                    
-                    # Status-Zuweisung greift jetzt perfekt auf das Set zu!
-                    if p_name in updates_available:
-                        current_pkg["status"] = "update_available"
-                    elif p_name in installed_packages:
-                        current_pkg["status"] = "installed"
-                    else:
-                        current_pkg["status"] = "available"
-                    
-                    # Core-Beschreibungen (Token)
-                    core_descriptions = {
-                        "code": "desc_core_code", "visual-studio-code-bin": "desc_core_vscode_bin",
-                        "vscodium-bin": "desc_core_vscodium", "firefox": "desc_core_firefox",
-                        "chromium": "desc_core_chromium", "gimp": "desc_core_gimp",
-                        "vlc": "desc_core_vlc", "libreoffice-fresh": "desc_core_libreoffice",
-                        "openboard": "desc_core_openboard"
-                    }
-                    if p_name in core_descriptions:
-                        current_pkg["description"] = core_descriptions[p_name]
-                    elif is_category:
-                        current_pkg["description"] = "desc_generic_system"
+                        
+                    elif any(line_stripped.startswith(x) for x in ["Beschreibung", "Description"]):
+                        if current_pkg:
+                            current_pkg["description"] = line_stripped.split(":")[-1].strip()
+                            p_name = current_pkg["package_name"]
+                            
+                            # Status zuweisen
+                            if p_name in updates_available:
+                                current_pkg["status"] = "update_available"
+                            elif p_name in installed_packages:
+                                current_pkg["status"] = "installed"
+                            else:
+                                current_pkg["status"] = "available"
+                            
+                            # Core-Token zuweisen
+                            core_descriptions = {
+                                "code": "desc_core_code", "visual-studio-code-bin": "desc_core_vscode_bin",
+                                "vscodium-bin": "desc_core_vscodium", "firefox": "desc_core_firefox",
+                                "chromium": "desc_core_chromium", "gimp": "desc_core_gimp",
+                                "vlc": "desc_core_vlc", "libreoffice-fresh": "desc_core_libreoffice",
+                                "openboard": "desc_core_openboard"
+                            }
+                            if p_name in core_descriptions:
+                                current_pkg["description"] = core_descriptions[p_name]
+                            else:
+                                current_pkg["description"] = "desc_generic_system"
 
-                    apps_found.append(current_pkg)
-                    current_pkg = None
+                            apps_found.append(current_pkg)
+                            current_pkg = None
+                            repo = "repo" # Reset für das nächste Paket in der Liste
+            else:
+                # PARSER FÜR 'yay -Ss' (Freie Suche - bleibt wie gehabt)
+                for line in lines:
+                    line_stripped = line.strip()
+                    if not line_stripped: continue
                     
-                if len(apps_found) >= 15:
-                    break
+                    if "/" in line_stripped and not line_stripped.startswith("http"):
+                        try:
+                            parts = line_stripped.split("/")
+                            repo = parts[0].strip()
+                            pkg_name = parts[1].split(" ")[0].strip()
+                            source_type = "aur" if repo.lower() == "aur" else "repo"
+                            
+                            current_pkg = {
+                                "package_name": pkg_name,
+                                "name": pkg_name.replace("-bin", "").replace("-git", "").capitalize(),
+                                "source": source_type,
+                                "description": ""
+                            }
+                        except:
+                            current_pkg = None
                     
+                    elif current_pkg and not line_stripped.startswith("    "):
+                        current_pkg["description"] = line_stripped
+                        p_name = current_pkg["package_name"]
+                        
+                        if p_name in updates_available:
+                            current_pkg["status"] = "update_available"
+                        elif p_name in installed_packages:
+                            current_pkg["status"] = "installed"
+                        else:
+                            current_pkg["status"] = "available"
+                        
+                        core_descriptions = {
+                            "code": "desc_core_code", "visual-studio-code-bin": "desc_core_vscode_bin",
+                            "vscodium-bin": "desc_core_vscodium", "firefox": "desc_core_firefox",
+                            "chromium": "desc_core_chromium", "gimp": "desc_core_gimp",
+                            "vlc": "desc_core_vlc", "libreoffice-fresh": "desc_core_libreoffice",
+                            "openboard": "desc_core_openboard"
+                        }
+                        if p_name in core_descriptions:
+                            current_pkg["description"] = core_descriptions[p_name]
+
+                        apps_found.append(current_pkg)
+                        current_pkg = None
+                        
+                    if len(apps_found) >= 15:
+                        break
+                        
             return apps_found
         except Exception as e:
             print(f"Fehler bei API-Suche: {e}")

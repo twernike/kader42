@@ -4,8 +4,8 @@ import json
 import locale
 from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, 
                              QHBoxLayout, QLabel, QLineEdit, QPushButton, 
-                             QListWidget, QListWidgetItem, QScrollArea, QFrame, QGridLayout, QSizePolicy)
-from PySide6.QtCore import Qt, QSize, QTimer, QUrl, Signal
+                             QListWidget, QListWidgetItem, QScrollArea, QFrame, QGridLayout, QSizePolicy, QScroller, QScrollerProperties)
+from PySide6.QtCore import Qt, QSize, QTimer, QUrl, Signal, QEvent
 from PySide6.QtGui import QFont, QIcon, QPixmap
 from PySide6.QtNetwork import QNetworkAccessManager, QNetworkRequest, QNetworkReply
 
@@ -80,6 +80,7 @@ def _(key):
 # ==========================================================
 class AppCard(QFrame):
     job_completed_signal = Signal()
+
     def __init__(self, name, description, pkg_name, icon_name=None, source="repo", flatpak_id=None, status="available"):
         super().__init__()
         self.pkg_name = pkg_name
@@ -87,6 +88,7 @@ class AppCard(QFrame):
         self.flatpak_id = flatpak_id
         self.icon_name = icon_name if icon_name else "package-x-generic"
         self.current_job_id = None
+        self.action_mode = "install"  
         
         self.setObjectName("AppCard")
         self.setFixedSize(240, 280)
@@ -131,12 +133,38 @@ class AppCard(QFrame):
         self.status_label.setAlignment(Qt.AlignCenter)
         layout.addWidget(self.status_label)
         
-        self.btn = QPushButton(_("install"))
-        self.btn.setFont(QFont("Cantarell", 10, QFont.Weight.Bold))
-        self.btn.setFixedHeight(35)
+        # ==========================================================
+        # 2-BUTTON LAYOUT (Griffig für Touch)
+        # ==========================================================
+        self.button_container = QHBoxLayout()
+        self.button_container.setSpacing(12)
+        self.button_container.setAlignment(Qt.AlignCenter)
+        self.button_container.setContentsMargins(0, 0, 0, 0)
+        
+        # 1. BUTTON (Links): Update
+        self.btn = QPushButton()
+        self.btn.setFixedSize(90, 50)
         self.btn.setCursor(Qt.PointingHandCursor)
+        self.btn.setIcon(QIcon.fromTheme("update-none", QIcon.fromTheme("go-up")))
+        self.btn.setIconSize(QSize(25, 25))
+        
+        # WICHTIG: Damit Touch den Klick sofort auslöst und nicht verschluckt
+        self.btn.setAttribute(Qt.WA_TouchPadAcceptSingleTouchEvents, True)
         self.btn.clicked.connect(self.trigger_api_action)
-        layout.addWidget(self.btn)
+        
+        # 2. BUTTON (Rechts): Install / Remove
+        self.extra_remove_btn = QPushButton()
+        self.extra_remove_btn.setFixedSize(90, 50)
+        self.extra_remove_btn.setCursor(Qt.PointingHandCursor)
+        self.extra_remove_btn.setIconSize(QSize(25, 25))
+        
+        # WICHTIG: Damit Touch den Klick sofort auslöst und nicht verschluckt
+        self.extra_remove_btn.setAttribute(Qt.WA_TouchPadAcceptSingleTouchEvents, True)
+        self.extra_remove_btn.clicked.connect(self.trigger_extra_remove)
+
+        self.button_container.addWidget(self.btn)
+        self.button_container.addWidget(self.extra_remove_btn)
+        layout.addLayout(self.button_container)
         
         self.nav_manager = QNetworkAccessManager(self)
         
@@ -145,52 +173,51 @@ class AppCard(QFrame):
             
         self.initial_status = status
         self.update_status_local()
-
+ 
     def update_status_local(self, status_override=None):
         status = status_override if status_override else getattr(self, "initial_status", "available")
+        
+        if not hasattr(self, 'extra_remove_btn'): return
+        
+        self.btn.setEnabled(True)
+        self.extra_remove_btn.setEnabled(True)
         
         if status == "removed_success":
             self.status_label.setText("🗑️ Paket entfernt") if SYSTEM_LANG == "de" else self.status_label.setText("🗑️ Package removed")
             self.status_label.setStyleSheet("font-size: 10px; color: #e74c3c; font-weight: bold;")
-            self.btn.setText(_("status_available"))
-            self.btn.setStyleSheet("background-color: #3daee9; border-radius: 8px; color: white; border: none;")
-            self.action_mode = "install"
-            self.btn.setEnabled(True)
-            
-        elif status == "installed_success":
-            self.status_label.setText("✅ Installiert") if SYSTEM_LANG == "de" else self.status_label.setText("✅ Installed")
+            self.btn.setEnabled(False)
+            self.btn.setStyleSheet("background-color: #232e48; border-radius: 8px; border: none; opacity: 0.5;")
+            self.extra_remove_btn.setIcon(QIcon.fromTheme("system-software-install", QIcon.fromTheme("go-down")))
+            self.extra_remove_btn.setStyleSheet("background-color: #3daee9; border-radius: 8px; border: none;")
+
+        elif status in ["installed_success", "installed"]:
+            if status == "installed_success":
+                self.status_label.setText("✅ Installiert") if SYSTEM_LANG == "de" else self.status_label.setText("✅ Installed")
+            else:
+                self.status_label.setText(_("status_installed"))
             self.status_label.setStyleSheet("font-size: 10px; color: #2ecc71; font-weight: bold;")
-            self.btn.setText(_("remove"))
-            self.btn.setStyleSheet("background-color: #e74c3c; border-radius: 8px; color: white; border: none;")
-            self.action_mode = "remove"
-            self.btn.setEnabled(True)
+            self.btn.setEnabled(False)
+            self.btn.setStyleSheet("background-color: #232e48; border-radius: 8px; border: none; opacity: 0.5;")
+            self.extra_remove_btn.setIcon(QIcon.fromTheme("user-trash"))
+            self.extra_remove_btn.setStyleSheet("background-color: #e74c3c; border-radius: 8px; border: none;")
 
         elif status == "update_available":
-            self.status_label.setText(_("update_state"))
+            self.status_label.setText(_("update_state") if _("update_state") else "⚠️ Update")
             self.status_label.setStyleSheet("font-size: 10px; color: #e67e22; font-weight: bold;")
-            self.btn.setText("Update")
-            self.btn.setStyleSheet("background-color: #2ecc71; border-radius: 8px; color: white; border: none;")
+            self.btn.setStyleSheet("background-color: #2ecc71; border-radius: 8px; border: none;")
             self.action_mode = "install"
-            self.btn.setEnabled(True)
-            
-        elif status == "installed":
-            self.status_label.setText(_("status_installed"))
-            self.status_label.setStyleSheet("font-size: 10px; color: #2ecc71; font-weight: bold;")
-            self.btn.setText(_("remove"))
-            self.btn.setStyleSheet("background-color: #e74c3c; border-radius: 8px; color: white; border: none;")
-            self.action_mode = "remove"
-            self.btn.setEnabled(True)
+            self.extra_remove_btn.setIcon(QIcon.fromTheme("user-trash"))
+            self.extra_remove_btn.setStyleSheet("background-color: #e74c3c; border-radius: 8px; border: none;")
             
         else:
             self.status_label.setText(_("status_available"))
             self.status_label.setStyleSheet("font-size: 10px; color: #00f0ff; font-weight: bold;")
-            self.btn.setText(_("install"))
-            self.btn.setStyleSheet("background-color: #3daee9; border-radius: 8px; color: white; border: none;")
-            self.action_mode = "install"
-            self.btn.setEnabled(True)
+            self.btn.setEnabled(False)
+            self.btn.setStyleSheet("background-color: #232e48; border-radius: 8px; border: none; opacity: 0.5;")
+            self.extra_remove_btn.setIcon(QIcon.fromTheme("system-software-install", QIcon.fromTheme("go-down")))
+            self.extra_remove_btn.setStyleSheet("background-color: #3daee9; border-radius: 8px; border: none;")
 
     def set_system_fallback_icon(self):
-        # Determines whether an absolute path (such as /usr/share/icons/mello.png) or a theme name has been specified
         if os.path.isabs(self.icon_name) and os.path.exists(self.icon_name):
             pixmap = QPixmap(self.icon_name)
             self.icon_label.setPixmap(pixmap.scaled(64, 64, Qt.KeepAspectRatio, Qt.SmoothTransformation))
@@ -213,13 +240,31 @@ class AppCard(QFrame):
         self.reply.deleteLater()
 
     def trigger_api_action(self):
+        print(f"➔ API Trigger: Update geklickt für {self.pkg_name}")
+        self.send_api_job(self.action_mode)
+        self.lock_ui_for_job()
+
+    def trigger_extra_remove(self):
+        print(f"➔ API Trigger: Install/Remove geklickt für {self.pkg_name}")
+        current_status_text = self.status_label.text()
+        if "install" in current_status_text.lower() or "update" in current_status_text.lower() or "✅" in current_status_text:
+            target_action = "remove"
+        else:
+            target_action = "install"
+            
+        self.send_api_job(target_action)
+        self.lock_ui_for_job()
+
+    def lock_ui_for_job(self):
         self.btn.setEnabled(False)
+        self.extra_remove_btn.setEnabled(False)
         self.status_label.setText(_("status_queue"))
-        
+
+    def send_api_job(self, action):
+        print(f"📡 Sende POST an API: {API_URL}/job | Paket: {self.pkg_name} | Aktion: {action}")
         req = QNetworkRequest(QUrl(f"{API_URL}/job"))
         req.setHeader(QNetworkRequest.ContentTypeHeader, "application/json")
-        
-        job_data = {"package_name": self.pkg_name, "source": self.source, "action": self.action_mode}
+        job_data = {"package_name": self.pkg_name, "source": self.source, "action": action}
         payload = json.dumps(job_data).encode("utf-8")
         
         reply = self.nav_manager.post(req, payload)
@@ -230,13 +275,16 @@ class AppCard(QFrame):
             try:
                 response_data = json.loads(reply.readAll().data().decode())
                 self.current_job_id = response_data.get("id")
+                print(f"✅ Job erfolgreich erstellt! ID: {self.current_job_id}")
                 self.poll_timer = QTimer(self)
                 self.poll_timer.timeout.connect(self.poll_job_status)
                 self.poll_timer.start(1000)
-            except:
-                self.btn.setEnabled(True)
+            except Exception as e:
+                print(f"❌ Fehler beim Parsen der Job-ID: {e}")
+                self.update_status_local()
         else:
-            self.btn.setEnabled(True)
+            print(f"❌ API-Fehler beim Senden des Jobs: {reply.errorString()}")
+            self.update_status_local()
         reply.deleteLater()
 
     def poll_job_status(self):
@@ -249,35 +297,32 @@ class AppCard(QFrame):
         if reply.error() == QNetworkReply.NoError:
             try:
                 data = reply.readAll().data().decode()
-                # print(f"DEBUG API-Antwort: {data}") # <-- Auskommentieren, um die Rohdaten zu sehen
-                
                 job = json.loads(data)
                 status = job.get("status")
                 
                 if status in ["installing", "removing", "building_aur", "running"]:
                     self.status_label.setText(f"⌛ {status}")
                 elif status == "completed":
-                    print(f"➔ AppCard ({self.pkg_name}): Status ist completed! Stoppe Timer.")
+                    print(f"➔ AppCard ({self.pkg_name}): State is completed! Stop timer...")
                     self.poll_timer.stop()
                     
-                    # Wir prüfen anhand des aktuellen Button-Textes oder der Beschriftung,
-                    # was wir eigentlich gerade getan haben:
-                    if self.btn.text() == _("remove") or "removing" in self.status_label.text():
+                    if "remov" in self.status_label.text().lower():
                         self.update_status_local("removed_success")
                     else:
                         self.update_status_local("installed_success")
                         
                     self.job_completed_signal.emit()
                 elif status == "failed":
+                    print(f"❌ Job fehlgeschlagen für {self.pkg_name}")
                     self.poll_timer.stop()
                     self.update_status_local()
             except Exception as e:
-                # IMPORTANT: This shows us whether the parsing is crashing silently!
                 print(f"❌ FEHLER in on_poll_finished für {self.pkg_name}: {e}")
         else:
             print(f"❌ Network error during polling: {reply.errorString()}")
+            self.poll_timer.stop()
+            self.update_status_local()
         reply.deleteLater()
-
 
 # ==========================================================
 # 2. THE MAIN WINDOW (Bilingual Sidebar & Search)
@@ -384,6 +429,16 @@ class KaderStore(QMainWindow):
         self.scroll.setWidgetResizable(True)
         self.scroll.setStyleSheet("border: none; background: transparent;")
         
+        # ==========================================================
+        # KINETIC SCROLLING FIX (Sorgt für Touch-Wischen UND Klickbarkeit)
+        # ==========================================================
+        QScroller.grabGesture(self.scroll.viewport(), QScroller.TouchGesture)
+        scroller = QScroller.scroller(self.scroll.viewport())
+        scroller_properties = scroller.scrollerProperties()
+        scroller_properties.setScrollMetric(QScrollerProperties.MousePressEventDelay, 0.0)
+        scroller.setScrollerProperties(scroller_properties)
+
+
         self.grid_widget = QWidget()
         self.grid_layout = QGridLayout(self.grid_widget)
         self.grid_layout.setAlignment(Qt.AlignTop | Qt.AlignLeft)
@@ -408,22 +463,28 @@ class KaderStore(QMainWindow):
         if reply.error() == QNetworkReply.NoError:
             try:
                 raw_data = reply.readAll().data().decode()
+                if not raw_data:
+                    print("⚠️ API lieferte leere Daten.")
+                    return
+                    
                 data = json.loads(raw_data)
-                url_str = reply.url().toString()
+                # Wir holen uns NUR den reinen Pfad (z.B. "/apps" oder "/categories")
+                path = reply.url().path()
                 
-                if "/categories" in url_str:
-                    # Populate the sidebar dynamically using the API
+                print(f"📡 GUI empfing Daten für Pfad: {path}") # Debug-Log
+                
+                if path == "/categories":
                     self.apps_data = {"categories": data}
                     self.setup_sidebar()
-                # HIER DIE KORREKTUR: Wir fangen AUCH /installed ab!
-                elif "/apps" in url_str or "/installed" in url_str:
-                    # Displays the apps in a grid
+                elif path in ["/apps", "/installed"]:
+                    print(f"📦 Rendere {len(data)} Apps im Grid...")
+                    self.clear_grid() # Grid vor dem Rendern explizit leeren
                     self.render_category_apps(data)
                     
             except Exception as e:
-                print(f"JSON Parse Fehler in GUI: {e}")
+                print(f"❌ JSON Parse Fehler in GUI: {e}")
         else:
-            print(f"Network error in the GUI: {reply.errorString()}")
+            print(f"❌ Netzwerkfehler in der GUI: {reply.errorString()}")
         reply.deleteLater()
 
     def setup_sidebar(self):
