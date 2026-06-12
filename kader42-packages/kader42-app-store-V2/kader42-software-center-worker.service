@@ -1,0 +1,13 @@
+[Unit]
+Description=Kader⁴² Software Center Worker
+After=kader42-software-center-api.service
+
+[Service]
+Type=simple
+WorkingDirectory=%h/.config/kader42-software-center
+ExecStart=/usr/bin/python3 /usr/lib/kader42-software-center/kader42-software-center-worker.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=default.target

@@ -1,0 +1,12 @@
+[Unit]
+Description=Kader⁴² Software Center REST API
+After=plasma-core.target
+
+[Service]
+Type=simple
+WorkingDirectory=%h/.config/kader42-software-center
+ExecStart=/usr/bin/python3 /usr/lib/kader42-software-center/kader42-software-center-api.py
+Restart=on-failure
+
+[Install]
+WantedBy=default.target

@@ -1,0 +1,32 @@
+# kader42-software-center.install
+
+post_install() {
+    echo "==> Enable Kader⁴² Store User Services globally."
+    systemctl --global daemon-reload
+    systemctl --user enable --now kader42-software-center-worker.service
+    systemctl --user enable --now kader42-store-api.service
+
+    echo "==> Pin Kader⁴² Software Center to the global taskbar..."
+    DESKTOP_FILE="kader42-software-center.desktop"
+    
+    CURRENT_FAVORITES=$(kreadconfig6 --file /etc/xdg/kdeglobals --group FavoriteApps --key PinnedToTaskbar)
+    if [[ -z "$CURRENT_FAVORITES" ]]; then
+        NEW_FAVORITES="applications:$DESKTOP_FILE"
+    elif [[ "$CURRENT_FAVORITES" != *"$DESKTOP_FILE"* ]]; then
+        NEW_FAVORITES="$CURRENT_FAVORITES,applications:$DESKTOP_FILE"
+    else
+        NEW_FAVORITES="$CURRENT_FAVORITES"
+    fi
+    
+    kwriteconfig6 --file /etc/xdg/kdeglobals --group FavoriteApps --key PinnedToTaskbar "$NEW_FAVORITES"
+}
+
+post_upgrade() {
+    post_install
+}
+
+pre_remove() {
+    echo "==>  Disable Kader⁴² Store User Services..."
+    systemctl --global --user disable kader42-store-api.service 2>/dev/null || true
+    systemctl --global --user disable kader42-store-worker.service 2>/dev/null || true
+}
