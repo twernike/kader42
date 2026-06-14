@@ -1,3 +1,4 @@
+#!/usr/bin/usr/env python
 # /usr/lib/kader-store/worker.py
 import sqlite3
 import time

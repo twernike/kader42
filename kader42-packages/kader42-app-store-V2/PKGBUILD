@@ -1,57 +1,55 @@
 # Maintainer: Thomas Wernike <support@kader42.de>
 pkgname=kader42-software-center
 pkgver=1.0.0
-pkgrel=1
-pkgdesc="Software Management in Kader⁴²"
+pkgrel=9
+pkgdesc="Software Management for Kader⁴²"
 arch=('any')
 url="https://kader42.de"
 license=('GPL')
-install=kader42-software-center.install
 depends=(
     'python' 
     'pyside6' 
     'yay' 
-    'pyalpm'      # Zwingend erforderlich für den 'import pyalpm' im Worker/Shared
-    'qt6-tools'   # Lebenswichtig für /usr/bin/qdbus6 (Live-Taskleisten-Pin)
-    'kconfig'     # Liefert kwriteconfig6 / kreadconfig6 für die .install-Datei
+    'pyalpm'      
+    'qt6-tools'   
+    'kconfig'     
 )
-
-# kader42-software-center-api.py, shared.py and kader42-sofware-worker.py to /usr/lib/kader42-software-center.
-# kader42-software-center-api.service and kader42-software-center-worker.service to /usr/lib/systemd/user
-# kader42-software-center.py to /usr/bin
-# kader42-software-center.desktop to /usr/share/applications
-# mello.png to /usr/share/icons
-# 42-kader-store.rules to /usr/share/polkit-1/rules.d/
 
 source=('kader42-software-center-api.py'
         'shared.py'
         'kader42-software-center-worker.py'
         'kader42-software-center-api.service'
         'kader42-software-center-worker.service'
-        'kader42-software-center.py'
-        'mello.png'
+        'kader42-software-center'
+        'kader42-software-center.desktop'
+        'mello.svg'
         '42-kader-store.rules'
+        'kcm_kader42_software_center.desktop'
         )
-md5sums=('SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP')
+md5sums=('SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP')
 
 package() {
-  # 1. Create the directories in the package image ($pkgdir)
-  # -D creates any missing parent directories; -m755 sets execution permissions
-  
-  # backend files
+  # 1. Backend-Skripte (Ausführbar machen)
   install -Dm755 "${srcdir}/kader42-software-center-api.py" "${pkgdir}/usr/lib/kader42-software-center/kader42-software-center.api.py"
   install -Dm755 "${srcdir}/shared.py" "${pkgdir}/usr/lib/kader42-software-center/shared.py"
   install -Dm755 "${srcdir}/kader42-software-center-worker.py" "${pkgdir}/usr/lib/kader42-software-center/kader42-sofware-worker.py"
 
-  # services
-  install -Dm755 "${srcdir}/kader42-software-center-api.service" "${pkgdir}/usr/lib/systemd/user/kader42-software-center-api.service"
-  install -Dm755 "${srcdir}/kader42-software-center-worker.service" "${pkgdir}/usr/lib/systemd/user/kader42-software-center-worker.service"
+  # 2. GUI-Binary & JETZT AUCH DIE DESKTOP-DATEI (Wichtig: 644)
+  install -Dm755 "${srcdir}/kader42-software-center" "${pkgdir}/usr/bin/kader42-software-center"
+  install -Dm644 "${srcdir}/kader42-software-center.desktop" "${pkgdir}/usr/share/applications/kader42-software-center.desktop"
 
-  # polkit rule
-  install -Dm755 "${srcdir}/42-kader-store.rules" "${pkgdir}/usr/share/polkit-1/rules.d/42-kader-store.rules"
+  # 3. Das Icon (Als SVG im hicolor-scalable Ordner)
+  install -Dm644 "${srcdir}/mello.svg" "${pkgdir}/usr/share/icons/hicolor/scalable/apps/mello.svg"
 
+  # 4. Polkit Rules & KCM Module (KCM-Desktop-Dateien gehören nach /usr/share/applications/ für Plasma 6!)
+  install -Dm644 "${srcdir}/42-kader-store.rules" "${pkgdir}/usr/share/polkit-1/rules.d/42-kader-store.rules"
 
-  # GUI
-  install -Dm755 "${srcdir}/kader42-software-center.py" "${pkgdir}/usr/bin/kader42-software-center.py"
-  install -Dm755 "${srcdir}/mello.png" "${pkgdir}/usr/share/icons/mello.png"
+  # 5. Systemd Services (Wichtig: Rechte 644, NICHT 755!)
+  install -Dm644 "${srcdir}/kader42-software-center-api.service" "${pkgdir}/usr/lib/systemd/user/kader42-software-center-api.service"
+  install -Dm644 "${srcdir}/kader42-software-center-worker.service" "${pkgdir}/usr/lib/systemd/user/kader42-software-center-worker.service"
+
+  # 6. Autostart-Wants für die User-Services (Symlinks)
+  mkdir -p "${pkgdir}/usr/lib/systemd/user/default.target.wants"
+  ln -sf "../kader42-software-center-api.service" "${pkgdir}/usr/lib/systemd/user/default.target.wants/kader42-software-center-api.service"
+  ln -sf "../kader42-software-center-worker.service" "${pkgdir}/usr/lib/systemd/user/default.target.wants/kader42-software-center-worker.service"
 }

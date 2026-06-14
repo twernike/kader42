@@ -1,32 +1,28 @@
-# kader42-software-center.install
-
 post_install() {
-    echo "==> Enable Kader⁴² Store User Services globally."
-    systemctl --global daemon-reload
-    systemctl --user enable --now kader42-software-center-worker.service
-    systemctl --user enable --now kader42-store-api.service
-
-    echo "==> Pin Kader⁴² Software Center to the global taskbar..."
-    DESKTOP_FILE="kader42-software-center.desktop"
+  echo "==> Setze Kader⁴² App Store als Startmenü-Favorit für aktive User..."
+  
+  # Schleife durch alle echten User auf dem System (Home-Verzeichnisse)
+  for user_home in /home/*; do
+    [ -d "$user_home" ] || continue
+    username=$(basename "$user_home")
+    config_file="$user_home/.config/plasma-org.kde.plasma.desktop-appletsrc"
     
-    CURRENT_FAVORITES=$(kreadconfig6 --file /etc/xdg/kdeglobals --group FavoriteApps --key PinnedToTaskbar)
-    if [[ -z "$CURRENT_FAVORITES" ]]; then
-        NEW_FAVORITES="applications:$DESKTOP_FILE"
-    elif [[ "$CURRENT_FAVORITES" != *"$DESKTOP_FILE"* ]]; then
-        NEW_FAVORITES="$CURRENT_FAVORITES,applications:$DESKTOP_FILE"
-    else
-        NEW_FAVORITES="$CURRENT_FAVORITES"
+    if [ -f "$config_file" ]; then
+      # 1. Finde die Applet-ID des Kickoff-Menüs in der Config des Users
+      applet_id=$(grep -B 2 "plugin=org.kde.plasma.kickoff" "$config_file" | grep "\[Containments\]" | sed 's/[^0-9]//g' | head -n 1)
+      
+      if [ -n "$applet_id" ]; then
+        # Da wir als root (pacman) laufen, nutzen wir sudo, um die Config als der jeweilige User sauber zu beschreiben
+        sudo -u "$username" kwriteconfig6 --file "$config_file" --group "Containments" --group "$applet_id" --group "Configuration" --group "General" --key "favorites" "applications:kader42-software-center.desktop,applications:systemsettings.desktop,applications:org.kde.dolphin.desktop"
+      fi
     fi
-    
-    kwriteconfig6 --file /etc/xdg/kdeglobals --group FavoriteApps --key PinnedToTaskbar "$NEW_FAVORITES"
+  done
+
+  # 2. Für ZUKÜNFTIGE User in /etc/skel hinterlegen
+  mkdir -p /etc/skel/.config
+  # Wenn du hier eine Basis-Datei anlegst, wird sie bei 'useradd' automatisch kopiert
 }
 
 post_upgrade() {
-    post_install
-}
-
-pre_remove() {
-    echo "==>  Disable Kader⁴² Store User Services..."
-    systemctl --global --user disable kader42-store-api.service 2>/dev/null || true
-    systemctl --global --user disable kader42-store-worker.service 2>/dev/null || true
+  post_install
 }

@@ -2,7 +2,7 @@
 pkgname=kader42-icons
 pkgver=1.0.0
 pkgrel=1
-pkgdesc="The specific Kader42 Plasma Theme"
+pkgdesc="The specific Kader42 icons"
 arch=('any')
 install=kader42-icons.install
 

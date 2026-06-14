@@ -1,7 +1,7 @@
 # Maintainer: Thomas <thomas@kader42.de>
 pkgname=kader42-plasma-theme
 pkgver=1.0.0
-pkgrel=1
+pkgrel=2
 pkgdesc="The specific Kader42 Plasma Theme"
 arch=('any')
 install=kader42-plasma-theme.install

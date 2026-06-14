@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Service
+X-KDE-ServiceTypes=KCModule
+X-KDE-Library=kcm_external_app
+X-KDE-ExternalApp=/usr/bin/kader42-software-center
+X-KDE-System-Settings-Parent-Category=softwaremanagement
+Icon=system-software-install
+Name=Kader⁴² Software Center
+Comment=Manage your software or install new software

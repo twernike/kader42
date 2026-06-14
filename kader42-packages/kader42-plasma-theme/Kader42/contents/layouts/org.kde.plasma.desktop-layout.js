@@ -43,6 +43,9 @@ var kickoff=notebook.addWidget("org.kde.plasma.kickoff")
 // kickoff.currentConfigGroup = ["Shortcuts"];
 // kickoff.writeConfig("globalShortcut", "Meta");
 
+kickoff.currentConfigGroup = ["Configuration", "General"];
+kickoff.writeConfig("favorites", "applications:kader42-software-center.desktop,applications:systemsettings.desktop,applications:org.kde.dolphin.desktop");
+
 notebook.addWidget("org.kde.plasma.pager")
 notebook.addWidget("org.kde.plasma.icontasks")
 notebook.addWidget("org.kde.plasma.marginsseparator")

@@ -1,3 +1,4 @@
+#!/usr/bin/usr/env python
 # /usr/lib/kader-store/api.py
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import json
