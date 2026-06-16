@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Kader42 Software Center Tray
+Comment=Hintergrunddienst für das Software Center
+Exec=/usr/bin/python /usr/lib/kader42-software-center/kader42-software-center-tray.py
+Icon=mello
+Terminal=false
+Categories=System;
+X-KDE-StartupNotify=false
+X-KDE-autostart-phase=2

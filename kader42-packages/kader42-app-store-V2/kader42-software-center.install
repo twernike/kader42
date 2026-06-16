@@ -1,26 +1,19 @@
 post_install() {
-  echo "==> Setze Kader⁴² App Store als Startmenü-Favorit für aktive User..."
-  
-  # Schleife durch alle echten User auf dem System (Home-Verzeichnisse)
-  for user_home in /home/*; do
-    [ -d "$user_home" ] || continue
-    username=$(basename "$user_home")
-    config_file="$user_home/.config/plasma-org.kde.plasma.desktop-appletsrc"
-    
-    if [ -f "$config_file" ]; then
-      # 1. Finde die Applet-ID des Kickoff-Menüs in der Config des Users
-      applet_id=$(grep -B 2 "plugin=org.kde.plasma.kickoff" "$config_file" | grep "\[Containments\]" | sed 's/[^0-9]//g' | head -n 1)
-      
-      if [ -n "$applet_id" ]; then
-        # Da wir als root (pacman) laufen, nutzen wir sudo, um die Config als der jeweilige User sauber zu beschreiben
-        sudo -u "$username" kwriteconfig6 --file "$config_file" --group "Containments" --group "$applet_id" --group "Configuration" --group "General" --key "favorites" "applications:kader42-software-center.desktop,applications:systemsettings.desktop,applications:org.kde.dolphin.desktop"
-      fi
-    fi
-  done
+  echo "==> Activate Tray Icon live..."
 
-  # 2. Für ZUKÜNFTIGE User in /etc/skel hinterlegen
-  mkdir -p /etc/skel/.config
-  # Wenn du hier eine Basis-Datei anlegst, wird sie bei 'useradd' automatisch kopiert
+  local active_user=$(who | awk '{print $1}' | head -n 1)
+
+  if [ -n "$active_user" ]; then
+      local user_uid=$(id -u "$active_user")
+      
+      # Die Befehle werden mit && sauber nacheinander im Kontext des Users ausgeführt
+      SYSTEMD_BUS_VARIABLE=1 sudo -u "$active_user" DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/$user_uid/bus" \
+        systemctl --user import-environment DISPLAY WAYLAND_DISPLAY XAUTHORITY && \
+      SYSTEMD_BUS_VARIABLE=1 sudo -u "$active_user" DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/$user_uid/bus" \
+        systemctl --user daemon-reload && \
+      SYSTEMD_BUS_VARIABLE=1 sudo -u "$active_user" DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/$user_uid/bus" \
+        systemctl --user restart kader42-software-center-tray.service
+  fi
 }
 
 post_upgrade() {

@@ -1,0 +1,16 @@
+[Unit]
+Description=Kader42 Software Center Tray Icon
+# Wir warten, bis die grafische Sitzung des Users aktiv ist
+After=graphical-session.target
+PartOf=graphical-session.target
+
+[Service]
+Type=simple
+# Das lädt die Variablen des aktiven Desktops (Wayland/X11) direkt vor dem Start in die Unit
+ExecStartPre=/usr/bin/systemctl --user import-environment DISPLAY WAYLAND_DISPLAY XAUTHORITY
+ExecStart=/usr/bin/python /usr/lib/kader42-software-center/kader42-software-center-tray.py
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=graphical-session.target

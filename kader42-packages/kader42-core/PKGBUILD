@@ -1,14 +1,14 @@
 # Maintainer: Thomas Wernike <support@kader42.de>
 pkgname=kader42-core
-pkgver=1.0.2
-pkgrel=7
+pkgver=1.0.3
+pkgrel=0
 pkgdesc="Core configurations and systemd units for Kader42"
 arch=('any')
 depends=('bash' 'dbus' 'kader42-hooks' 'system-config-printer' 'cups' 'libreoffice-fresh-de' 'kader42-software-center')
 install=kader42-core.install
-source=('kader42-cleanup.service')
+source=('kader42-cleanup.service' 'kader42-software-center-favorite.upd' 'kader42-software-center-favorite.js')
 
-md5sums=('SKIP')
+md5sums=('SKIP' 'SKIP' 'SKIP')
 
 
 package() {
@@ -44,4 +44,7 @@ package() {
     # Create a symlink equivalent to “systemctl enable”
     mkdir -p "${pkgdir}/usr/lib/systemd/system/multi-user.target.wants"
     ln -s "../kader42-cleanup.service" "${pkgdir}/usr/lib/systemd/system/multi-user.target.wants/kader42-cleanup.service"
+
+    install -Dm644 "${srcdir}/kader42-software-center-favorite.upd" "${pkgdir}/usr/share/kconf_update/kader42-software-center-favorite.upd"
+    install -Dm755 "${srcdir}/kader42-software-center-favorite.js" "${pkgdir}/usr/share/kconf_update/kader42-software-center-favorite.js"
 }
