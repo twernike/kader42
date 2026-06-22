@@ -28,41 +28,89 @@ get_mode_by_keyboard_count() {
 
 case "$CHASSIS_TYPE" in
     31)
-        # --- CONVERTIBLE MODE (Optimized Hardware Switch) ---
-        echo "[Kader42 Tablet Event Listener] Convertible detected. Searching for dedicated hinge switch..."
-        
-        # Findet das spezifische eventX-Device für den Tabletschalter (z. B. Intel Virtual Buttons oder gpio-keys)
-        # Dadurch muss die Bash-Schleife später nicht jede Mausbewegung verarbeiten.
-        TARGET_EV=$(grep -E 'Name="Intel Virtual Buttons"|Name="gpio-keys"' -B5 -A10 /proc/bus/input/devices | grep -oE 'event[0-9]+' | head -n 1)
-        
-        if [ -z "$TARGET_EV" ]; then
-            echo "[Kader42] WARNUNG: Kein dediziertes Hardware-Device gefunden. Nutze globalen Filter."
-            DEV_ARG=""
-        else
-            DEV_ARG="--device /dev/input/$TARGET_EV"
-            echo "[Kader42] Target Device identifiziert: /dev/input/$TARGET_EV"
-        fi
+        # --- CONVERTIBLE MODE (KWin DBus mit Hardware-Fallback) ---
+        echo "[Kader42 Tablet Event Listener] Convertible detected. Initializing hybrid listener..."
 
-        # stdbuf -oL erzwingt Line-Buffering. Zusammen mit dem dedizierten Device 
-        # läuft das absolut verzögerungsfrei und mit praktisch 0% CPU-Last.
-        stdbuf -oL libinput debug-events $DEV_ARG | while read -r line; do
-            if echo "$line" | grep -q "switch tablet-mode"; then
-                if echo "$line" | grep -q "state 1"; then
-                    MODE=1  # Physisch umgeklappt
-                elif echo "$line" | grep -q "state 0"; then
-                    MODE=0  # Normaler Notebook-Zustand
-                else
-                    continue
-                fi
-                
-                # Debounce: Nur feuern, wenn sich der Zustand wirklich geändert hat
-                if [ "$MODE" != "$LAST_MODE" ]; then
-                    echo "[Kader42 Tablet Event Listener] Hardware Mode changed → $MODE"
-                    /usr/bin/kader42-plasma-convertible-switcher "$MODE"
-                    LAST_MODE="$MODE"
-                fi
+        run_kwin_dbus_listener() {
+            # We query the property directly and assign the result (or an error) to the variable.
+            CURRENT_STATE=$(qdbus6 org.kde.KWin /org/kde/KWin org.kde.KWin.TabletModeManager.tabletMode 2>&1)
+            local exit_code=$?
+
+            # TRUE ERROR CHECK: Fallback only if the command fails, 
+            # the response is empty, or the string explicitly contains “Error.”
+            if [ $exit_code -ne 0 ] || [ -z "$CURRENT_STATE" ] || [[ "$CURRENT_STATE" == *"Error"* ]]; then
+                echo "[Kader42] KWin DBus-Schnittstelle wirft Fehler oder ist nicht bereit: $CURRENT_STATE"
+                return 1 # Hier ist der Fallback gerechtfertigt
             fi
-        done
+
+            # When we get to this point, KWin has returned a clear “true” or “false” (even on the dock!)
+            echo "[Kader42] DBus-Verbindung erfolgreich. Initialer Zustand: $CURRENT_STATE"
+            
+            if [ "$CURRENT_STATE" = "true" ]; then
+                LAST_MODE=1
+                /usr/bin/kader42-plasma-convertible-switcher "1"
+            else
+                LAST_MODE=0
+                /usr/bin/kader42-plasma-convertible-switcher "0"
+            fi
+
+            # The DBus loop continues to listen reliably in the background
+            dbus-monitor --profile "type='signal',interface='org.kde.KWin.TabletModeManager',member='tabletModeChanged'" 2>/dev/null | while read -r line; do
+                NEW_STATE=$(qdbus6 org.kde.KWin /org/kde/KWin org.kde.KWin.TabletModeManager.tabletMode 2>/dev/null)
+                
+                # Same here: Only abort if KWin really crashes (the value becomes empty or throws an error)
+                if [ -z "$NEW_STATE" ] || [[ "$NEW_STATE" == *"Error"* ]]; then 
+                    echo "[Kader42 DBus] Verbindung zu KWin während des Betriebs verloren!"
+                    break 
+                fi
+
+                if [ "$NEW_STATE" = "true" ] && [ "$LAST_MODE" -ne 1 ]; then
+                    echo "[Kader42 DBus Event] Mode changed → 1"
+                    /usr/bin/kader42-plasma-convertible-switcher "1"
+                    LAST_MODE=1
+                elif [ "$NEW_STATE" = "false" ] && [ "$LAST_MODE" -ne 0 ]; then
+                    echo "[Kader42 DBus Event] Mode changed → 0"
+                    /usr/bin/kader42-plasma-convertible-switcher "0"
+                    LAST_MODE=0
+                fi
+            done
+            
+            return 1 # Triggers the libinput fallback if the loop ever breaks
+        }
+
+        if ! run_kwin_dbus_listener; then
+            echo "[Kader42 Tablet Event Listener] DBus listener failed or terminated."
+            echo "[Kader42 Tablet Event Listener] Start STABLE FALLBACK: Dedicated hardware hinge switch..."
+            
+            TARGET_EV=$(grep -E 'Name="Intel Virtual Buttons"|Name="gpio-keys"' -B5 -A10 /proc/bus/input/devices | grep -oE 'event[0-9]+' | head -n 1)
+            
+            if [ -z "$TARGET_EV" ]; then
+                echo "[Kader42 Tablet Event Listener] WARNING: No dedicated hardware device found. Use the global filter."
+                DEV_ARG=""
+            else
+                DEV_ARG="--device /dev/input/$TARGET_EV"
+                echo "[Kader42 Tablet Event Listener] Target Device Identified: /dev/input/$TARGET_EV"
+            fi
+
+            stdbuf -oL libinput debug-events $DEV_ARG | while read -r line; do
+                if echo "$line" | grep -q "switch tablet-mode"; then
+                    if echo "$line" | grep -q "state 1"; then
+                        MODE=1  # Physically folded down
+                    elif echo "$line" | grep -q "state 0"; then
+                        MODE=0  # Normal Laptop Status
+                    else
+                        continue
+                    fi
+                    
+                    # Debounce: Fire only when the state has actually changed
+                    if [ "$MODE" != "$LAST_MODE" ]; then
+                        echo "[Kader42 Tablet Event Listener] Hardware Mode changed → $MODE"
+                        /usr/bin/kader42-plasma-convertible-switcher "$MODE"
+                        LAST_MODE="$MODE"
+                    fi
+                fi
+            done
+        fi
         ;;
 
     32)
