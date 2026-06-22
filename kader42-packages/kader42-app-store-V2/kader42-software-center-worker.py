@@ -1,5 +1,5 @@
 #!/usr/bin/usr/env python
-# /usr/lib/kader-store/worker.py
+# /usr/lib/kader-store/kader42-software-center-worker.py
 import sqlite3
 import time
 import subprocess

@@ -2,8 +2,9 @@
 # /usr/lib/kader-store/shared.py
 import sqlite3
 import os
+from pathlib import Path
 
-DB_PATH = "~/.kader-store/queue.db"
+DB_PATH = Path("~/.config/kader42/software-center.db").expanduser()
 CACHE_DIR = os.path.expanduser("~/.cache/kader-store/icons/")
 
 def init_environment():

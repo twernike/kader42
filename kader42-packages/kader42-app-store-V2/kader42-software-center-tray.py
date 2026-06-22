@@ -14,7 +14,7 @@ def main():
 
     # 1. Tray Icon erstellen und dein mello.svg zuweisen
     # QIcon.fromTheme sucht automatisch in /usr/share/icons/hicolor/...
-    tray_icon = QSystemTrayIcon(QIcon.fromTheme("mello"), app)
+    tray_icon = QSystemTrayIcon(QIcon.fromTheme("software-center-tray-icon"), app)
     tray_icon.setToolTip("Kader42 Software Center")
 
     # 2. Kontextmenü (Rechtsklick) bauen

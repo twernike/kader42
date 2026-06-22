@@ -1,7 +1,7 @@
 # Maintainer: Thomas Wernike <support@kader42.de>
 pkgname=kader42-software-center
 pkgver=1.0.0
-pkgrel=25
+pkgrel=38
 pkgdesc="Software Management for Kader⁴²"
 arch=('any')
 url="https://kader42.de"
@@ -22,32 +22,32 @@ source=('kader42-software-center-api.py'
         'kader42-software-center-worker.service'
         'kader42-software-center'
         'kader42-software-center.desktop'
-        'mello.svg'
         '42-kader-store.rules'
         'kader42-software-center-tray.py'
         'kader42-software-center-tray.desktop'
+        'software-center-tray-icon.svg'
         )
 md5sums=('SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP')
 
 package() {
   # 1. Backend-Skripte (Ausführbar machen)
-  install -Dm755 "${srcdir}/kader42-software-center-api.py" "${pkgdir}/usr/lib/kader42-software-center/kader42-software-center.api.py"
+  install -Dm755 "${srcdir}/kader42-software-center-api.py" "${pkgdir}/usr/lib/kader42-software-center/kader42-software-center-api.py"
   install -Dm755 "${srcdir}/shared.py" "${pkgdir}/usr/lib/kader42-software-center/shared.py"
-  install -Dm755 "${srcdir}/kader42-software-center-worker.py" "${pkgdir}/usr/lib/kader42-software-center/kader42-sofware-worker.py"
-  install -Dm755 "${srcdir}/kader42-software-center-worker.py" "${pkgdir}/usr/lib/kader42-software-center/kader42-software-center-tray.py"
+  install -Dm755 "${srcdir}/kader42-software-center-worker.py" "${pkgdir}/usr/lib/kader42-software-center/kader42-software-center-worker.py"
+  install -Dm755 "${srcdir}/kader42-software-center-tray.py" "${pkgdir}/usr/lib/kader42-software-center/kader42-software-center-tray.py"
 
 
   install -Dm755 "${srcdir}/kader42-software-center" "${pkgdir}/usr/bin/kader42-software-center"
-  install -Dm644 "${srcdir}/kader42-software-center.desktop" "${pkgdir}/usr/share/applications/kader42-software-center.desktop"
+  install -Dm755 "${srcdir}/kader42-software-center.desktop" "${pkgdir}/usr/share/applications/kader42-software-center.desktop"
 
-  install -Dm644 "${srcdir}/mello.svg" "${pkgdir}/usr/share/icons/hicolor/scalable/apps/mello.svg"
+  install -Dm644 "${srcdir}/software-center-tray-icon.svg" "${pkgdir}/usr/share/icons/hicolor/scalable/apps/software-center-tray-icon.svg"
+  
 
   install -Dm644 "${srcdir}/42-kader-store.rules" "${pkgdir}/usr/share/polkit-1/rules.d/42-kader-store.rules"
 
   install -Dm644 "${srcdir}/kader42-software-center-api.service" "${pkgdir}/usr/lib/systemd/user/kader42-software-center-api.service"
   install -Dm644 "${srcdir}/kader42-software-center-worker.service" "${pkgdir}/usr/lib/systemd/user/kader42-software-center-worker.service"
-  install -Dm644 "${srcdir}/kader42-software-center-tray.desktop" "${pkgdir}/etc/xdg/kader42-software-center-tray.desktop"
-
+  install -Dm755 "${srcdir}/kader42-software-center-tray.desktop" "${pkgdir}/etc/xdg/autostart/kader42-software-center-tray.desktop"
 
   mkdir -p "${pkgdir}/usr/lib/systemd/user/default.target.wants"
   ln -sf "../kader42-software-center-api.service" "${pkgdir}/usr/lib/systemd/user/default.target.wants/kader42-software-center-api.service"

@@ -1,19 +1,9 @@
 post_install() {
-  echo "==> Activate Tray Icon live..."
-
-  local active_user=$(who | awk '{print $1}' | head -n 1)
-
-  if [ -n "$active_user" ]; then
-      local user_uid=$(id -u "$active_user")
-      
-      # Die Befehle werden mit && sauber nacheinander im Kontext des Users ausgeführt
-      SYSTEMD_BUS_VARIABLE=1 sudo -u "$active_user" DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/$user_uid/bus" \
-        systemctl --user import-environment DISPLAY WAYLAND_DISPLAY XAUTHORITY && \
-      SYSTEMD_BUS_VARIABLE=1 sudo -u "$active_user" DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/$user_uid/bus" \
-        systemctl --user daemon-reload && \
-      SYSTEMD_BUS_VARIABLE=1 sudo -u "$active_user" DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/$user_uid/bus" \
-        systemctl --user restart kader42-software-center-tray.service
-  fi
+  echo “==> [Kader⁴² software center] The Software Center tray icon has been registered for autostart.”
+  echo “==> The icon will automatically appear in the system tray the next time you log in.”
+  echo "---"
+  echo "==> [Kader⁴² software center] Das Software Center Tray-Icon wurde für den Autostart registriert."
+  echo "==> Das Icon wird beim nächsten Login automatisch im System-Tray angezeigt.
 }
 
 post_upgrade() {

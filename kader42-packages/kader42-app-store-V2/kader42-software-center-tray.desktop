@@ -1,10 +1,11 @@
 [Desktop Entry]
 Type=Application
 Name=Kader42 Software Center Tray
-Comment=Hintergrunddienst für das Software Center
+Icon=software-center-tray-icon
 Exec=/usr/bin/python /usr/lib/kader42-software-center/kader42-software-center-tray.py
-Icon=mello
 Terminal=false
-Categories=System;
-X-KDE-StartupNotify=false
+# Schaltet das visuelle Start-Feedback ab, da kein Fenster kommt:
+StartupNotify=false
+# Sorgt dafür, dass Plasma das Icon in der richtigen Desktop-Phase lädt:
 X-KDE-autostart-phase=2
+OnlyShowIn=KDE;
