@@ -54,14 +54,28 @@ class StoreAPIHandler(BaseHTTPRequestHandler):
                 self._set_headers(200)
                 self.wfile.write(json.dumps([]).encode('utf-8'))
 
-        # 3. ENDPOINT: Installierte Apps & Updates abrufen
+        # 3. ENDPOINT: View Installed Apps & Updates
         elif path_str == "/installed":
             results = self.get_installed_apps_and_updates()
             self._set_headers(200)
             self.wfile.write(json.dumps(results).encode('utf-8'))
 
+        elif path_str == "/updates":
+            all_apps = self.get_installed_apps_and_updates()
+            
+            # Wir filtern exakt nach deinem Status-String!
+            update_packages = [app for app in all_apps if app.get('status') == 'update_available']
+            
+            results = {
+                "total_updates": len(update_packages),
+                "packages": update_packages
+            }
+            
+            self._set_headers(200)
+            self.wfile.write(json.dumps(results).encode('utf-8'))
+
         # ==========================================================
-        # NEU: HIER WAR DAS LOCH! ENDPOINT: Job-Status abfragen (/job/<id>)
+        # Check Job Status (/job/<id>)
         # ==========================================================
         elif path_str.startswith("/job/"):
             try:

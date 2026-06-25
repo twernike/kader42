@@ -3,12 +3,14 @@ import sys
 import os
 import json
 import locale
+import subprocess
 from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, 
                              QHBoxLayout, QLabel, QLineEdit, QPushButton, 
                              QListWidget, QListWidgetItem, QScrollArea, QFrame, QGridLayout, QSizePolicy, QScroller, QScrollerProperties)
 from PySide6.QtCore import Qt, QSize, QTimer, QUrl, Signal, QEvent
 from PySide6.QtGui import QFont, QIcon, QPixmap
-from PySide6.QtNetwork import QNetworkAccessManager, QNetworkRequest, QNetworkReply
+# HIER WURDEN QLocalServer UND QLocalSocket ERGÄNZT:
+from PySide6.QtNetwork import QNetworkAccessManager, QNetworkRequest, QNetworkReply, QLocalServer, QLocalSocket
 
 API_URL = "http://127.0.0.1:8080"
 
@@ -16,13 +18,12 @@ API_URL = "http://127.0.0.1:8080"
 # LANGUAGE & LOCALIZATION SETUP
 # ==========================================================
 try:
-    # Determines the system locale (e.g., de_DE → de, en_US → en)
     SYSTEM_LANG = locale.getdefaultlocale()[0][:2]
 except:
     SYSTEM_LANG = "de"
 
 if SYSTEM_LANG not in ["de", "en"]:
-    SYSTEM_LANG = "de"  # Fallback to the primary OS language
+    SYSTEM_LANG = "de"
 
 TRANSLATIONS = {
     "de": {
@@ -46,7 +47,11 @@ TRANSLATIONS = {
         "desc_core_gimp": "Professionelles Programm zur Bildbearbeitung und Manipulation.",
         "desc_core_vlc": "Universeller Medienabspieler für nahezu alle Formate.",
         "desc_core_libreoffice": "Umfangreiche und freie Office-Suite (Aktuellster Zweig).",
-        "desc_core_openboard": "Interaktive Whiteboard-Software für den Bildungsbereich."
+        "desc_core_openboard": "Interaktive Whiteboard-Software für den Bildungsbereich.",
+        "menu_updates": "Updates",
+        "system_up_to_date": "Dein System ist auf dem neuesten Stand.",
+        "updates_available_title": "%s Updates verfügbar",
+        "update_all_btn": "Alle aktualisieren"
     },
     "en": {
         "search_placeholder": "🔎 Search for apps...",
@@ -55,7 +60,7 @@ TRANSLATIONS = {
         "status_installed": "Installed packages",
         "status_available": "Available",
         "status_checking": "Checking...",
-        "status_queue": "⌛ Queued...",
+        "status_queue": "Queued...",
         "update_state": "",
         "desc_update_available": "⚠️ Update available in %s!",
         "desc_installed_repo": "Installed application (Repository)",
@@ -69,7 +74,11 @@ TRANSLATIONS = {
         "desc_core_gimp": "Professional image manipulation and editing program.",
         "desc_core_vlc": "Universal media player for almost all formats.",
         "desc_core_libreoffice": "Powerful and free office suite (Fresh branch).",
-        "desc_core_openboard": "Interactive whiteboard software for education."
+        "desc_core_openboard": "Interactive whiteboard software for education.",
+        "menu_updates": "Updates",
+        "system_up_to_date": "Your system is up to date.",
+        "updates_available_title": "%s updates available",
+        "update_all_btn": "Update All"
     }
 }
 
@@ -89,7 +98,7 @@ class AppCard(QFrame):
         self.flatpak_id = flatpak_id
         self.icon_name = icon_name if icon_name else "package-x-generic"
         self.current_job_id = None
-        self.action_mode = "install"  
+        self.action_mode = "install"
         
         self.setObjectName("AppCard")
         self.setFixedSize(240, 280)
@@ -103,25 +112,18 @@ class AppCard(QFrame):
         layout.setAlignment(Qt.AlignCenter)
         layout.setSpacing(10)
         
-        # Icon Label
         self.icon_label = QLabel()
         self.icon_label.setAlignment(Qt.AlignCenter)
         layout.addWidget(self.icon_label)
         self.set_system_fallback_icon()
         
-        # Name
         name_label = QLabel(name)
         name_label.setFont(QFont("Cantarell", 13, QFont.Weight.Bold))
         name_label.setStyleSheet("color: white; background: transparent;")
         name_label.setAlignment(Qt.AlignCenter)
         layout.addWidget(name_label)
         
-        desc_text = ""
-        if isinstance(description, dict):
-            desc_text = description.get(SYSTEM_LANG, description.get("de", ""))
-        else:
-            desc_text = description
-
+        desc_text = description.get(SYSTEM_LANG, description.get("de", "")) if isinstance(description, dict) else description
         self.desc_label = QLabel(desc_text)
         self.desc_label.setStyleSheet("color: #8fa0c4; font-size: 11px; background: transparent;")
         self.desc_label.setWordWrap(True)
@@ -134,32 +136,23 @@ class AppCard(QFrame):
         self.status_label.setAlignment(Qt.AlignCenter)
         layout.addWidget(self.status_label)
         
-        # ==========================================================
-        # 2-BUTTON LAYOUT (Griffig für Touch)
-        # ==========================================================
         self.button_container = QHBoxLayout()
         self.button_container.setSpacing(12)
         self.button_container.setAlignment(Qt.AlignCenter)
         self.button_container.setContentsMargins(0, 0, 0, 0)
         
-        # 1. BUTTON (Links): Update
         self.btn = QPushButton()
         self.btn.setFixedSize(90, 50)
         self.btn.setCursor(Qt.PointingHandCursor)
         self.btn.setIcon(QIcon.fromTheme("update-none", QIcon.fromTheme("go-up")))
         self.btn.setIconSize(QSize(25, 25))
-        
-        # WICHTIG: Damit Touch den Klick sofort auslöst und nicht verschluckt
         self.btn.setAttribute(Qt.WA_TouchPadAcceptSingleTouchEvents, True)
         self.btn.clicked.connect(self.trigger_api_action)
         
-        # 2. BUTTON (Rechts): Install / Remove
         self.extra_remove_btn = QPushButton()
         self.extra_remove_btn.setFixedSize(90, 50)
         self.extra_remove_btn.setCursor(Qt.PointingHandCursor)
         self.extra_remove_btn.setIconSize(QSize(25, 25))
-        
-        # WICHTIG: Damit Touch den Klick sofort auslöst und nicht verschluckt
         self.extra_remove_btn.setAttribute(Qt.WA_TouchPadAcceptSingleTouchEvents, True)
         self.extra_remove_btn.clicked.connect(self.trigger_extra_remove)
 
@@ -168,7 +161,6 @@ class AppCard(QFrame):
         layout.addLayout(self.button_container)
         
         self.nav_manager = QNetworkAccessManager(self)
-        
         if self.flatpak_id and self.flatpak_id.strip():
             self.load_flathub_icon()
             
@@ -177,7 +169,6 @@ class AppCard(QFrame):
  
     def update_status_local(self, status_override=None):
         status = status_override if status_override else getattr(self, "initial_status", "available")
-        
         if not hasattr(self, 'extra_remove_btn'): return
         
         self.btn.setEnabled(True)
@@ -205,8 +196,9 @@ class AppCard(QFrame):
         elif status == "update_available":
             self.status_label.setText(_("update_state") if _("update_state") else "⚠️ Update")
             self.status_label.setStyleSheet("font-size: 10px; color: #e67e22; font-weight: bold;")
+            self.btn.setEnabled(True)
             self.btn.setStyleSheet("background-color: #2ecc71; border-radius: 8px; border: none;")
-            self.action_mode = "install"
+            self.action_mode = "update"
             self.extra_remove_btn.setIcon(QIcon.fromTheme("user-trash"))
             self.extra_remove_btn.setStyleSheet("background-color: #e74c3c; border-radius: 8px; border: none;")
             
@@ -314,7 +306,7 @@ class AppCard(QFrame):
                         
                     self.job_completed_signal.emit()
                 elif status == "failed":
-                    print(f"❌ Job fehlgeschlagen für {self.pkg_name}")
+                    print(f"❌ Job failed für {self.pkg_name}")
                     self.poll_timer.stop()
                     self.update_status_local()
             except Exception as e:
@@ -326,16 +318,16 @@ class AppCard(QFrame):
         reply.deleteLater()
 
 # ==========================================================
-# 2. THE MAIN WINDOW (Bilingual Sidebar & Search)
+# 2. THE MAIN WINDOW
 # ==========================================================
 class KaderStore(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Kader⁴² Software Center")
-        self.resize(1240, 900) 
+        self.resize(1240, 900)
         self.setStyleSheet("background-color: #0b0f19; color: white;")
         
-        app_icon_path = "/usr/share/icons/mello.png" 
+        app_icon_path = "/usr/share/icons/mello.png"
         if os.path.exists(app_icon_path):
             self.setWindowIcon(QIcon(app_icon_path))
         else:
@@ -385,60 +377,61 @@ class KaderStore(QMainWindow):
         self.sidebar.itemClicked.connect(self.on_sidebar_clicked)
         content.addWidget(self.sidebar)
         
-        # Right-hand side: Divided into a banner (top) and a scrollable grid (bottom)
+        # Right-hand side
         right_layout = QVBoxLayout()
         right_layout.setSpacing(15)
         
+        # WINDOWS-LIKE UPDATE HEADER BANNER
+        self.update_header_frame = QFrame()
+        self.update_header_frame.setStyleSheet("background-color: #131926; border-radius: 14px; border: 1px solid #232e48;")
+        self.update_header_frame.setFixedHeight(75)
+        up_header_layout = QHBoxLayout(self.update_header_frame)
+        up_header_layout.setContentsMargins(15, 0, 15, 0)
+        
+        self.update_status_title = QLabel(_("system_up_to_date"))
+        self.update_status_title.setStyleSheet("font-size: 15px; font-weight: bold; color: white;")
+        self.update_all_btn = QPushButton(_("update_all_btn"))
+        self.update_all_btn.setStyleSheet("""
+            QPushButton { background-color: #27ae60; color: white; font-weight: bold; padding: 8px 16px; border-radius: 6px; border: none; font-size: 13px; }
+            QPushButton:hover { background-color: #219653; }
+            QPushButton:disabled { background-color: #232e48; color: #7f8c8d; }
+        """)
+        self.update_all_btn.clicked.connect(self.trigger_all_updates)
+        self.update_all_btn.hide()
+        
+        up_header_layout.addWidget(self.update_status_title)
+        up_header_layout.addStretch()
+        up_header_layout.addWidget(self.update_all_btn)
+        right_layout.addWidget(self.update_header_frame)
+        self.update_header_frame.hide()
+
+        # Standard-Werbebanner
         self.banner_label = QLabel()
         self.banner_label.setFixedWidth(376)
         self.banner_label.setFixedHeight(210)
         self.banner_label.setScaledContents(True)
         
         banner_path = "/usr/share/kader42/software-center-banner.png"
-        
         if os.path.exists(banner_path):
-            # Since it's a PNG with a transparent background, we'll upload it as-is
-            banner_pixmap = QPixmap(banner_path)
-            self.banner_label.setPixmap(banner_pixmap)
-            
-            # IMPORTANT: No borders, no background—complete transparency!
-            self.banner_label.setStyleSheet("""
-                QLabel {
-                    background: transparent;
-                    border: none;
-                }
-            """)
+            self.banner_label.setPixmap(QPixmap(banner_path))
+            self.banner_label.setStyleSheet("QLabel { background: transparent; border: none; }")
         else:
-            # A simpler, aligned fallback in case the image is missing
-            self.banner_label.setText("<h2>Kader4² Software Center</h2>")
+            self.banner_label.setText("<h2>Kader⁴² Software Center</h2>")
             self.banner_label.setAlignment(Qt.AlignCenter)
-            self.banner_label.setStyleSheet("""
-                QLabel { 
-                    background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #1a233a, stop:1 #131926);
-                    border: 1px solid #232e48;
-                    border-radius: 14px;
-                    color: white;
-                }
-            """)
-            
-        # Here's the magic: Qt.AlignCenter ensures that the transparent artwork
-        # always floats exactly in the center of the right pane.
+            self.banner_label.setStyleSheet("QLabel { background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #1a233a, stop:1 #131926); border: 1px solid #232e48; border-radius: 14px; color: white; }")
+      
         right_layout.addWidget(self.banner_label, 0, Qt.AlignCenter)
         
-        # Scroll area for the tile grid
+        # Scroll area for the grid
         self.scroll = QScrollArea()
         self.scroll.setWidgetResizable(True)
         self.scroll.setStyleSheet("border: none; background: transparent;")
         
-        # ==========================================================
-        # KINETIC SCROLLING FIX (Sorgt für Touch-Wischen UND Klickbarkeit)
-        # ==========================================================
         QScroller.grabGesture(self.scroll.viewport(), QScroller.TouchGesture)
         scroller = QScroller.scroller(self.scroll.viewport())
         scroller_properties = scroller.scrollerProperties()
         scroller_properties.setScrollMetric(QScrollerProperties.MousePressEventDelay, 0.0)
         scroller.setScrollerProperties(scroller_properties)
-
 
         self.grid_widget = QWidget()
         self.grid_layout = QGridLayout(self.grid_widget)
@@ -448,14 +441,18 @@ class KaderStore(QMainWindow):
         
         right_layout.addWidget(self.scroll)
         content.addLayout(right_layout)
-        
         self.root.addLayout(content)
         
         self.search_timer = QTimer()
         self.search_timer.setSingleShot(True)
         self.search_timer.timeout.connect(self.trigger_search)
 
+        self.start_view = "default"
+        if len(sys.argv) > 1 and sys.argv[1] == "--view=updates":
+            self.start_view = "updates"
+
         self.fetch_data()
+
     def fetch_data(self):
         url = QUrl(f"{API_URL}/categories")
         self.network_manager.get(QNetworkRequest(url))
@@ -464,23 +461,32 @@ class KaderStore(QMainWindow):
         if reply.error() == QNetworkReply.NoError:
             try:
                 raw_data = reply.readAll().data().decode()
-                if not raw_data:
-                    print("⚠️ API lieferte leere Daten.")
-                    return
+                if not raw_data: return
                     
                 data = json.loads(raw_data)
-                # Wir holen uns NUR den reinen Pfad (z.B. "/apps" oder "/categories")
                 path = reply.url().path()
-                
-                print(f"📡 GUI empfing Daten für Pfad: {path}") # Debug-Log
                 
                 if path == "/categories":
                     self.apps_data = {"categories": data}
                     self.setup_sidebar()
-                elif path in ["/apps", "/installed"]:
-                    print(f"📦 Rendere {len(data)} Apps im Grid...")
-                    self.clear_grid() # Grid vor dem Rendern explizit leeren
-                    self.render_category_apps(data)
+                elif path in ["/apps", "/installed", "/updates"]:
+                    self.clear_grid()
+                    
+                    if path == "/updates":
+                        total_updates = data.get("total_updates", 0)
+                        packages = data.get("packages", [])
+                        
+                        if total_updates > 0:
+                            self.update_status_title.setText(_("updates_available_title") % total_updates)
+                            self.update_all_btn.show()
+                            self.update_all_btn.setEnabled(True)
+                        else:
+                            self.update_status_title.setText(_("system_up_to_date"))
+                            self.update_all_btn.hide()
+                        
+                        self.render_category_apps(packages)
+                    else:
+                        self.render_category_apps(data)
                     
             except Exception as e:
                 print(f"❌ JSON Parse Fehler in GUI: {e}")
@@ -491,31 +497,53 @@ class KaderStore(QMainWindow):
     def setup_sidebar(self):
         self.sidebar.clear()
         
-        # 1. The fixed “Installed” entry at the very top gets a neat system checkmark
         installed_icon = QIcon.fromTheme("emblem-success-symbolic", QIcon.fromTheme("software-installed-panel"))
         installed_item = QListWidgetItem(installed_icon, _("status_installed"))
         installed_item.setData(Qt.UserRole, "kader_installed_view")
         self.sidebar.addItem(installed_item)
         
-        # 2. Load the dynamic categories from the API
+        updates_icon = QIcon.fromTheme("update-medium", QIcon.fromTheme("go-up"))
+        self.updates_item = QListWidgetItem(updates_icon, _("menu_updates"))
+        self.updates_item.setData(Qt.UserRole, "kader_updates_view")
+        self.sidebar.addItem(self.updates_item)
+        
         cats = self.apps_data.get("categories", [])
         for c in cats:
             name = c.get(SYSTEM_LANG, c.get("de", "Apps"))
-            
-            # We retrieve the icon name from the API. If none is defined, 
-            # we use “package-x-generic” as a fallback.
             icon_name = c.get("icon", "package-x-generic")
-            
-            # Qt now searches for the icon in real time within the active KDE theme
             icon = QIcon.fromTheme(icon_name, QIcon.fromTheme("package-x-generic"))
             
             item = QListWidgetItem(icon, name)
             item.setData(Qt.UserRole, c["id"])
             self.sidebar.addItem(item)
             
-        if self.sidebar.count() > 0: 
+        if self.start_view == "updates":
+            for i in range(self.sidebar.count()):
+                if self.sidebar.item(i).data(Qt.UserRole) == "kader_updates_view":
+                    self.sidebar.setCurrentRow(i)
+                    self.start_view = "default"
+                    break
+        elif self.sidebar.count() > 0: 
             self.sidebar.setCurrentRow(0)
-            self.load_category()
+            
+        self.load_category()
+        self.fetch_sidebar_badge_count()
+
+    def fetch_sidebar_badge_count(self):
+        self.badge_manager = QNetworkAccessManager(self)
+        def on_badge_loaded(reply):
+            if reply.error() == QNetworkReply.NoError:
+                try:
+                    data = json.loads(reply.readAll().data().decode())
+                    total = data.get("total_updates", 0)
+                    if total > 0:
+                        self.updates_item.setText(f"{_('menu_updates')} ({total})")
+                    else:
+                        self.updates_item.setText(_("menu_updates"))
+                except: pass
+            reply.deleteLater()
+        self.badge_manager.finished.connect(on_badge_loaded)
+        self.badge_manager.get(QNetworkRequest(QUrl(f"{API_URL}/updates")))
 
     def on_sidebar_clicked(self, item):
         self.search.blockSignals(True)
@@ -530,24 +558,30 @@ class KaderStore(QMainWindow):
         
         cat_id = cur.data(Qt.UserRole)
         
-        # NEW: When the installed apps are clicked, load from the new endpoint
-        if cat_id == "kader_installed_view":
-            url = QUrl(f"{API_URL}/installed")
+        if cat_id == "kader_updates_view":
+            self.banner_label.hide()
+            self.update_header_frame.show()
+            self.update_status_title.setText(_("status_checking"))
+            self.update_all_btn.hide()
+            url = QUrl(f"{API_URL}/updates")
             self.network_manager.get(QNetworkRequest(url))
         else:
-            url = QUrl(f"{API_URL}/apps?category={cat_id}")
-            self.network_manager.get(QNetworkRequest(url))
+            self.update_header_frame.hide()
+            self.banner_label.show()
+            
+            if cat_id == "kader_installed_view":
+                url = QUrl(f"{API_URL}/installed")
+                self.network_manager.get(QNetworkRequest(url))
+            else:
+                url = QUrl(f"{API_URL}/apps?category={cat_id}")
+                self.network_manager.get(QNetworkRequest(url))
     
     def refresh_current_view(self):
-        """Triggers a fresh reload of the current view after a job"""
         print("➔ GUI: Job completed! Starting automatic refresh...")
-        
-        # Case 1: A sidebar entry (category or “Installed”) is active
+        self.fetch_sidebar_badge_count()
         current_item = self.sidebar.currentItem()
         if current_item:
             self.load_category()
-            
-        # Case 2: No sidebar entry is active -> We are in search mode
         else:
             query = self.search.text().strip()
             if query:
@@ -567,7 +601,6 @@ class KaderStore(QMainWindow):
             desc_key = a.get('description', '')
             source_upper = a.get('source', '').upper()
             
-            # Weiche für die verschiedenen Token aus der API
             if desc_key == "desc_update_available":
                 final_description = _("desc_update_available") % source_upper
             elif desc_key == "desc_installed_repo":
@@ -575,31 +608,70 @@ class KaderStore(QMainWindow):
             elif desc_key == "desc_installed_aur":
                 final_description = _("desc_installed_aur")
             elif desc_key == "desc_generic_system":
-                # Dynamic placeholder for the REPO/AUR abbreviation
                 final_description = _("desc_generic_system") % source_upper
             elif desc_key.startswith("desc_core_"):
-                # If it is one of the defined core app tokens, translate it directly
                 final_description = _(desc_key)
             else:
-                # Fallback for any remaining free text or fallbacks
                 final_description = desc_key
 
             card = AppCard(
                 a['name'], 
                 final_description, 
                 a['package_name'], 
-                icon_name="package-x-generic", 
+                icon_name="package-x-generic",
                 source=a['source'],
                 flatpak_id=flat_id,
                 status=a['status']
             )
 
-            # WICHTIG: Signal an refresh_current_view koppeln mit 400ms Atempause
-            # card.job_completed_signal.connect(
-            # lambda: QTimer.singleShot(400, self.refresh_current_view)
-            # )
+            card.job_completed_signal.connect(
+                lambda: QTimer.singleShot(400, self.refresh_current_view)
+            )
 
             self.grid_layout.addWidget(card, row, col)
+
+    def trigger_all_updates(self):
+        print("📡 Sende POST für globales System-Update...")
+        self.update_all_btn.setEnabled(False)
+        self.update_status_title.setText(_("status_queue"))
+        
+        req = QNetworkRequest(QUrl(f"{API_URL}/job"))
+        req.setHeader(QNetworkRequest.ContentTypeHeader, "application/json")
+        job_data = {"package_name": "system-update", "source": "repo", "action": "update"}
+        payload = json.dumps(job_data).encode("utf-8")
+        
+        reply = self.network_manager.post(req, payload)
+        def on_global_job_triggered():
+            if reply.error() == QNetworkReply.NoError:
+                try:
+                    res = json.loads(reply.readAll().data().decode())
+                    job_id = res.get("id")
+                    self.global_poll = QTimer(self)
+                    def poll_global_status():
+                        p_req = QNetworkRequest(QUrl(f"{API_URL}/job/{job_id}"))
+                        p_reply = self.network_manager.get(p_req)
+                        def on_global_poll_fin():
+                            if p_reply.error() == QNetworkReply.NoError:
+                                j_data = json.loads(p_reply.readAll().data().decode())
+                                status = j_data.get("status")
+                                if status == "completed":
+                                    self.global_poll.stop()
+                                    self.refresh_current_view()
+                                elif status == "failed":
+                                    self.global_poll.stop()
+                                    self.load_category()
+                                else:
+                                    self.update_status_title.setText(f"⌛ {status}")
+                            p_reply.deleteLater()
+                        p_reply.finished.connect(on_global_poll_fin)
+                    self.global_poll.timeout.connect(poll_global_status)
+                    self.global_poll.start(1000)
+                except:
+                    self.load_category()
+            else:
+                self.load_category()
+            reply.deleteLater()
+        reply.finished.connect(on_global_job_triggered)
 
     def start_search_timer(self, text):
         if text.strip(): self.search_timer.start(400)
@@ -608,26 +680,78 @@ class KaderStore(QMainWindow):
     def trigger_search(self):
         query = self.search.text().strip()
         if not query: return
+        
+        self.update_header_frame.hide()
+        self.banner_label.show()
         self.clear_grid()
         self.sidebar.clearSelection()
         
         url = QUrl(f"{API_URL}/apps?search={query}")
         self.network_manager.get(QNetworkRequest(url))
-        
 
     def clear_grid(self):
-        """Completely removes all old tiles from the layout and memory"""
         if self.grid_layout is not None:
             while self.grid_layout.count():
                 item = self.grid_layout.takeAt(0)
                 widget = item.widget()
                 if widget is not None:
-                    # Forces Qt to cleanly remove the old widget and all its timers/connections 
-                    # from RAM
                     widget.deleteLater()
 
+# ==========================================================
+# 3. INTERNATIONALE SINGLE-INSTANCE KONTROLLE (WURDE INTEGRIERT)
+# ==========================================================
 if __name__ == "__main__":
     app = QApplication(sys.argv)
+    
+    # Name des lokalen System-Sockets für Kader42
+    socket_name = "kader42-software-center-single-instance-lock"
+    
+    # Prüfen, ob bereits ein Prozess mit diesem Socket läuft
+    socket = QLocalSocket()
+    socket.connectToServer(socket_name)
+    
+    if socket.waitForConnected(500):
+        # Ja, es läuft eine Instanz! Wir übergeben die Argumente an sie
+        arguments = sys.argv[1:]
+        payload = json.dumps({"arguments": arguments}).encode("utf-8")
+        socket.write(payload)
+        socket.waitForBytesWritten(1000)
+        print("➔ Software Center läuft bereits. Argumente übergeben und Prozess beendet.")
+        sys.exit(0)
+        
+    # Wenn keine Instanz läuft, bereinigen wir alte Socket-Reste und starten den Server
+    QLocalServer.removeServer(socket_name)
+    local_server = QLocalServer()
+    local_server.listen(socket_name)
+    
+    # Erstellt das Hauptfenster
     window = KaderStore()
+    
+    # Listener-Funktion: Reagiert, wenn eine zweite Instanz im Nachhinein anklopft
+    def on_new_connection():
+        client_socket = local_server.nextPendingConnection()
+        if client_socket.waitForReadyRead(1000):
+            try:
+                data = client_socket.readAll().data().decode("utf-8")
+                payload = json.loads(data)
+                args = payload.get("arguments", [])
+                
+                # Wenn das Tray-Icon die Updates erzwingen will, wechseln wir live den Reiter
+                if "--view=updates" in args:
+                    for i in range(window.sidebar.count()):
+                        if window.sidebar.item(i).data(Qt.UserRole) == "kader_updates_view":
+                            window.sidebar.setCurrentRow(i)
+                            window.load_category()
+                            break
+            except Exception as e:
+                print(f"Fehler beim Parsen der Zweitinstanz-Argumente: {e}")
+                
+        # Fenster wieder in den Fokus rücken und maximieren
+        window.showNormal()
+        window.activateWindow()
+        window.raise_()
+
+    local_server.newConnection.connect(on_new_connection)
+    
     window.show()
     sys.exit(app.exec())
