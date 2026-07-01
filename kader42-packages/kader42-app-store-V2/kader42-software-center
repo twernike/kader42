@@ -4,12 +4,12 @@ import os
 import json
 import locale
 import subprocess
+import time
 from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, 
                              QHBoxLayout, QLabel, QLineEdit, QPushButton, 
-                             QListWidget, QListWidgetItem, QScrollArea, QFrame, QGridLayout, QSizePolicy, QScroller, QScrollerProperties)
-from PySide6.QtCore import Qt, QSize, QTimer, QUrl, Signal, QEvent
+                             QListWidget, QListWidgetItem, QScrollArea, QFrame, QGridLayout, QSizePolicy, QScroller, QScrollerProperties, QTimeEdit)
+from PySide6.QtCore import Qt, QSize, QTimer, QUrl, Signal, QEvent, QTime
 from PySide6.QtGui import QFont, QIcon, QPixmap
-# HIER WURDEN QLocalServer UND QLocalSocket ERGÄNZT:
 from PySide6.QtNetwork import QNetworkAccessManager, QNetworkRequest, QNetworkReply, QLocalServer, QLocalSocket
 
 API_URL = "http://127.0.0.1:8080"
@@ -49,9 +49,14 @@ TRANSLATIONS = {
         "desc_core_libreoffice": "Umfangreiche und freie Office-Suite (Aktuellster Zweig).",
         "desc_core_openboard": "Interaktive Whiteboard-Software für den Bildungsbereich.",
         "menu_updates": "Updates",
+        "menu_settings": "Einstellungen",
         "system_up_to_date": "Dein System ist auf dem neuesten Stand.",
         "updates_available_title": "%s Updates verfügbar",
-        "update_all_btn": "Alle aktualisieren"
+        "update_all_btn": "Alle aktualisieren",
+        "setting_auto_update": "Automatische System-Updates aktivieren",
+        "setting_time": "Geplante Uhrzeit:",
+        "setting_save": "Einstellungen speichern",
+        "setting_success": "Konfiguration erfolgreich gesichert!"
     },
     "en": {
         "search_placeholder": "🔎 Search for apps...",
@@ -76,14 +81,136 @@ TRANSLATIONS = {
         "desc_core_libreoffice": "Powerful and free office suite (Fresh branch).",
         "desc_core_openboard": "Interactive whiteboard software for education.",
         "menu_updates": "Updates",
+        "menu_settings": "Settings",
         "system_up_to_date": "Your system is up to date.",
         "updates_available_title": "%s updates available",
-        "update_all_btn": "Update All"
+        "update_all_btn": "Update All",
+        "setting_auto_update": "Enable automatic system updates",
+        "setting_time": "Scheduled Time:",
+        "setting_save": "Save Settings",
+        "setting_success": "Configuration saved successfully!"
     }
 }
 
 def _(key):
     return TRANSLATIONS[SYSTEM_LANG].get(key, key)
+
+# ==========================================================
+# EINSTELLUNGS-ANSICHT (AUTO-UPDATES)
+# ==========================================================
+class SettingsView(QWidget):
+    def __init__(self, network_manager):
+        super().__init__()
+        self.network_manager = network_manager
+        
+        layout = QVBoxLayout(self)
+        layout.setAlignment(Qt.AlignTop | Qt.AlignLeft)
+        layout.setSpacing(25)
+        layout.setContentsMargins(30, 30, 30, 30)
+        
+        title = QLabel(_("menu_settings"))
+        title.setFont(QFont("Cantarell", 18, QFont.Weight.Bold))
+        title.setStyleSheet("color: #00f0ff;")
+        layout.addWidget(title)
+        
+        self.card = QFrame()
+        self.card.setStyleSheet("background-color: #131926; border-radius: 14px; border: 1px solid #232e48;")
+        self.card.setFixedWidth(500)
+        card_layout = QVBoxLayout(self.card)
+        card_layout.setSpacing(20)
+        card_layout.setContentsMargins(20, 20, 20, 20)
+        
+        self.auto_cb = QCheckBox(_("setting_auto_update"))
+        self.auto_cb.setFont(QFont("Cantarell", 12))
+        self.auto_cb.setStyleSheet("QCheckBox { color: white; border: none; } QCheckBox::indicator { width: 18px; height: 18px; }")
+        card_layout.addWidget(self.auto_cb)
+        
+        time_layout = QHBoxLayout()
+        time_layout.setSpacing(10)
+        time_label = QLabel(_("setting_time"))
+        time_label.setStyleSheet("color: #8fa0c4; border: none; font-size: 13px;")
+        
+        self.time_edit = QTimeEdit()
+        self.time_edit.setDisplayFormat("HH:mm")
+        self.time_edit.setFixedWidth(100)
+        self.time_edit.setStyleSheet("QTimeEdit { background: #0b0f19; color: white; border: 1px solid #232e48; padding: 5px; border-radius: 6px; }")
+        
+        time_layout.addWidget(time_label)
+        time_layout.addWidget(self.time_edit)
+        time_layout.addStretch()
+        card_layout.addLayout(time_layout)
+        
+        self.save_btn = QPushButton(_("setting_save"))
+        self.save_btn.setCursor(Qt.PointingHandCursor)
+        self.save_btn.setStyleSheet("""
+            QPushButton { background-color: #3daee9; color: white; font-weight: bold; padding: 10px; border-radius: 8px; border: none; font-size: 13px; }
+            QPushButton:hover { background-color: #2980b9; }
+        """)
+        self.save_btn.clicked.connect(self.save_settings)
+        card_layout.addWidget(self.save_btn)
+        
+        self.status_msg = QLabel("")
+        self.status_msg.setStyleSheet("color: #2ecc71; font-weight: bold; border: none; font-size: 12px;")
+        card_layout.addWidget(self.status_msg)
+        
+        layout.addWidget(self.card)
+        self.load_settings()
+
+    def load_settings(self):
+            """Wird aufgerufen, sobald der User in der Sidebar auf 'Einstellungen' klickt."""
+            # 1. Wir senden eine GET-Anfrage an die API
+            req = QNetworkRequest(QUrl(f"{API_URL}/settings"))
+            reply = self.network_manager.get(req)
+        
+            def on_loaded():
+                if reply.error() == QNetworkReply.NoError:
+                    try:
+                        # API-Antwort parsen (enthält live den systemd-Status!)
+                        data = json.loads(reply.readAll().data().decode("utf-8"))
+                    
+                        # Checkbox setzen (True/False aus get_systemd_timer_state())
+                        self.auto_cb.setChecked(data.get("auto_updates", False))
+                    
+                        # Uhrzeit setzen (z.B. "04:00")
+                        t_str = data.get("update_time", "04:00")
+                        h, m = map(int, t_str.split(":"))
+                        self.time_edit.setTime(QTime(h, m))
+                    except Exception as e:
+                        print(f"Fehler beim Parsen der Settings in der GUI: {e}")
+                reply.deleteLater()
+            
+            reply.finished.connect(on_loaded)
+        
+    def save_settings(self):
+        """Wird aufgerufen, wenn der User auf 'Einstellungen speichern' klickt."""
+        # 1. Den aktuellen Zustand aus den Widgets auslesen
+        payload_data = {
+            "auto_updates": self.auto_cb.isChecked(),
+            "update_time": self.time_edit.time().toString("HH:mm")
+        }
+        
+        # 2. JSON-Payload vorbereiten
+        req = QNetworkRequest(QUrl(f"{API_URL}/settings"))
+        req.setHeader(QNetworkRequest.ContentTypeHeader, "application/json")
+        payload = json.dumps(payload_data).encode("utf-8")
+        
+        # 3. Per POST an die API schicken (die dann via pkexec systemd steuert)
+        reply = self.network_manager.post(req, payload)
+        
+        def on_saved():
+            if reply.error() == QNetworkReply.NoError:
+                # Erfolgsmeldung in der GUI anzeigen
+                self.status_msg.setText(_("setting_success"))
+                # Text nach 3 Sekunden automatisch wieder ausblenden
+                QTimer.singleShot(3000, lambda: self.status_msg.setText(""))
+            else:
+                print(f"API-Fehler beim Speichern der Settings: {reply.errorString()}")
+            reply.deleteLater()
+            
+        reply.finished.connect(on_saved)
+
+# Dummy-Klasse für sauberes CSS-Inlining der Checkbox
+from PySide6.QtWidgets import QCheckBox
 
 # ==========================================================
 # 1. DIE APP-KACHEL
@@ -327,7 +454,7 @@ class KaderStore(QMainWindow):
         self.resize(1240, 900)
         self.setStyleSheet("background-color: #0b0f19; color: white;")
         
-        app_icon_path = "/usr/share/icons/mello.png"
+        app_icon_path = "/usr/share/icons/hicolor/scalable/apps/software-center-tray-icon.svg"
         if os.path.exists(app_icon_path):
             self.setWindowIcon(QIcon(app_icon_path))
         else:
@@ -364,13 +491,7 @@ class KaderStore(QMainWindow):
         self.sidebar.setFixedWidth(270)
         self.sidebar.setStyleSheet("""
             QListWidget { background: #0b0f19; border: none; } 
-            QListWidget::item { 
-                padding: 20px; 
-                color: #8fa0c4; 
-                font-size: 13pt; 
-                font-weight: bold; 
-                border-bottom: 1px solid #131926; 
-            } 
+            QListWidget::item { padding: 20px; color: #8fa0c4; font-size: 13pt; font-weight: bold; border-bottom: 1px solid #131926; } 
             QListWidget::item:selected { background: #1a233a; color: #00f0ff; border-radius: 10px; }
         """)
         self.sidebar.setIconSize(QSize(32, 32))
@@ -439,7 +560,12 @@ class KaderStore(QMainWindow):
         self.grid_layout.setSpacing(22)
         self.scroll.setWidget(self.grid_widget)
         
+        # NEU: Settings View als persistente Schicht registrieren
+        self.settings_view = SettingsView(self.network_manager)
+        self.settings_view.hide()
+        
         right_layout.addWidget(self.scroll)
+        right_layout.addWidget(self.settings_view) # Wird flexibel ein-/ausgeblendet
         content.addLayout(right_layout)
         self.root.addLayout(content)
         
@@ -471,7 +597,7 @@ class KaderStore(QMainWindow):
                     self.setup_sidebar()
                 elif path in ["/apps", "/installed", "/updates"]:
                     self.clear_grid()
-                    
+                     
                     if path == "/updates":
                         total_updates = data.get("total_updates", 0)
                         packages = data.get("packages", [])
@@ -517,6 +643,12 @@ class KaderStore(QMainWindow):
             item.setData(Qt.UserRole, c["id"])
             self.sidebar.addItem(item)
             
+        # NEU: Settings Item ganz unten anfügen
+        settings_icon = QIcon.fromTheme("preferences-system", QIcon.fromTheme("settings-configure"))
+        settings_item = QListWidgetItem(settings_icon, _("menu_settings"))
+        settings_item.setData(Qt.UserRole, "kader_settings_view")
+        self.sidebar.addItem(settings_item)
+            
         if self.start_view == "updates":
             for i in range(self.sidebar.count()):
                 if self.sidebar.item(i).data(Qt.UserRole) == "kader_updates_view":
@@ -554,26 +686,40 @@ class KaderStore(QMainWindow):
     def load_category(self):
         self.clear_grid()
         cur = self.sidebar.currentItem()
+        cb = int(time.time())
         if not cur: return
         
         cat_id = cur.data(Qt.UserRole)
+        
+        # UI-Umschaltung für das Einstellungs-Widget abfangen
+        if cat_id == "kader_settings_view":
+            self.scroll.hide()
+            self.banner_label.hide()
+            self.update_header_frame.hide()
+            self.settings_view.show()
+            self.settings_view.load_settings() # Live die API abfragen
+            return
+            
+        # Standard-Ansicht wiederherstellen, falls Settings aktiv waren
+        self.settings_view.hide()
+        self.scroll.show()
         
         if cat_id == "kader_updates_view":
             self.banner_label.hide()
             self.update_header_frame.show()
             self.update_status_title.setText(_("status_checking"))
             self.update_all_btn.hide()
-            url = QUrl(f"{API_URL}/updates")
+            url = QUrl(f"{API_URL}/updates?cb={cb}")
             self.network_manager.get(QNetworkRequest(url))
         else:
             self.update_header_frame.hide()
             self.banner_label.show()
             
             if cat_id == "kader_installed_view":
-                url = QUrl(f"{API_URL}/installed")
+                url = QUrl(f"{API_URL}/installed?cb={cb}")
                 self.network_manager.get(QNetworkRequest(url))
             else:
-                url = QUrl(f"{API_URL}/apps?category={cat_id}")
+                url = QUrl(f"{API_URL}/apps?category={cat_id}&cb={cb}")
                 self.network_manager.get(QNetworkRequest(url))
     
     def refresh_current_view(self):
@@ -590,11 +736,16 @@ class KaderStore(QMainWindow):
     def render_category_apps(self, apps):
         columns = 3
         for index, a in enumerate(apps):
+            pkg_lower = a['package_name'].lower()
+            
+            # NEU: Das eigene Software Center wird komplett aus allen Ansichten gefiltert 
+            if pkg_lower == "kader42-software-center":
+                continue
+                
             row = index // columns
             col = index % columns
             
             flat_id = None
-            pkg_lower = a['package_name'].lower()
             if "firefox" in pkg_lower: flat_id = "org.mozilla.firefox"
             elif "vlc" in pkg_lower: flat_id = "org.videolan.VLC"
             
@@ -679,14 +830,19 @@ class KaderStore(QMainWindow):
 
     def trigger_search(self):
         query = self.search.text().strip()
+        cb = int(time.time())
         if not query: return
+        
+        # Beim Suchen aus den Settings herausspringen
+        self.settings_view.hide()
+        self.scroll.show()
         
         self.update_header_frame.hide()
         self.banner_label.show()
         self.clear_grid()
         self.sidebar.clearSelection()
         
-        url = QUrl(f"{API_URL}/apps?search={query}")
+        url = QUrl(f"{API_URL}/apps?search={query}&cb={cb}")
         self.network_manager.get(QNetworkRequest(url))
 
     def clear_grid(self):
@@ -698,20 +854,16 @@ class KaderStore(QMainWindow):
                     widget.deleteLater()
 
 # ==========================================================
-# 3. INTERNATIONALE SINGLE-INSTANCE KONTROLLE (WURDE INTEGRIERT)
+# 3. INTERNATIONALE SINGLE-INSTANCE KONTROLLE
 # ==========================================================
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     
-    # Name des lokalen System-Sockets für Kader42
     socket_name = "kader42-software-center-single-instance-lock"
-    
-    # Prüfen, ob bereits ein Prozess mit diesem Socket läuft
     socket = QLocalSocket()
     socket.connectToServer(socket_name)
     
     if socket.waitForConnected(500):
-        # Ja, es läuft eine Instanz! Wir übergeben die Argumente an sie
         arguments = sys.argv[1:]
         payload = json.dumps({"arguments": arguments}).encode("utf-8")
         socket.write(payload)
@@ -719,15 +871,12 @@ if __name__ == "__main__":
         print("➔ Software Center läuft bereits. Argumente übergeben und Prozess beendet.")
         sys.exit(0)
         
-    # Wenn keine Instanz läuft, bereinigen wir alte Socket-Reste und starten den Server
     QLocalServer.removeServer(socket_name)
     local_server = QLocalServer()
     local_server.listen(socket_name)
     
-    # Erstellt das Hauptfenster
     window = KaderStore()
     
-    # Listener-Funktion: Reagiert, wenn eine zweite Instanz im Nachhinein anklopft
     def on_new_connection():
         client_socket = local_server.nextPendingConnection()
         if client_socket.waitForReadyRead(1000):
@@ -736,7 +885,6 @@ if __name__ == "__main__":
                 payload = json.loads(data)
                 args = payload.get("arguments", [])
                 
-                # Wenn das Tray-Icon die Updates erzwingen will, wechseln wir live den Reiter
                 if "--view=updates" in args:
                     for i in range(window.sidebar.count()):
                         if window.sidebar.item(i).data(Qt.UserRole) == "kader_updates_view":
@@ -746,7 +894,6 @@ if __name__ == "__main__":
             except Exception as e:
                 print(f"Fehler beim Parsen der Zweitinstanz-Argumente: {e}")
                 
-        # Fenster wieder in den Fokus rücken und maximieren
         window.showNormal()
         window.activateWindow()
         window.raise_()

@@ -4,6 +4,10 @@ post_install() {
   echo "---"
   echo "==> [Kader⁴² software center] Das Software Center Tray-Icon wurde für den Autostart registriert."
   echo "==> Das Icon wird beim nächsten Login automatisch im System-Tray angezeigt.
+
+  update-desktop-database -q
+  xdg-mime default kader42-software-center.desktop x-scheme-handler/appstream
+
 }
 
 post_upgrade() {

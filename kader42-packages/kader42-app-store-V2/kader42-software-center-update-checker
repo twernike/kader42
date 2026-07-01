@@ -1,0 +1,51 @@
+#!/usr/bin/env python
+
+import pyalpm
+import sqlite3
+import sys
+from shared import DB_PATH, prepare_alpm_handle
+
+def check_for_updates():
+    handle = prepare_alpm_handle()
+    local_db = handle.get_localdb()
+    sync_dbs = handle.get_syncdbs()
+    
+    # Sicherheitsnetz: Wenn keine Repos registriert wurden (z.B. Netzwerk offline oder Config-Fehler)
+    if not sync_dbs:
+        print("Keine Sync-Datenbanken registriert! re-Import in shared.py geprüft?", file=sys.stderr)
+        return
+
+    updates_count = 0
+    
+    # Alle installierten Pakete durchgehen
+    for pkg in local_db.pkgcache:
+        # Wir suchen in jeder registrierten Sync-DB (core, extra, kader42...) nach dem Paket
+        for db in sync_dbs:
+            sync_pkg = db.get_pkg(pkg.name)
+            if sync_pkg:
+                # Wenn die Version auf dem Server neuer ist als lokal -> Update!
+                if pyalpm.vercmp(sync_pkg.version, pkg.version) > 0:
+                    updates_count += 1
+                break # Gefunden, nächstes lokales Paket prüfen
+
+    print(f"Update-Check beendet. Verfügbare Updates: {updates_count}")
+
+    # Ergebnis in die DB schreiben
+    with sqlite3.connect(DB_PATH) as conn:
+        # Sicherstellen, dass die Tabelle existiert, falls der Checker vor der API läuft
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS system_status (
+                key TEXT PRIMARY KEY,
+                value TEXT,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        conn.execute("""
+            INSERT INTO system_status (key, value, updated_at) 
+            VALUES ('available_updates', ?, CURRENT_TIMESTAMP)
+            ON CONFLICT(key) DO UPDATE SET value=excluded.value, updated_at=excluded.updated_at
+        """, (str(updates_count),))
+        conn.commit()
+
+if __name__ == "__main__":
+    check_for_updates()

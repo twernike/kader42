@@ -1,7 +1,7 @@
 # Maintainer: Thomas Wernike <support@kader42.de>
 pkgname=kader42-software-center
-pkgver=1.0.0
-pkgrel=38
+pkgver=1.0.1
+pkgrel=1
 pkgdesc="Software Management for Kader⁴²"
 arch=('any')
 url="https://kader42.de"
@@ -14,12 +14,16 @@ depends=(
     'qt6-tools'   
     'kconfig'     
 )
+provides=('pamac-aur' 'pamac-tray-icon-plasma' 'pamac' 'pamac-manager')
+conflicts=('pamac-aur' 'pamac-tray-icon-plasma' 'pamac' 'pamac-manager')
 
 source=('kader42-software-center-api.py'
         'shared.py'
         'kader42-software-center-worker.py'
         'kader42-software-center-api.service'
         'kader42-software-center-worker.service'
+        'kader42-autoupdate.service'
+        'kader42-autoupdate.timer'
         'kader42-software-center'
         'kader42-software-center.desktop'
         '42-kader-store.rules'
@@ -27,10 +31,9 @@ source=('kader42-software-center-api.py'
         'kader42-software-center-tray.desktop'
         'software-center-tray-icon.svg'
         )
-md5sums=('SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP')
+md5sums=('SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP') 
 
 package() {
-  # 1. Backend-Skripte (Ausführbar machen)
   install -Dm755 "${srcdir}/kader42-software-center-api.py" "${pkgdir}/usr/lib/kader42-software-center/kader42-software-center-api.py"
   install -Dm755 "${srcdir}/shared.py" "${pkgdir}/usr/lib/kader42-software-center/shared.py"
   install -Dm755 "${srcdir}/kader42-software-center-worker.py" "${pkgdir}/usr/lib/kader42-software-center/kader42-software-center-worker.py"
@@ -47,6 +50,10 @@ package() {
 
   install -Dm644 "${srcdir}/kader42-software-center-api.service" "${pkgdir}/usr/lib/systemd/user/kader42-software-center-api.service"
   install -Dm644 "${srcdir}/kader42-software-center-worker.service" "${pkgdir}/usr/lib/systemd/user/kader42-software-center-worker.service"
+  install -Dm644 "${srcdir}/kader42-autoupdate.service" "${pkgdir}/usr/lib/systemd/system/kader42-autoupdate.service"
+  install -Dm644 "${srcdir}/kader42-autoupdate.timer" "${pkgdir}/usr/lib/systemd/system/kader42-autoupdate.timer"
+
+
   install -Dm755 "${srcdir}/kader42-software-center-tray.desktop" "${pkgdir}/etc/xdg/autostart/kader42-software-center-tray.desktop"
 
   mkdir -p "${pkgdir}/usr/lib/systemd/user/default.target.wants"

@@ -9,8 +9,8 @@ import os
 import subprocess
 from shared import DB_PATH, CACHE_DIR, init_environment
 
-# Hier definieren wir die Kategorien und welche Suchbegriffe oder 
-# Arch-Paketgruppen im Hintergrund abgefragt werden sollen.
+# Here we define the categories and which search terms or 
+# Arch package groups should be queried in the background.
 CATEGORY_DEFINITIONS = [
     {"id": "development", "icon":"applications-development","de": "Entwicklungstools", "en": "Development", "query": "code visual-studio-code-bin vscodium-bin eclipse pycharm gitkraken"},
     {"id": "internet","icon": "applications-internet", "de": "Internet & Browser", "en": "Internet", "query": "firefox chromium thunderbird filezilla discord"},
@@ -18,7 +18,82 @@ CATEGORY_DEFINITIONS = [
     {"id": "office", "icon": "applications-office", "de": "Büro & Office", "en": "Office", "query": "libreoffice-fresh openboard xournalpp"}
 ]
 
+import os
+import json
+import subprocess
+from http.server import HTTPServer, BaseHTTPRequestHandler
+import urllib.parse
+# ... deine anderen Imports (sqlite3, shared, etc.) ...
+
+SETTINGS_DIR = "/etc/kader42"
+SETTINGS_FILE = f"{SETTINGS_DIR}/software-center.json"
+
+# ==========================================================
+# SYSTEMD & SETTINGS HELPER FUNCTIONS
+# ==========================================================
+def get_systemd_timer_state():
+    """Prüft live im System, ob der systemd-Timer aktiv geschaltet ist."""
+    try:
+        res = subprocess.run("systemctl is-enabled kader42-autoupdate.timer", shell=True, capture_output=True, text=True)
+        return res.stdout.strip() == "enabled"
+    except Exception as e:
+        print(f"Fehler bei systemctl is-enabled: {e}")
+        return False
+
+def load_settings():
+    """Lädt die Uhrzeit aus der JSON, holt den Aktivitätsstatus aber live aus systemd."""
+    saved_time = "04:00"
+    if os.path.exists(SETTINGS_FILE):
+        try:
+            with open(SETTINGS_FILE, "r") as f:
+                data = json.load(f)
+                saved_time = data.get("update_time", "04:00")
+        except Exception as e:
+            print(f"Fehler beim Lesen der Einstellungsdatei: {e}")
+        
+    return {
+        "auto_updates": get_systemd_timer_state(),  
+        "update_time": saved_time
+    }
+
+def save_settings(data):
+    """Sichert die Uhrzeit und schaltet den systemd-Timer samt Override live um."""
+    try:
+        if not os.path.exists(SETTINGS_DIR):
+            os.makedirs(SETTINGS_DIR, exist_ok=True)
+            
+        auto_updates = data.get("auto_updates", False)
+        update_time = data.get("update_time", "04:00")
+        
+        # 1. Nur die Uhrzeit in der JSON sichern
+        with open(SETTINGS_FILE, "w") as f:
+            json.dump({"update_time": update_time}, f, indent=4)
+            
+        # 2. Dynamischen systemd-Override für die Uhrzeit verwalten
+        override_dir = "/etc/systemd/system/kader42-autoupdate.timer.d"
+        override_file = f"{override_dir}/override.conf"
+        
+        if auto_updates:
+            os.makedirs(override_dir, exist_ok=True)
+            with open(override_file, "w") as f:
+                f.write(f"[Timer]\nOnCalendar=\nOnCalendar=*-*-* {update_time}:00\n")
+            
+            subprocess.run("systemctl daemon-reload", shell=True)
+            subprocess.run("systemctl enable --now kader42-autoupdate.timer", shell=True)
+            print(f"➔ systemd: Timer aktiviert und auf {update_time} Uhr gesetzt.")
+        else:
+            subprocess.run("systemctl disable --now kader42-autoupdate.timer", shell=True)
+            if os.path.exists(override_file):
+                os.remove(override_file)
+            subprocess.run("systemctl daemon-reload", shell=True)
+            print("➔ systemd: Timer erfolgreich deaktiviert.")
+            
+    except Exception as e:
+        print(f"Fehler beim Verarbeiten der Einstellungen im System: {e}")
+
 class StoreAPIHandler(BaseHTTPRequestHandler):
+    
+
     def _set_headers(self, status=200):
         self.send_response(status)
         self.send_header('Content-Type', 'application/json')
@@ -63,7 +138,7 @@ class StoreAPIHandler(BaseHTTPRequestHandler):
         elif path_str == "/updates":
             all_apps = self.get_installed_apps_and_updates()
             
-            # Wir filtern exakt nach deinem Status-String!
+            # We filter exactly by the status string!
             update_packages = [app for app in all_apps if app.get('status') == 'update_available']
             
             results = {
@@ -73,6 +148,9 @@ class StoreAPIHandler(BaseHTTPRequestHandler):
             
             self._set_headers(200)
             self.wfile.write(json.dumps(results).encode('utf-8'))
+        elif path_str == "/settings":
+            self._set_headers(200)
+            self.wfile.write(json.dumps(self.load_settings()).encode('utf-8'))
 
         # ==========================================================
         # Check Job Status (/job/<id>)
@@ -83,7 +161,7 @@ class StoreAPIHandler(BaseHTTPRequestHandler):
                 job_id_str = path_str.split("/")[-1]
                 job_id = int(job_id_str)
                 
-                # Holt den Status direkt aus der SQLite-Datenbank
+                # Trim off “/job/” to get the ID as a number
                 status_data = self.get_job_status(job_id)
                 
                 self._set_headers(200)
@@ -111,6 +189,13 @@ class StoreAPIHandler(BaseHTTPRequestHandler):
             job_id = self.queue_job(pkg_name, source, action)
             self._set_headers(201)
             self.wfile.write(json.dumps({"id": job_id, "status": "queued"}).encode('utf-8'))
+        elif self.path == "/settings":
+            content_length = int(self.headers['Content-Length'])
+            body = self.rfile.read(content_length).decode('utf-8')
+            settings_data = json.loads(body)
+            self.save_settings(settings_data)
+            self._set_headers(200)
+            self.wfile.write(json.dumps({"status": "saved"}).encode('utf-8'))
 
     def search_via_yay(self, query):
         apps_found = []
@@ -118,38 +203,39 @@ class StoreAPIHandler(BaseHTTPRequestHandler):
         if not query:
             return []
 
-        # 1. ROBUSTER LOKALER STATUS-CACHE
         installed_packages = set()
         updates_available = set()
         try:
             if os.path.exists("/var/lib/pacman/local"):
                 for d in os.listdir("/var/lib/pacman/local"):
                     if not d or "-" not in d: continue
+                    
+                    # A local Pacman folder always looks like this: pkgname-version-release
+                    # We split it from the right and remove the last two elements (version & release).
                     parts = d.split("-")
-                    for i in range(len(parts) - 1, 0, -1):
-                        if parts[i] and parts[i][0].isdigit():
-                            pkg_name = "-".join(parts[:i])
-                            installed_packages.add(pkg_name)
-                            break
+                    if len(parts) > 2:
+                        # Connect all parts except the last two with a hyphen
+                        pkg_name = "-".join(parts[:-2])
+                        installed_packages.add(pkg_name)
 
             res_upd = subprocess.run("yay -Qu", shell=True, capture_output=True, text=True)
             for line in res_upd.stdout.split("\n"):
                 if line.strip():
                     updates_available.add(line.split(" ")[0].strip())
         except Exception as e:
-            print(f"API Such-Vorbehandlung Fehler: {e}")
+            print(f"[kader42-software-center-api] API Search Preprocessing Error: {e}")
 
-        # 2. WEICHE: KATEGORIE (Exakte Paketliste) vs. FREIE SUCHE
-        # Wir prüfen, ob die Query aus den CATEGORY_DEFINITIONS stammt
+        # 2. FILTER: CATEGORY (Exact Package List) vs. FREE SEARCH
+        # We check whether the query comes from the CATEGORY_DEFINITIONS
         is_category = any(c["query"] == query for c in CATEGORY_DEFINITIONS) or " " in query
 
         if is_category:
-            # Bei Kategorien fragen wir die exakten Pakete direkt via info (-Si) ab
+            # For categories, we query the exact packages directly via info (-Si)ab
             package_list = query.split()
-            # Um das AUR nicht zu überlasten, nutzen wir pacman/yay effizient
+            # To avoid overloading the AUR, we use pacman/yay efficiently
             cmd = f"yay -Si {' '.join(package_list)}"
         else:
-            # Bei der freien Suche nutzen wir weiterhin die reguläre Suche (-Ss)
+            # For the free search, we continue to use the regular search (-Ss)
             cmd = f"yay -Ss {query}"
         
         try:
@@ -160,13 +246,13 @@ class StoreAPIHandler(BaseHTTPRequestHandler):
             
             if is_category:
                 # PARSER FÜR 'yay -Si' (Kategorien)
-                repo = "repo"  # Sicherer Fallback-Wert vorab initialisiert!
+                repo = "repo"  # Safe fallback value initialized in advance!
                 
                 for line in lines:
                     line_stripped = line.strip()
                     if not line_stripped: continue
                     
-                    # Erkennt Repository oder Datenbank (egal ob DE oder EN)
+                    # Detects repository or database (whether DE or EN)
                     if any(line_stripped.startswith(x) for x in ["Repository", "Datenbank", "Database"]):
                         repo = line_stripped.split(":")[-1].strip()
                         
@@ -209,9 +295,9 @@ class StoreAPIHandler(BaseHTTPRequestHandler):
 
                             apps_found.append(current_pkg)
                             current_pkg = None
-                            repo = "repo" # Reset für das nächste Paket in der Liste
+                            repo = "repo" # Reset for the next item in the list
             else:
-                # PARSER FÜR 'yay -Ss' (Freie Suche - bleibt wie gehabt)
+                # PARSER FOR ‘yay -Ss’ (Free search - remains the same)
                 for line in lines:
                     line_stripped = line.strip()
                     if not line_stripped: continue
@@ -235,6 +321,10 @@ class StoreAPIHandler(BaseHTTPRequestHandler):
                     elif current_pkg and not line_stripped.startswith("    "):
                         current_pkg["description"] = line_stripped
                         p_name = current_pkg["package_name"]
+
+                        if p_name.lower() == "kader42-software-center":
+                            current_pkg = None
+                            continue
                         
                         if p_name in updates_available:
                             current_pkg["status"] = "update_available"
@@ -283,9 +373,9 @@ class StoreAPIHandler(BaseHTTPRequestHandler):
     def get_installed_apps_and_updates(self):
         apps = []
         
-        # 1. Alle explizit installierten Pakete holen
+        # 1. Get all explicitly installed packages
         try:
-            # shell=True sorgt dafür, dass yay in deiner gewohnten Benutzerumgebung ausgeführt wird
+            # shell=True ensures that yay runs in the usual user environment
             res_installed = subprocess.run("yay -Qe", shell=True, capture_output=True, text=True)
             
             if res_installed.returncode != 0:
@@ -302,7 +392,7 @@ class StoreAPIHandler(BaseHTTPRequestHandler):
             print(f"API Exception bei yay -Qe: {e}")
             return []
 
-        # 2. Alle verfügbaren Updates ermitteln (Repo + AUR kombiniert)
+        # 2.  Check for all available updates (Repo + AUR combined)
         updates_available = set()
         try:
             res_updates = subprocess.run("yay -Qu", shell=True, capture_output=True, text=True)
@@ -312,14 +402,14 @@ class StoreAPIHandler(BaseHTTPRequestHandler):
         except Exception:
             pass
 
-        # 3. Alle installierten AUR-Pakete ermitteln
+        # 3. List all installed AUR packages
         try:
             res_aur = subprocess.run("yay -Qm", shell=True, capture_output=True, text=True)
             aur_packages = {line.split(" ")[0].strip() for line in res_aur.stdout.split("\n") if line.strip()}
         except Exception:
             aur_packages = set()
 
-        # 4. Filter nach GUI-Anwendungen über die .desktop-Dateiname-Heuristik
+        # 4. Filter by GUI applications using the .desktop filename heuristic
         desktop_apps = set()
         desktop_dir = "/usr/share/applications"
         if os.path.exists(desktop_dir):
@@ -331,19 +421,19 @@ class StoreAPIHandler(BaseHTTPRequestHandler):
                         if pkg in base_name or base_name in pkg:
                             desktop_apps.add(pkg)
 
-        # Sicherheits-Fallback für bekannte Core-Apps deiner Distribution
+        # Security fallback for well-known core apps in your distribution
         known_guis = ["code", "visual-studio-code-bin", "vscodium-bin", "discord", "steam", "spotify"]
         for pkg in known_guis:
             if pkg in explicit_packages:
                 desktop_apps.add(pkg)
 
-        # 5. JSON-Struktur für das Frontend aufbauen
+        # 5. Building a JSON Structure for the Front End
         for pkg in desktop_apps:
             has_update = pkg in updates_available
             source_type = "aur" if pkg in aur_packages else "repo"
             status_type = "update_available" if has_update else "installed"
             
-            # Statt festem Text senden wir Variablen für das Frontend
+            # Instead of hard-coded text, we send variables to the front end
             if has_update:
                 desc_key = "desc_update_available"
             else:
