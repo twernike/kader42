@@ -18,8 +18,9 @@ API_URL = "http://127.0.0.1:8080"
 # LANGUAGE & LOCALIZATION SETUP
 # ==========================================================
 try:
-    SYSTEM_LANG = locale.getdefaultlocale()[0][:2]
-except:
+    lang_code = locale.getlocale()[0] or locale.getdefaultlocale()[0]
+    SYSTEM_LANG = lang_code[:2] if lang_code else "de"
+except Exception:
     SYSTEM_LANG = "de"
 
 if SYSTEM_LANG not in ["de", "en"]:
@@ -133,12 +134,20 @@ class SettingsView(QWidget):
         self.time_edit = QTimeEdit()
         self.time_edit.setDisplayFormat("HH:mm")
         self.time_edit.setFixedWidth(100)
-        self.time_edit.setStyleSheet("QTimeEdit { background: #0b0f19; color: white; border: 1px solid #232e48; padding: 5px; border-radius: 6px; }")
+        self.time_edit.setStyleSheet("""
+            QTimeEdit { background: #0b0f19; color: white; border: 1px solid #232e48; padding: 5px; border-radius: 6px; }
+            QTimeEdit:disabled { background: #1a1f2c; color: #556585; border: 1px solid #1f2736; }
+        """) # Styling für den ausgegrauten Zustand hinzugefügt!
         
         time_layout.addWidget(time_label)
         time_layout.addWidget(self.time_edit)
         time_layout.addStretch()
         card_layout.addLayout(time_layout)
+        
+        # MAGIE HIER: Verbindet die Checkbox direkt mit dem Aktivierungszustand der Zeitauswahl
+        self.auto_cb.toggled.connect(self.time_edit.setEnabled)
+        # Standardmäßig erst mal deaktivieren (wird gleich durch load_settings() überschrieben)
+        self.time_edit.setEnabled(False)
         
         self.save_btn = QPushButton(_("setting_save"))
         self.save_btn.setCursor(Qt.PointingHandCursor)
@@ -154,32 +163,58 @@ class SettingsView(QWidget):
         card_layout.addWidget(self.status_msg)
         
         layout.addWidget(self.card)
-        self.load_settings()
-
-    def load_settings(self):
-            """Wird aufgerufen, sobald der User in der Sidebar auf 'Einstellungen' klickt."""
-            # 1. Wir senden eine GET-Anfrage an die API
-            req = QNetworkRequest(QUrl(f"{API_URL}/settings"))
-            reply = self.network_manager.get(req)
         
-            def on_loaded():
-                if reply.error() == QNetworkReply.NoError:
-                    try:
-                        # API-Antwort parsen (enthält live den systemd-Status!)
-                        data = json.loads(reply.readAll().data().decode("utf-8"))
-                    
-                        # Checkbox setzen (True/False aus get_systemd_timer_state())
-                        self.auto_cb.setChecked(data.get("auto_updates", False))
-                    
-                        # Uhrzeit setzen (z.B. "04:00")
-                        t_str = data.get("update_time", "04:00")
-                        h, m = map(int, t_str.split(":"))
-                        self.time_edit.setTime(QTime(h, m))
-                    except Exception as e:
-                        print(f"Fehler beim Parsen der Settings in der GUI: {e}")
+        self.load_settings()
+        
+    def load_settings(self):
+        """Wird aufgerufen, sobald der User in der Sidebar auf 'Einstellungen' klickt."""
+        req = QNetworkRequest(QUrl(f"{API_URL}/settings"))
+        reply = self.network_manager.get(req)
+        
+        def on_loaded():
+            # Erst prüfen, ob ein Netzwerkfehler vorliegt
+            if reply.error() != QNetworkReply.NoError:
+                print(f"Netzwerkfehler beim Laden der Settings: {reply.errorString()}")
                 reply.deleteLater()
+                return
+
+            # Bytes auslesen
+            raw_bytes = reply.readAll().data()
             
-            reply.finished.connect(on_loaded)
+            # WICHTIG: Wenn der Puffer im async-Request noch leer ist, abbrechen!
+            if not raw_bytes or len(raw_bytes) == 0:
+                reply.deleteLater()
+                return
+                
+            try:
+                # Dekodieren und parsen
+                json_str = raw_bytes.decode("utf-8").strip()
+                
+                # Sicherheitsnetz: Ist der String leeres JSON?
+                if not json_str or json_str in ["", "null"]:
+                    reply.deleteLater()
+                    return
+                    
+                data = json.loads(json_str)
+                is_active = data.get("auto_updates", False)
+                
+                # UI-Elemente blockieren kurz Signale, um Endlosschleifen zu verhindern
+                self.auto_cb.blockSignals(True)
+                self.auto_cb.setChecked(is_active)
+                self.time_edit.setEnabled(is_active)
+                self.auto_cb.blockSignals(False)
+                
+                t_str = data.get("update_time", "04:00")
+                h, m = map(int, t_str.split(":"))
+                self.time_edit.setTime(QTime(h, m))
+                
+            except Exception as e:
+                # Dieser Print wird jetzt nicht mehr getriggert, da leere Antworten oben abgefangen werden
+                print(f"Fehler beim Parsen der Settings in der GUI: {e}")
+                
+            reply.deleteLater()
+            
+        reply.finished.connect(on_loaded)
         
     def save_settings(self):
         """Wird aufgerufen, wenn der User auf 'Einstellungen speichern' klickt."""

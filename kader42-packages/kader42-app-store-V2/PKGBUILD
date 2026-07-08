@@ -1,7 +1,7 @@
 # Maintainer: Thomas Wernike <support@kader42.de>
 pkgname=kader42-software-center
-pkgver=1.0.1
-pkgrel=1
+pkgver=1.0.2
+pkgrel=0
 pkgdesc="Software Management for Kader⁴²"
 arch=('any')
 url="https://kader42.de"
@@ -30,14 +30,16 @@ source=('kader42-software-center-api.py'
         'kader42-software-center-tray.py'
         'kader42-software-center-tray.desktop'
         'software-center-tray-icon.svg'
+        'kader42-check-and-update.py'
         )
-md5sums=('SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP') 
+md5sums=('SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP') 
 
 package() {
   install -Dm755 "${srcdir}/kader42-software-center-api.py" "${pkgdir}/usr/lib/kader42-software-center/kader42-software-center-api.py"
   install -Dm755 "${srcdir}/shared.py" "${pkgdir}/usr/lib/kader42-software-center/shared.py"
   install -Dm755 "${srcdir}/kader42-software-center-worker.py" "${pkgdir}/usr/lib/kader42-software-center/kader42-software-center-worker.py"
   install -Dm755 "${srcdir}/kader42-software-center-tray.py" "${pkgdir}/usr/lib/kader42-software-center/kader42-software-center-tray.py"
+  install -Dm755 "${srcdir}/kader42-check-and-update.py" "${pkgdir}/usr/lib/kader42-software-center/kader42-check-and-update.py"
 
 
   install -Dm755 "${srcdir}/kader42-software-center" "${pkgdir}/usr/bin/kader42-software-center"

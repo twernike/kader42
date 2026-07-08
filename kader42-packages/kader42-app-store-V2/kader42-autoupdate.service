@@ -1,8 +1,8 @@
 [Unit]
-Description=Kader42 Automatic System Updates
+Description=Kader42 Automatic System Updates Checker
 After=network-online.target
 Wants=network-online.target
 
 [Service]
 Type=oneshot
-ExecStart=/usr/bin/yay -Syu --noconfirm
+ExecStart=python /usr/lib/kader42-software-center/kader42-check-and-update.py

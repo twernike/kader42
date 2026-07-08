@@ -1,8 +1,9 @@
 [Unit]
-Description=Kader42 Automatic System Updates Timer
+Description=Kader42 Automatic System Updates Check Timer
 
 [Timer]
-OnCalendar=*-*-* 04:00:00
+# Prüft jede Minute, ob die eingestellte Update-Zeit erreicht ist
+OnCalendar=*-*-* *:*:00
 Persistent=true
 
 [Install]

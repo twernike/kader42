@@ -18,30 +18,32 @@ CATEGORY_DEFINITIONS = [
     {"id": "office", "icon": "applications-office", "de": "Büro & Office", "en": "Office", "query": "libreoffice-fresh openboard xournalpp"}
 ]
 
+# Instead of writing `server = HTTPServer(...)` directly, let's make it reusable:
+class ReusableHTTPServer(HTTPServer):
+    allow_reuse_address = True
+
+
+SETTINGS_DIR = os.path.expanduser("~/.config/kader42")
+SETTINGS_FILE = f"{SETTINGS_DIR}/software-center.json"
+
+import subprocess
 import os
 import json
-import subprocess
-from http.server import HTTPServer, BaseHTTPRequestHandler
-import urllib.parse
-# ... deine anderen Imports (sqlite3, shared, etc.) ...
 
 SETTINGS_DIR = "/etc/kader42"
 SETTINGS_FILE = f"{SETTINGS_DIR}/software-center.json"
 
-# ==========================================================
-# SYSTEMD & SETTINGS HELPER FUNCTIONS
-# ==========================================================
 def get_systemd_timer_state():
-    """Prüft live im System, ob der systemd-Timer aktiv geschaltet ist."""
+    """Checks in real time within the system whether the systemd timer is permanently enabled."""
     try:
         res = subprocess.run("systemctl is-enabled kader42-autoupdate.timer", shell=True, capture_output=True, text=True)
+        # If the timer is enabled, `systemctl` returns exactly “enabled”
         return res.stdout.strip() == "enabled"
-    except Exception as e:
-        print(f"Fehler bei systemctl is-enabled: {e}")
+    except:
         return False
 
 def load_settings():
-    """Lädt die Uhrzeit aus der JSON, holt den Aktivitätsstatus aber live aus systemd."""
+    """Retrieve the activation status in real time via `is-enabled` and the time from the JSON."""
     saved_time = "04:00"
     if os.path.exists(SETTINGS_FILE):
         try:
@@ -49,47 +51,44 @@ def load_settings():
                 data = json.load(f)
                 saved_time = data.get("update_time", "04:00")
         except Exception as e:
-            print(f"Fehler beim Lesen der Einstellungsdatei: {e}")
+            print(f"Fehler beim Laden der JSON: {e}")
         
+    # If the file doesn't exist or was corrupted, 
+    # we'll still return the correct structure!
     return {
-        "auto_updates": get_systemd_timer_state(),  
+        "auto_updates": get_systemd_timer_state(),
         "update_time": saved_time
     }
 
 def save_settings(data):
-    """Sichert die Uhrzeit und schaltet den systemd-Timer samt Override live um."""
+    """Write the JSON and run the actual `systemctl enable/disable` commands."""
     try:
-        if not os.path.exists(SETTINGS_DIR):
-            os.makedirs(SETTINGS_DIR, exist_ok=True)
-            
         auto_updates = data.get("auto_updates", False)
         update_time = data.get("update_time", "04:00")
-        
-        # 1. Nur die Uhrzeit in der JSON sichern
+
+        # 1. Save only the time in the JSON (if needed, e.g., for overrides)
+        if not os.path.exists(SETTINGS_DIR):
+            try:
+                os.makedirs(SETTINGS_DIR, exist_ok=True)
+            except PermissionError:
+                # If the API doesn't have permissions here, the helper script/Polkit handles it
+                pass
+                
+        if auto_updates:
+            # 2. Permanently enable or disable the systemd timer using pkexec
+            subprocess.run("pkexec systemctl enable --now kader42-autoupdate.timer", shell=True)
+            print("[kader42-software-center-api] ➔ systemd: systemctl enable --now kader42-autoupdate.timer executed.")
+        else:
+            # Deletes the symlinks and stops the timer immediately (--now)
+            subprocess.run("pkexec systemctl disable --now kader42-autoupdate.timer", shell=True)
+            print("[kader42-software-center-api] ➔ systemd: systemctl disable --now kader42-autoupdate.timer executed")
+            
+        # Optional: Here we write the JSON (if Polkit rules apply to the directory)
         with open(SETTINGS_FILE, "w") as f:
             json.dump({"update_time": update_time}, f, indent=4)
             
-        # 2. Dynamischen systemd-Override für die Uhrzeit verwalten
-        override_dir = "/etc/systemd/system/kader42-autoupdate.timer.d"
-        override_file = f"{override_dir}/override.conf"
-        
-        if auto_updates:
-            os.makedirs(override_dir, exist_ok=True)
-            with open(override_file, "w") as f:
-                f.write(f"[Timer]\nOnCalendar=\nOnCalendar=*-*-* {update_time}:00\n")
-            
-            subprocess.run("systemctl daemon-reload", shell=True)
-            subprocess.run("systemctl enable --now kader42-autoupdate.timer", shell=True)
-            print(f"➔ systemd: Timer aktiviert und auf {update_time} Uhr gesetzt.")
-        else:
-            subprocess.run("systemctl disable --now kader42-autoupdate.timer", shell=True)
-            if os.path.exists(override_file):
-                os.remove(override_file)
-            subprocess.run("systemctl daemon-reload", shell=True)
-            print("➔ systemd: Timer erfolgreich deaktiviert.")
-            
     except Exception as e:
-        print(f"Fehler beim Verarbeiten der Einstellungen im System: {e}")
+        print(f"[kader42-software-center-api] Error while running systemctl: {e}")
 
 class StoreAPIHandler(BaseHTTPRequestHandler):
     
@@ -149,8 +148,15 @@ class StoreAPIHandler(BaseHTTPRequestHandler):
             self._set_headers(200)
             self.wfile.write(json.dumps(results).encode('utf-8'))
         elif path_str == "/settings":
-            self._set_headers(200)
-            self.wfile.write(json.dumps(self.load_settings()).encode('utf-8'))
+            settings_data = load_settings()
+            response_bytes = json.dumps(settings_data).encode('utf-8')
+            
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json')
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.send_header('Content-Length', str(len(response_bytes)))
+            self.end_headers()
+            self.wfile.write(response_bytes)
 
         # ==========================================================
         # Check Job Status (/job/<id>)
@@ -170,6 +176,19 @@ class StoreAPIHandler(BaseHTTPRequestHandler):
                 print(f"API Fehler beim Job-Polling: {e}")
                 self._set_headers(400)
                 self.wfile.write(json.dumps({"error": "Invalid Job ID"}).encode('utf-8'))
+                
+        # ==========================================================
+        # FALLBACK: Prevents 0-byte responses for unknown paths
+        # ==========================================================
+        else:
+            print(f"⚠️[kader42-software-center-api] Unknown GET path called: {path_str}")
+            fallback_bytes = b"{}"
+            self.send_response(404)
+            self.send_header('Content-Type', 'application/json')
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.send_header('Content-Length', str(len(fallback_bytes)))
+            self.end_headers()
+            self.wfile.write(fallback_bytes)
 
     def do_POST(self):
         if self.path == "/job":
@@ -193,7 +212,7 @@ class StoreAPIHandler(BaseHTTPRequestHandler):
             content_length = int(self.headers['Content-Length'])
             body = self.rfile.read(content_length).decode('utf-8')
             settings_data = json.loads(body)
-            self.save_settings(settings_data)
+            save_settings(settings_data)
             self._set_headers(200)
             self.wfile.write(json.dumps({"status": "saved"}).encode('utf-8'))
 
@@ -453,6 +472,6 @@ class StoreAPIHandler(BaseHTTPRequestHandler):
 
 if __name__ == "__main__":
     init_environment()
-    server = HTTPServer(('127.0.0.1', 8080), StoreAPIHandler)
-    print("The Kader⁴² App Store REST API is hosted at http://127.0.0.1:8080")
+    print("Starting Kader⁴² App Store REST API on http://127.0.0.1:8080 ...")
+    server = ReusableHTTPServer(('127.0.0.1', 8080), StoreAPIHandler)
     server.serve_forever()
