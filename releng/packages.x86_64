@@ -410,8 +410,6 @@ steam
 # AUR packages
 calamares
 yay
-pamac-aur
-pamac-tray-icon-plasma
 #winboat
 #heroic-games-launcher-bin
 openboard
@@ -429,3 +427,4 @@ kader42-core
 kader42-icons
 kader42-plasma-theme
 kader42-convertible-tools
+kader42-software-center
