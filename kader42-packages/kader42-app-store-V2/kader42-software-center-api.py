@@ -1,4 +1,4 @@
-#!/usr/bin/usr/env python
+#!/usr/bin/env python
 # /usr/lib/kader-store/api.py
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import json
@@ -21,6 +21,30 @@ CATEGORY_DEFINITIONS = [
 # Instead of writing `server = HTTPServer(...)` directly, let's make it reusable:
 class ReusableHTTPServer(HTTPServer):
     allow_reuse_address = True
+
+class SystemdHTTPServer(HTTPServer):
+    allow_reuse_address = True
+
+    def __init__(self, server_address, RequestHandlerClass):
+        # When starting up, systemd sets the LISTEN_FDS environment variable via a .socket file
+        listen_fds = int(os.environ.get("LISTEN_FDS", 0))
+
+        if listen_fds > 0:
+            # ➔ SYSTEMD SOCKET ACTIVATION MODE
+            # Creates the object without attempting to bind to a socket
+            super().__init__(server_address, RequestHandlerClass, bind_and_activate=False)
+            
+            # Closes the dummy socket created by TCPServer
+            if hasattr(self, "socket") and self.socket:
+                self.socket.close()
+
+            # Takes over the socket (file descriptor 3) already opened by systemd
+            self.socket = socket.socket(fileno=3)
+            self.server_address = self.socket.getsockname()
+            print("[kader42-software-center-api] Systemd Socket Activation detected and applied.")
+        else:
+            # ➔ STANDALONE MODE (e.g., manual startup in the terminal)
+            super().__init__(server_address, RequestHandlerClass, bind_and_activate=True)
 
 
 SETTINGS_DIR = os.path.expanduser("~/.config/kader42")
@@ -91,7 +115,6 @@ def save_settings(data):
         print(f"[kader42-software-center-api] Error while running systemctl: {e}")
 
 class StoreAPIHandler(BaseHTTPRequestHandler):
-    
 
     def _set_headers(self, status=200):
         self.send_response(status)
@@ -163,11 +186,9 @@ class StoreAPIHandler(BaseHTTPRequestHandler):
         # ==========================================================
         elif path_str.startswith("/job/"):
             try:
-                # Schneidet das "/job/" ab, um die ID als Zahl zu bekommen
+                # Trim off “/job/” to get the ID as a number
                 job_id_str = path_str.split("/")[-1]
                 job_id = int(job_id_str)
-                
-                # Trim off “/job/” to get the ID as a number
                 status_data = self.get_job_status(job_id)
                 
                 self._set_headers(200)
@@ -473,5 +494,6 @@ class StoreAPIHandler(BaseHTTPRequestHandler):
 if __name__ == "__main__":
     init_environment()
     print("Starting Kader⁴² App Store REST API on http://127.0.0.1:8080 ...")
-    server = ReusableHTTPServer(('127.0.0.1', 8080), StoreAPIHandler)
+    # server = ReusableHTTPServer(('127.0.0.1', 8080), StoreAPIHandler)
+    server = SystemdHTTPServer(('127.0.0.1', 8080), StoreAPIHandler)
     server.serve_forever()

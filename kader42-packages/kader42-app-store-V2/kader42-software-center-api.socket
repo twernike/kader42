@@ -1,0 +1,8 @@
+[Unit]
+Description=Kader⁴² Software Center API Socket
+
+[Socket]
+ListenStream=127.0.0.1:8080
+
+[Install]
+WantedBy=sockets.target
