@@ -1,7 +1,7 @@
 # Maintainer: Thomas Wernike <support@kader42.de>
 pkgname=kader42-hooks
 pkgver=1.0.2
-pkgrel=7
+pkgrel=8
 pkgdesc="A safety net to address the lack of transaction safety in Pacman."
 arch=('any')
 depends=('bash' 'rsync' 'awk' 'mkinitcpio')
@@ -37,7 +37,7 @@ package() {
     # 2. The Bash scripts to be executed (MUST be executable, 755)
     install -D -m 755 "$srcdir/kader42-kernel-backup.sh"     "$pkgdir/usr/share/kader42/kader42-pre-backup.sh"
     install -D -m 755 "$srcdir/kader42-post-check.sh"        "$pkgdir/usr/share/kader42/kader42-post-check.sh"
-    install -D -m 755 "$srcdir/kader42-bootcheck.sh"         "$pkgdir/usr/share/kader42-bootcheck.sh"
+    install -D -m 755 "$srcdir/kader42-bootcheck.sh"         "$pkgdir/usr/share/kader42/kader42-bootcheck.sh"
 
     # 3. The mkinitcpio hooks
     # Here, we take the unique source files and copy them to their respective system subdirectories
