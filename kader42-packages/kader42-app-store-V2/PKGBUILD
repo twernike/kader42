@@ -1,6 +1,6 @@
 # Maintainer: Thomas Wernike <support@kader42.de>
 pkgname=kader42-software-center
-pkgver=1.0.2
+pkgver=1.0.3
 pkgrel=0
 pkgdesc="Software Management for Kader⁴²"
 arch=('any')
@@ -31,8 +31,24 @@ source=('kader42-software-center-api.py'
         'kader42-software-center-tray.desktop'
         'software-center-tray-icon.svg'
         'kader42-check-and-update.py'
+        '10-kader42-software-center-keep-password.rules'
         )
-md5sums=('SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP') 
+md5sums=('a3e3ece8910a160fcedd85895e04e4de'
+         '1a0a63cdd6bb4230e8c05eb28a739620'
+         '0540f9e10daa360c74c653f12de773ed'
+         '8cef2076a10b763f8a4c9250a1ba36aa'
+         '782755f3c3d88ac2d3d5ebc043b1e846'
+         '91f291fba8fe4ab52a749e1c2442f112'
+         '19e3e657dcbe0a7bdd1bb6409f7b2282'
+         'c0d856c4229d55fee2c7f8e271e4b62c'
+         '9a638f3c11c76ff8194ab127833aa0aa'
+         'edd2f57005a0e1dd1e78f54a51b65de8'
+         '546f23e6a1e49ef8a371b22125baf63a'
+         '9d884cc7049d092579c3a01442af3375'
+         'a3bdeebdf85f002a7f03c39ead8bd2ec'
+         'b9acf5d9fcb051f751495eff73e44c1c'
+         '66bbc6ed4159fcaa04f49196a32ee948')
+
 
 package() {
   install -Dm755 "${srcdir}/kader42-software-center-api.py" "${pkgdir}/usr/lib/kader42-software-center/kader42-software-center-api.py"
@@ -57,6 +73,9 @@ package() {
 
 
   install -Dm755 "${srcdir}/kader42-software-center-tray.desktop" "${pkgdir}/etc/xdg/autostart/kader42-software-center-tray.desktop"
+
+  install -Dm644 "${srcdir}/10-kader42-software-center-keep-password.rules" "${pkgdir}/etc/polkit-1/rules.d/10-kader42-software-center-keep-password.rules"
+
 
   mkdir -p "${pkgdir}/usr/lib/systemd/user/default.target.wants"
   ln -sf "../kader42-software-center-api.service" "${pkgdir}/usr/lib/systemd/user/default.target.wants/kader42-software-center-api.service"
