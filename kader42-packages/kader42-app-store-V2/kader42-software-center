@@ -7,7 +7,7 @@ import subprocess
 import time
 from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, 
                              QHBoxLayout, QLabel, QLineEdit, QPushButton, 
-                             QListWidget, QListWidgetItem, QScrollArea, QFrame, QGridLayout, QSizePolicy, QScroller, QScrollerProperties, QTimeEdit)
+                             QListWidget, QListWidgetItem, QScrollArea, QFrame, QGridLayout, QSizePolicy, QScroller, QScrollerProperties, QTimeEdit, QTextEdit)
 from PySide6.QtCore import Qt, QSize, QTimer, QUrl, Signal, QEvent, QTime
 from PySide6.QtGui import QFont, QIcon, QPixmap
 from PySide6.QtNetwork import QNetworkAccessManager, QNetworkRequest, QNetworkReply, QLocalServer, QLocalSocket
@@ -57,7 +57,9 @@ TRANSLATIONS = {
         "setting_auto_update": "Automatische System-Updates aktivieren",
         "setting_time": "Geplante Uhrzeit:",
         "setting_save": "Einstellungen speichern",
-        "setting_success": "Konfiguration erfolgreich gesichert!"
+        "setting_success": "Konfiguration erfolgreich gesichert!",
+        "update_failed_conflict": "❌ Update abgebrochen (min. ein Paketkonflikt existiert im System)",
+        "update_success": "✅ System erfolgreich aktualisiert!"
     },
     "en": {
         "search_placeholder": "🔎 Search for apps...",
@@ -89,7 +91,9 @@ TRANSLATIONS = {
         "setting_auto_update": "Enable automatic system updates",
         "setting_time": "Scheduled Time:",
         "setting_save": "Save Settings",
-        "setting_success": "Configuration saved successfully!"
+        "setting_success": "Configuration saved successfully!",
+        "update_failed_conflict": "❌ Update aborted (Package conflict detected)",
+        "update_success": "✅ System updated successfully!"
     }
 }
 
@@ -144,9 +148,9 @@ class SettingsView(QWidget):
         time_layout.addStretch()
         card_layout.addLayout(time_layout)
         
-        # MAGIE HIER: Verbindet die Checkbox direkt mit dem Aktivierungszustand der Zeitauswahl
+        # Links the checkbox directly to the activation status of the time selection
         self.auto_cb.toggled.connect(self.time_edit.setEnabled)
-        # Standardmäßig erst mal deaktivieren (wird gleich durch load_settings() überschrieben)
+        # Disable by default for now (this will be overridden immediately by `load_settings()`)
         self.time_edit.setEnabled(False)
         
         self.save_btn = QPushButton(_("setting_save"))
@@ -172,25 +176,25 @@ class SettingsView(QWidget):
         reply = self.network_manager.get(req)
         
         def on_loaded():
-            # Erst prüfen, ob ein Netzwerkfehler vorliegt
+            # First, check whether there is a network error
             if reply.error() != QNetworkReply.NoError:
                 print(f"Netzwerkfehler beim Laden der Settings: {reply.errorString()}")
                 reply.deleteLater()
                 return
 
-            # Bytes auslesen
+            # Read Bytes
             raw_bytes = reply.readAll().data()
             
-            # WICHTIG: Wenn der Puffer im async-Request noch leer ist, abbrechen!
+            # IMPORTANT: If the buffer in the async request is still empty, abort!
             if not raw_bytes or len(raw_bytes) == 0:
                 reply.deleteLater()
                 return
                 
             try:
-                # Dekodieren und parsen
+                # Decoding and Parsing
                 json_str = raw_bytes.decode("utf-8").strip()
                 
-                # Sicherheitsnetz: Ist der String leeres JSON?
+                # Safety net: Is the string empty JSON?
                 if not json_str or json_str in ["", "null"]:
                     reply.deleteLater()
                     return
@@ -198,7 +202,7 @@ class SettingsView(QWidget):
                 data = json.loads(json_str)
                 is_active = data.get("auto_updates", False)
                 
-                # UI-Elemente blockieren kurz Signale, um Endlosschleifen zu verhindern
+                # UI elements briefly block signals to prevent infinite loops
                 self.auto_cb.blockSignals(True)
                 self.auto_cb.setChecked(is_active)
                 self.time_edit.setEnabled(is_active)
@@ -209,46 +213,46 @@ class SettingsView(QWidget):
                 self.time_edit.setTime(QTime(h, m))
                 
             except Exception as e:
-                # Dieser Print wird jetzt nicht mehr getriggert, da leere Antworten oben abgefangen werden
-                print(f"Fehler beim Parsen der Settings in der GUI: {e}")
+                # This print statement is no longer triggered because empty responses are intercepted at the top
+                print(f"Error parsing the settings in the GUI: {e}")
                 
             reply.deleteLater()
             
         reply.finished.connect(on_loaded)
         
     def save_settings(self):
-        """Wird aufgerufen, wenn der User auf 'Einstellungen speichern' klickt."""
-        # 1. Den aktuellen Zustand aus den Widgets auslesen
+        """Called when the user clicks “Save Settings.”"""
+        # 1. Read the current status from the widgets
         payload_data = {
             "auto_updates": self.auto_cb.isChecked(),
             "update_time": self.time_edit.time().toString("HH:mm")
         }
         
-        # 2. JSON-Payload vorbereiten
+        # 2. Prepare the JSON payload
         req = QNetworkRequest(QUrl(f"{API_URL}/settings"))
         req.setHeader(QNetworkRequest.ContentTypeHeader, "application/json")
         payload = json.dumps(payload_data).encode("utf-8")
         
-        # 3. Per POST an die API schicken (die dann via pkexec systemd steuert)
+        # Send via POST to the API (which then controls systemd via pkexec)
         reply = self.network_manager.post(req, payload)
         
         def on_saved():
             if reply.error() == QNetworkReply.NoError:
-                # Erfolgsmeldung in der GUI anzeigen
+                # Display a success message in the GUI
                 self.status_msg.setText(_("setting_success"))
-                # Text nach 3 Sekunden automatisch wieder ausblenden
+                # Automatically hide the text again after 3 seconds
                 QTimer.singleShot(3000, lambda: self.status_msg.setText(""))
             else:
-                print(f"API-Fehler beim Speichern der Settings: {reply.errorString()}")
+                print(f"API error when saving settings: {reply.errorString()}")
             reply.deleteLater()
             
         reply.finished.connect(on_saved)
 
-# Dummy-Klasse für sauberes CSS-Inlining der Checkbox
+# Dummy class for clean CSS inlining of the checkbox
 from PySide6.QtWidgets import QCheckBox
 
 # ==========================================================
-# 1. DIE APP-KACHEL
+# 1. THE APP TILE
 # ==========================================================
 class AppCard(QFrame):
     job_completed_signal = Signal()
@@ -380,6 +384,7 @@ class AppCard(QFrame):
             icon = QIcon.fromTheme(self.icon_name, QIcon.fromTheme("package-x-generic"))
             self.icon_label.setPixmap(icon.pixmap(QSize(64, 64)))
 
+    # We only retrieve the icons from the Flathub server. However, we do not support Flatpaks.
     def load_flathub_icon(self):
         url = QUrl(f"https://dl.flathub.org/repo/appstream/x86_64/icons/128x128/{self.flatpak_id.strip()}.png")
         req = QNetworkRequest(url)
@@ -438,7 +443,7 @@ class AppCard(QFrame):
                 print(f"❌ Fehler beim Parsen der Job-ID: {e}")
                 self.update_status_local()
         else:
-            print(f"❌ API-Fehler beim Senden des Jobs: {reply.errorString()}")
+            print(f"❌ API error while submitting the job: {reply.errorString()}")
             self.update_status_local()
         reply.deleteLater()
 
@@ -468,7 +473,7 @@ class AppCard(QFrame):
                         
                     self.job_completed_signal.emit()
                 elif status == "failed":
-                    print(f"❌ Job failed für {self.pkg_name}")
+                    print(f"❌ Job failed for {self.pkg_name}")
                     self.poll_timer.stop()
                     self.update_status_local()
             except Exception as e:
@@ -497,6 +502,9 @@ class KaderStore(QMainWindow):
 
         self.network_manager = QNetworkAccessManager(self)
         self.network_manager.finished.connect(self.on_json_loaded)
+
+        self.poll_manager = QNetworkAccessManager(self)
+
         
         self.apps_data = {"categories": [], "apps": {}}
         
@@ -561,7 +569,23 @@ class KaderStore(QMainWindow):
         right_layout.addWidget(self.update_header_frame)
         self.update_header_frame.hide()
 
-        # Standard-Werbebanner
+        self.log_console = QTextEdit()
+        self.log_console.setReadOnly(True)
+        self.log_console.setFixedHeight(180)
+        self.log_console.setStyleSheet("""
+            QTextEdit {
+                background-color: #050811;
+                color: #00f0ff;
+                font-family: "Monospace", "Courier New";
+                font-size: 11px;
+                border: 1px solid #232e48;
+                border-radius: 8px;
+                padding: 8px;
+            }
+        """)
+        self.log_console.hide() 
+        right_layout.addWidget(self.log_console)
+
         self.banner_label = QLabel()
         self.banner_label.setFixedWidth(376)
         self.banner_label.setFixedHeight(210)
@@ -614,26 +638,48 @@ class KaderStore(QMainWindow):
 
         self.fetch_data()
 
+    def reset_update_banner(self):
+        """Resets the banner, the log console, and any polling properly."""
+        # 1. Clear and hide the log console
+        if hasattr(self, "log_console"):
+            self.log_console.clear()
+            self.log_console.hide()
+            
+        # 2. Reset the status color to the default green/cyan
+        if hasattr(self, "update_status_title"):
+            self.update_status_title.setStyleSheet("font-size: 15px; font-weight: bold; color: #2ecc71;")
+            
+        # 3. If a polling timer is still running, stop it just to be safe
+        if hasattr(self, "global_poll") and self.global_poll.isActive():
+            self.global_poll.stop()
+
     def fetch_data(self):
         url = QUrl(f"{API_URL}/categories")
         self.network_manager.get(QNetworkRequest(url))
 
     def on_json_loaded(self, reply):
         if reply.error() == QNetworkReply.NoError:
+            path = reply.url().path()
+            
+            # IMPORTANT: Ignore /job and /settings requests so that their own handlers
+            # can read from the response buffer!
+            if path.startswith("/job") or path == "/settings":
+                return
+                
             try:
                 raw_data = reply.readAll().data().decode()
                 if not raw_data: return
-                    
+                
                 data = json.loads(raw_data)
-                path = reply.url().path()
                 
                 if path == "/categories":
                     self.apps_data = {"categories": data}
                     self.setup_sidebar()
                 elif path in ["/apps", "/installed", "/updates"]:
                     self.clear_grid()
-                     
+                    
                     if path == "/updates":
+                        self.reset_update_banner()
                         total_updates = data.get("total_updates", 0)
                         packages = data.get("packages", [])
                         
@@ -648,11 +694,11 @@ class KaderStore(QMainWindow):
                         self.render_category_apps(packages)
                     else:
                         self.render_category_apps(data)
-                    
+                        
             except Exception as e:
                 print(f"❌ JSON Parse Fehler in GUI: {e}")
         else:
-            print(f"❌ Netzwerkfehler in der GUI: {reply.errorString()}")
+            print(f"❌ JSON Parsing Error in the GUI: {reply.errorString()}")
         reply.deleteLater()
 
     def setup_sidebar(self):
@@ -726,16 +772,16 @@ class KaderStore(QMainWindow):
         
         cat_id = cur.data(Qt.UserRole)
         
-        # UI-Umschaltung für das Einstellungs-Widget abfangen
+        # Intercept UI switching for the settings widget
         if cat_id == "kader_settings_view":
             self.scroll.hide()
             self.banner_label.hide()
             self.update_header_frame.hide()
             self.settings_view.show()
-            self.settings_view.load_settings() # Live die API abfragen
+            self.settings_view.load_settings() # Query the API in real time
             return
             
-        # Standard-Ansicht wiederherstellen, falls Settings aktiv waren
+        # Restore the default view if settings were active
         self.settings_view.hide()
         self.scroll.show()
         
@@ -773,7 +819,7 @@ class KaderStore(QMainWindow):
         for index, a in enumerate(apps):
             pkg_lower = a['package_name'].lower()
             
-            # NEU: Das eigene Software Center wird komplett aus allen Ansichten gefiltert 
+            # Your own Software Center is completely hidden from all views
             if pkg_lower == "kader42-software-center":
                 continue
                 
@@ -817,7 +863,7 @@ class KaderStore(QMainWindow):
             self.grid_layout.addWidget(card, row, col)
 
     def trigger_all_updates(self):
-        print("📡 Sende POST für globales System-Update...")
+        print("📡 Sending POST request for global system update...")
         self.update_all_btn.setEnabled(False)
         self.update_status_title.setText(_("status_queue"))
         
@@ -827,36 +873,97 @@ class KaderStore(QMainWindow):
         payload = json.dumps(job_data).encode("utf-8")
         
         reply = self.network_manager.post(req, payload)
+
+        self.log_console.clear()
+        self.log_console.show()
+        
         def on_global_job_triggered():
             if reply.error() == QNetworkReply.NoError:
                 try:
-                    res = json.loads(reply.readAll().data().decode())
+                    raw_res = reply.readAll().data().decode()
+                    print(f"📡 API Response for POST /job: {raw_res}")
+                    
+                    res = json.loads(raw_res)
                     job_id = res.get("id")
+                    
+                    if not job_id:
+                        print("❌ ERROR: No job ID returned by API!")
+                        return
+
+                    print(f"✅ Job started successfully! Polling status for Job ID: {job_id}")
+                    
                     self.global_poll = QTimer(self)
+
                     def poll_global_status():
+                        # 1. Status abfragen
                         p_req = QNetworkRequest(QUrl(f"{API_URL}/job/{job_id}"))
-                        p_reply = self.network_manager.get(p_req)
+                        p_reply = self.poll_manager.get(p_req)
+                        
                         def on_global_poll_fin():
                             if p_reply.error() == QNetworkReply.NoError:
-                                j_data = json.loads(p_reply.readAll().data().decode())
-                                status = j_data.get("status")
-                                if status == "completed":
-                                    self.global_poll.stop()
-                                    self.refresh_current_view()
-                                elif status == "failed":
-                                    self.global_poll.stop()
-                                    self.load_category()
-                                else:
-                                    self.update_status_title.setText(f"⌛ {status}")
+                                raw_bytes = p_reply.readAll().data()
+                                if raw_bytes:
+                                    try:
+                                        j_data = json.loads(raw_bytes.decode("utf-8").strip())
+                                        status = j_data.get("status")
+                                        
+                                        # Status-Anzeige aktualisieren
+                                        if status == "completed":
+                                            self.global_poll.stop()
+                                            self.update_status_title.setText(_("update_success"))
+                                            self.update_status_title.setStyleSheet("font-size: 15px; font-weight: bold; color: #2ecc71;")
+                                            self.update_all_btn.hide()
+                                            self.refresh_current_view()
+                                        elif status == "failed":
+                                            self.global_poll.stop()
+                                            self.update_status_title.setText(_("update_failed_conflict"))
+                                            self.update_status_title.setStyleSheet("font-size: 15px; font-weight: bold; color: #e74c3c;")
+                                            self.update_all_btn.hide()
+                                        else:
+                                            self.update_status_title.setText(f"⌛ {status}")
+                                    except Exception as e:
+                                        print(f"Status Parse Error: {e}")
                             p_reply.deleteLater()
+                            
                         p_reply.finished.connect(on_global_poll_fin)
+
+                        # 2. Query the new log route at the same time
+                        l_req = QNetworkRequest(QUrl(f"{API_URL}/job/{job_id}/log"))
+                        l_reply = self.poll_manager.get(l_req)
+                        
+                        def on_log_poll_fin():
+                            if l_reply.error() == QNetworkReply.NoError:
+                                raw_log_bytes = l_reply.readAll().data()
+                                if raw_log_bytes:
+                                    try:
+                                        log_json = json.loads(raw_log_bytes.decode("utf-8").strip())
+                                        log_text = log_json.get("log", "")
+                                        
+                                        if log_text and hasattr(self, "log_console"):
+                                            self.log_console.setPlainText(log_text)
+                                            # Automatisches Scrollen ans Ende
+                                            self.log_console.verticalScrollBar().setValue(
+                                                self.log_console.verticalScrollBar().maximum()
+                                            )
+                                    except Exception as e:
+                                        print(f"Log Parse Error: {e}")
+                            l_reply.deleteLater()
+                            
+                        l_reply.finished.connect(on_log_poll_fin)
+                        
+                        
                     self.global_poll.timeout.connect(poll_global_status)
                     self.global_poll.start(1000)
-                except:
+                    
+                except Exception as e:
+                    print(f"❌ Exception in POST response handler: {e}")
                     self.load_category()
             else:
+                print(f"❌ API Error on POST /job: {reply.errorString()}")
                 self.load_category()
+                
             reply.deleteLater()
+            
         reply.finished.connect(on_global_job_triggered)
 
     def start_search_timer(self, text):
@@ -868,7 +975,7 @@ class KaderStore(QMainWindow):
         cb = int(time.time())
         if not query: return
         
-        # Beim Suchen aus den Settings herausspringen
+        # Exit the Settings screen while searching
         self.settings_view.hide()
         self.scroll.show()
         
@@ -881,6 +988,7 @@ class KaderStore(QMainWindow):
         self.network_manager.get(QNetworkRequest(url))
 
     def clear_grid(self):
+        self.reset_update_banner()
         if self.grid_layout is not None:
             while self.grid_layout.count():
                 item = self.grid_layout.takeAt(0)
@@ -889,7 +997,7 @@ class KaderStore(QMainWindow):
                     widget.deleteLater()
 
 # ==========================================================
-# 3. INTERNATIONALE SINGLE-INSTANCE KONTROLLE
+# 3. INTERNATIONAL SINGLE-INSTANCE REVIEW
 # ==========================================================
 if __name__ == "__main__":
     app = QApplication(sys.argv)
@@ -903,7 +1011,7 @@ if __name__ == "__main__":
         payload = json.dumps({"arguments": arguments}).encode("utf-8")
         socket.write(payload)
         socket.waitForBytesWritten(1000)
-        print("➔ Software Center läuft bereits. Argumente übergeben und Prozess beendet.")
+        print("➔ The Kader⁴² Software Center is already running. Arguments passed and process terminated.")
         sys.exit(0)
         
     QLocalServer.removeServer(socket_name)
@@ -927,7 +1035,7 @@ if __name__ == "__main__":
                             window.load_category()
                             break
             except Exception as e:
-                print(f"Fehler beim Parsen der Zweitinstanz-Argumente: {e}")
+                print(f"Error parsing the secondary instance arguments: {e}")
                 
         window.showNormal()
         window.activateWindow()

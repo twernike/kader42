@@ -8,6 +8,8 @@ post_install() {
   update-desktop-database -q
   xdg-mime default kader42-software-center.desktop x-scheme-handler/appstream
 
+  
+
 }
 
 post_upgrade() {

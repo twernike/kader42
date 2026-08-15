@@ -116,100 +116,78 @@ def save_settings(data):
 
 class StoreAPIHandler(BaseHTTPRequestHandler):
 
-    def _set_headers(self, status=200):
+    def send_json(self, data, status=200):
+        """Sends JSON data with the correct Content-Length to the client."""
+        body = json.dumps(data).encode('utf-8')
         self.send_response(status)
         self.send_header('Content-Type', 'application/json')
         self.send_header('Access-Control-Allow-Origin', '*')
+        self.send_header('Content-Length', str(len(body)))
         self.end_headers()
+        self.wfile.write(body)
+
+    def get_job_log(self, job_id):
+        """Reads only the log output of a job from the database."""
+        with sqlite3.connect(DB_PATH) as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT log_output FROM jobs WHERE id = ?", (job_id,))
+            row = cursor.fetchone()
+            return row[0] if row and row[0] else ""
 
     def do_GET(self):
         url_parts = urllib.parse.urlparse(self.path)
         query_params = urllib.parse.parse_qs(url_parts.query)
         path_str = url_parts.path
-        
-        # 1. ENDPOINT: Kategorien abrufen
-        if path_str == "/categories":
-            self._set_headers(200)
-            self.wfile.write(json.dumps(CATEGORY_DEFINITIONS).encode('utf-8'))
 
-        # 2. ENDPOINT: Apps einer Kategorie ODER freie Suche
+        if path_str == "/categories":
+            self.send_json(CATEGORY_DEFINITIONS)
+
         elif path_str == "/apps":
             search_term = ""
             if "category" in query_params:
                 cat_id = query_params["category"][0]
                 cat = next((c for c in CATEGORY_DEFINITIONS if c["id"] == cat_id), None)
-                if cat:
-                    search_term = cat["query"]
+                if cat: search_term = cat["query"]
             elif "search" in query_params:
                 search_term = query_params["search"][0]
                 
-            if search_term:
-                results = self.search_via_yay(search_term)
-                self._set_headers(200)
-                self.wfile.write(json.dumps(results).encode('utf-8'))
-            else:
-                self._set_headers(200)
-                self.wfile.write(json.dumps([]).encode('utf-8'))
+            results = self.search_via_yay(search_term) if search_term else []
+            self.send_json(results)
 
-        # 3. ENDPOINT: View Installed Apps & Updates
         elif path_str == "/installed":
             results = self.get_installed_apps_and_updates()
-            self._set_headers(200)
-            self.wfile.write(json.dumps(results).encode('utf-8'))
+            self.send_json(results)
 
         elif path_str == "/updates":
             all_apps = self.get_installed_apps_and_updates()
-            
-            # We filter exactly by the status string!
             update_packages = [app for app in all_apps if app.get('status') == 'update_available']
-            
-            results = {
-                "total_updates": len(update_packages),
-                "packages": update_packages
-            }
-            
-            self._set_headers(200)
-            self.wfile.write(json.dumps(results).encode('utf-8'))
+            self.send_json({"total_updates": len(update_packages), "packages": update_packages})
+
         elif path_str == "/settings":
             settings_data = load_settings()
-            response_bytes = json.dumps(settings_data).encode('utf-8')
-            
-            self.send_response(200)
-            self.send_header('Content-Type', 'application/json')
-            self.send_header('Access-Control-Allow-Origin', '*')
-            self.send_header('Content-Length', str(len(response_bytes)))
-            self.end_headers()
-            self.wfile.write(response_bytes)
+            self.send_json(settings_data)
 
-        # ==========================================================
-        # Check Job Status (/job/<id>)
-        # ==========================================================
+        elif path_str.startswith("/job/") and path_str.endswith("/log"):
+            try:
+                # Extracts the ID from /job/42/log
+                job_id = int(path_str.split("/")[2])
+                log_text = self.get_job_log(job_id)
+                self.send_json({"id": job_id, "log": log_text})
+            except Exception as e:
+                print(f"API Log-Fetch Error: {e}")
+                self.send_json({"error": "Invalid Job ID"}, 400)
+
         elif path_str.startswith("/job/"):
             try:
-                # Trim off “/job/” to get the ID as a number
                 job_id_str = path_str.split("/")[-1]
                 job_id = int(job_id_str)
                 status_data = self.get_job_status(job_id)
-                
-                self._set_headers(200)
-                self.wfile.write(json.dumps(status_data).encode('utf-8'))
+                # IMPORTANT: Respond now using `send_json`, including `Content-Length`!
+                self.send_json(status_data)
             except Exception as e:
                 print(f"API Fehler beim Job-Polling: {e}")
-                self._set_headers(400)
-                self.wfile.write(json.dumps({"error": "Invalid Job ID"}).encode('utf-8'))
-                
-        # ==========================================================
-        # FALLBACK: Prevents 0-byte responses for unknown paths
-        # ==========================================================
-        else:
-            print(f"⚠️[kader42-software-center-api] Unknown GET path called: {path_str}")
-            fallback_bytes = b"{}"
-            self.send_response(404)
-            self.send_header('Content-Type', 'application/json')
-            self.send_header('Access-Control-Allow-Origin', '*')
-            self.send_header('Content-Length', str(len(fallback_bytes)))
-            self.end_headers()
-            self.wfile.write(fallback_bytes)
+                self.send_json({"error": "Invalid Job ID"}, 400)
+        
 
     def do_POST(self):
         if self.path == "/job":
@@ -222,20 +200,40 @@ class StoreAPIHandler(BaseHTTPRequestHandler):
             action = post_data.get("action")
             
             if not pkg_name or not action:
-                self._set_headers(400)
-                self.wfile.write(json.dumps({"error": "Missing parameters"}).encode('utf-8'))
+                err_bytes = json.dumps({"error": "Missing parameters"}).encode('utf-8')
+                self.send_response(400)
+                self.send_header('Content-Type', 'application/json')
+                self.send_header('Access-Control-Allow-Origin', '*')
+                self.send_header('Content-Length', str(len(err_bytes)))
+                self.end_headers()
+                self.wfile.write(err_bytes)
                 return
                 
             job_id = self.queue_job(pkg_name, source, action)
-            self._set_headers(201)
-            self.wfile.write(json.dumps({"id": job_id, "status": "queued"}).encode('utf-8'))
+            
+            # IMPORTANT: Respond with an explicit `Content-Length` for PySide6!
+            res_bytes = json.dumps({"id": job_id, "status": "queued"}).encode('utf-8')
+            
+            self.send_response(201)
+            self.send_header('Content-Type', 'application/json')
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.send_header('Content-Length', str(len(res_bytes)))
+            self.end_headers()
+            self.wfile.write(res_bytes)
+
         elif self.path == "/settings":
             content_length = int(self.headers['Content-Length'])
             body = self.rfile.read(content_length).decode('utf-8')
             settings_data = json.loads(body)
             save_settings(settings_data)
-            self._set_headers(200)
-            self.wfile.write(json.dumps({"status": "saved"}).encode('utf-8'))
+            
+            res_bytes = json.dumps({"status": "saved"}).encode('utf-8')
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json')
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.send_header('Content-Length', str(len(res_bytes)))
+            self.end_headers()
+            self.wfile.write(res_bytes)
 
     def search_via_yay(self, query):
         apps_found = []
@@ -312,7 +310,7 @@ class StoreAPIHandler(BaseHTTPRequestHandler):
                             current_pkg["description"] = line_stripped.split(":")[-1].strip()
                             p_name = current_pkg["package_name"]
                             
-                            # Status zuweisen
+                            # Assign Status
                             if p_name in updates_available:
                                 current_pkg["status"] = "update_available"
                             elif p_name in installed_packages:
@@ -320,7 +318,7 @@ class StoreAPIHandler(BaseHTTPRequestHandler):
                             else:
                                 current_pkg["status"] = "available"
                             
-                            # Core-Token zuweisen
+                            # Assign Core Tokens
                             core_descriptions = {
                                 "code": "desc_core_code", "visual-studio-code-bin": "desc_core_vscode_bin",
                                 "vscodium-bin": "desc_core_vscodium", "firefox": "desc_core_firefox",
@@ -405,10 +403,15 @@ class StoreAPIHandler(BaseHTTPRequestHandler):
         with sqlite3.connect(DB_PATH) as conn:
             conn.row_factory = sqlite3.Row
             cursor = conn.cursor()
-            cursor.execute("SELECT status, progress FROM jobs WHERE id = ?", (job_id,))
+            cursor.execute("SELECT status, progress, log_output FROM jobs WHERE id = ?", (job_id,))
             row = cursor.fetchone()
-            if row: return {"status": row["status"], "progress": row["progress"]}
-            return {"status": "unknown", "progress": 0}
+            if row: 
+                return {
+                    "status": row["status"], 
+                    "progress": row["progress"], 
+                    "log": row["log_output"] if row["log_output"] else ""
+            }
+        return {"status": "unknown", "progress": 0, "log": ""}
     
     def get_installed_apps_and_updates(self):
         apps = []
@@ -493,7 +496,7 @@ class StoreAPIHandler(BaseHTTPRequestHandler):
 
 if __name__ == "__main__":
     init_environment()
-    print("Starting Kader⁴² App Store REST API on http://127.0.0.1:8080 ...")
+    print("Started Kader⁴² App Store REST API on http://127.0.0.1:8080 ...")
     # server = ReusableHTTPServer(('127.0.0.1', 8080), StoreAPIHandler)
     server = SystemdHTTPServer(('127.0.0.1', 8080), StoreAPIHandler)
     server.serve_forever()
