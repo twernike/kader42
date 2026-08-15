@@ -5,15 +5,20 @@ echo ":: [Kader42-Bootcheck] Run a storage safety check before updating..."
 
 # Function for detecting and repairing the mount
 ensure_boot_mounted() {
-    # 1. Is /boot already mounted correctly as a VFAT partition?
+    # 0. Automount anstoßen, falls /boot im Leerlauf schläft
+    ls /boot >/dev/null 2>&1
+
+    # 1. Ist /boot bereits korrekt als VFAT-Partition eingebunden?
     if mountpoint -q /boot; then
         local current_fs
-        current_fs=$(findmnt -n -o FSTYPE /boot)
-        if [ "$current_fs" = "vfat" ]; then
+        # '--real' filtert 'autofs' heraus; 'tail -n 1' nimmt das echte FS
+        current_fs=$(findmnt -n -o FSTYPE --real /boot 2>/dev/null | tail -n 1)
+        
+        if [ "$current_fs" = "vfat" ] || [ "$current_fs" = "fat" ]; then
             return 0 # Everything's perfect; we can stop now.
         else
-            echo "⚠️ [Kader42-Bootcheck]  /boot is mounted as ‘$current_fs’, not as vfat!" >&2
-            return 1 # Incorrect file system (e.g., ghost folder is blocking access)
+            echo "⚠️ [Kader42-Bootcheck]  /boot is mounted as ‘${current_fs:-unknown}’, not as vfat!" >&2
+            return 1 # Incorrect file system (e.g., a “ghost” folder is blocking access)
         fi
     fi
 
