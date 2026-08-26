@@ -1,14 +1,15 @@
 # Maintainer: Thomas Wernike <support@kader42.de>
 pkgname=kader42-core
-pkgver=1.0.3
+pkgver=1.0.5
 pkgrel=0
 pkgdesc="Core configurations and systemd units for Kader42"
 arch=('any')
-depends=('bash' 'dbus' 'kader42-hooks' 'system-config-printer' 'cups' 'libreoffice-fresh-de' 'kader42-software-center')
+depends=('bash' 'dbus' 'kernel-modules-hook' 'pacback' 'systemd-boot-pacman-hook' 'system-config-printer' 'cups' 'libreoffice-fresh-de' 'kader42-software-center')
 install=kader42-core.install
 source=('kader42-cleanup.service' 'kader42-software-center-favorite.upd' 'kader42-software-center-favorite.js')
-
 md5sums=('SKIP' 'SKIP' 'SKIP')
+conflicts=('kader42-hooks')
+replaces=('kader42-hooks')
 
 
 package() {
