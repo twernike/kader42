@@ -1,5 +1,5 @@
 # ToDo: Add a check if the container exists and is running, if not start it or create it if it does not exist
-# Gehe ins Skript-Verzeichnis, dann eins hoch, und nimm davon den absoluten Pfad
+# Go to the script directory, then go up one level, and take the absolute path from there
 PARENT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 CONTAINER_NAME="kaderbuilder"
 mkdir -p "$PARENT_DIR/data" "$PARENT_DIR/packages" "$PARENT_DIR/docker-work/work"
