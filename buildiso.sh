@@ -215,20 +215,19 @@ rm -rf "$usr_lib"
 rm -rf "$liveuserHome"
 rm -rf "$rootCalamares"
 
-chmod 755 usr_data/bin/delete-and-reconnect-network.sh
-chown root:root usr_data/bin/delete-and-reconnect-network.sh
-chown root:root -R *
+# chown root:root -R *
 
 # Instead of `chown -R root:root *`
 # Only change the directories you're actually using to build the ISO:
-chown -R root:root releng data 2>/dev/null || true
+# chown -R root:root releng data 2>/dev/null || true
 
-./create-live-user.sh
+# ./create-live-user.sh
 
 echo
-echo -e  "\x1b[43m\e[38;5;20m |✍🏼|=============================|\e[0m"
-echo -e  "\x1b[43m\e[38;5;20m |✍🏼| Create needed directories...|\e[0m"
-echo -e  "\x1b[43m\e[38;5;20m |✍🏼|=============================|\e[0m"
+echo -e  "\x1b[43m\e[38;5;20m #############################################\e[0m"
+echo -e  "\x1b[43m\e[38;5;20m # ✍🏼 [buildiso] Create needed directories...#\e[0m"
+echo -e  "\x1b[43m\e[38;5;20m #############################################\e[0m"
+echo 
 
 mkdir -p build
 mkdir -p "$build_temp"
@@ -252,104 +251,106 @@ mkdir -p "$os_release_tmp"
 mkdir -p "$packages"
 mkdir -p "$customRepo"
 
-echo -e  "\x1b[43m\e[38;5;20m |✍🏼|=====================================|\e[0m"
-echo -e  "\x1b[43m\e[38;5;20m |✍🏼| Set ownership of airootfs to root...|\e[0m"
-echo -e  "\x1b[43m\e[38;5;20m |✍🏼|=====================================|\e[0m"
+echo -e  "\x1b[43m\e[38;5;20m #####################################################\e[0m"
+echo -e  "\x1b[43m\e[38;5;20m # ✍🏼 [buildiso] Set ownership of airootfs to root...#\e[0m"
+echo -e  "\x1b[43m\e[38;5;20m #####################################################\e[0m"
 
 chown -R root:root *
 chmod -R 755 $airootfs
 chown -R root:root "$airootfs"
 
-echo -e  "\x1b[43m\e[38;5;20m |Refresh pacman database|\e[0m"
+echo -e "\x1b[43m\e[38;5;20m ###################################################################\e[0m"
+echo -e "\x1b[43m\e[38;5;20m # 🗘 [buildiso] Refreshing and initializing pacman repositories...#\e[0m"
+echo -e "\x1b[43m\e[38;5;20m ##################################################################\e[0m"
+
 pacman -Syyu --noconfirm
 
-echo -e  "\e[1;92m|⚒️|===============================|\e[0m"
-echo -e "\e[1;92m |⚒️| Install other needed packages |\e[0m"
-echo -e  "\e[1;92m|⚒️|===============================|\e[0m"
+echo -e  "\e[1;92m ##################################################\e[0m"
+echo -e "\e[1;92m  # ⚒️ [buildiso] Install other needed packages...#\e[0m"
+echo -e  "\e[1;92m #################################################\e[0m"
 
 pacman -S --needed libinput systemd-libs base-devel sudo git --noconfirm
 
-echo -e "\x1b[43m\e[38;5;20m 🗘 ==================================================\e[0m"
-echo -e "\x1b[43m\e[38;5;20m 🗘 Refreshing and initializing pacman repositories...\e[0m"
-echo -e "\x1b[43m\e[38;5;20m 🗘 ==================================================\e[0m"
-
 echo
-echo -e  "\x1b[43m\e[38;5;20m |🕵|============================================|\e[0m"
-echo -e  "\x1b[43m\e[38;5;20m |🕵| Check whether archiso is already installed |\e[0m"
-echo -e  "\x1b[43m\e[38;5;20m |🕵| or still needs to be installed...          |\e[0m"
-echo -e  "\x1b[43m\e[38;5;20m |🕵|============================================|\e[0m"
+echo -e  "\x1b[43m\e[38;5;20m ############################################################\e[0m"
+echo -e  "\x1b[43m\e[38;5;20m # 🕵 [buildiso] Check whether archiso is already installed #\e[0m"
+echo -e  "\x1b[43m\e[38;5;20m # 🕵 [buildiso] or still needs to be installed...          #\e[0m"
+echo -e  "\x1b[43m\e[38;5;20m ############################################################\e[0m"
 
 pacman -Q archiso > /dev/null 2>&1
 
-#$? contains the exit code of the last command
+# $? contains the exit code of the last command
 if [ $? -eq 0 ]; then
-    echo -e "\e[1;92m ⏩ Package archiso already installed. Continue script...\e[0m"
+    echo -e "\e[1;92m ⏩ [buildiso] Package archiso already installed. Continue script...\e[0m"
 else
-    echo -e "\e[1;95m 👨‍🔧 Package archiso is not installed. Install archiso first...\e[0m"
+    echo -e "\e[1;95m 👨‍🔧 [buildiso] Package archiso is not installed. Install archiso first...\e[0m"
     pacman -S archiso sudo --noconfirm
 fi
 
-echo -e  "\x1b[43m\e[38;5;20m |🕵|========================================|\e[0m"
-echo -e  "\x1b[43m\e[38;5;20m |🕵| Check if the linux kernel is installed |\e[0m"
-echo -e  "\x1b[43m\e[38;5;20m |🕵|========================================|\e[0m"
+echo -e  "\x1b[43m\e[38;5;20m #########################################################\e[0m"
+echo -e  "\x1b[43m\e[38;5;20m # 🕵 [buildiso] Check if the linux kernel is installed #\e[0m"
+echo -e  "\x1b[43m\e[38;5;20m #######################################################\e[0m"
 pacman -Q linux > /dev/null 2>&1
 
 if [ $? -eq 0 ]; then
-    echo -e "\e[1;92m ⏩ Package linux already installed. Continue script...\e[0m"
+    echo -e "\e[1;92m ⏩ [buildiso] Package linux already installed. Continue script...\e[0m"
 else
-    echo -e "\e[1;95m 👨‍🔧 Package linux is not installed. Install linux first...\e[0m"
+    echo -e "\e[1;95m 👨‍🔧 [buildiso] Package linux is not installed. Install linux first...\e[0m"
     pacman -S linux  --noconfirm
 fi
-
-echo -e "\e[1;92m | ✍🏼| Copy linux.preset to airootfs |\e[0m"
+echo
+echo -e "\e[1;92m ✍🏼 [buildiso] Copy linux.preset to airootfs \e[0m"
 mkdir -p "$kaderCalamares/linux-preset"
 cp /etc/mkinitcpio.d/linux.preset "$kaderCalamares/linux-preset"
-cp -r "$etc_conf/." "$etc_tmp"
+# cp -r "$etc_conf/." "$etc_tmp" 
 
-echo -e  "\x1b[43m\e[38;5;20m |🕵|==================================================|\e[0m"
-echo -e  "\x1b[43m\e[38;5;20m |🕵| Check if the linux firmware package is installed |\e[0m"
-echo -e  "\x1b[43m\e[38;5;20m |🕵|==================================================|\e[0m"
+echo 
+echo -e  "\x1b[43m\e[38;5;20m ##################################################################\e[0m"
+echo -e  "\x1b[43m\e[38;5;20m # 🕵 [buildiso] Check if the linux firmware package is installed #\e[0m"
+echo -e  "\x1b[43m\e[38;5;20m ##################################################################\e[0m"
+echo
 pacman -Q linux-firmware > /dev/null 2>&1
 
 if [ $? -eq 0 ]; then
-    echo -e "\e[1;92m ⏩ Package linux already installed. Continue script...\e[0m"
+    echo -e "\e[1;92m ⏩ [buildiso] Package linux already installed. Continue script...\e[0m"
 else
-    echo -e "\e[1;95m 👨‍🔧 Package linux is not installed. Install linux first...\e[0m"
+    echo -e "\e[1;95m 👨‍🔧 [buildiso] Package linux is not installed. Install linux first...\e[0m"
     pacman -S linux-firmware  --noconfirm
 fi
 
-echo -e  "\x1b[43m\e[38;5;20m |🕵|============================================|\e[0m"
-echo -e  "\x1b[43m\e[38;5;20m |🕵| Check if the mkinitcpio-archiso package is installed |\e[0m"
-echo -e  "\x1b[43m\e[38;5;20m |🕵|============================================|\e[0m"
+echo -e  "\x1b[43m\e[38;5;20m ######################################################################\e[0m"
+echo -e  "\x1b[43m\e[38;5;20m # 🕵 [buildiso] Check if the mkinitcpio-archiso package is installed #\e[0m"
+echo -e  "\x1b[43m\e[38;5;20m ######################################################################\e[0m"
+echo
 pacman -Q mkinitcpio-archiso > /dev/null 2>&1
 
 if [ $? -eq 0 ]; then
-    echo -e "\e[1;92m ⏩ Package mkinitcpio-archiso already installed. Continue script...\e[0m"
+    echo -e "\e[1;92m ⏩ [buildiso] Package mkinitcpio-archiso already installed. Continue script...\e[0m"
 else
-    echo -e "\e[1;95m 👨‍🔧 Package mkinitcpio-archiso is not installed. Install it first...\e[0m"
+    echo -e "\e[1;95m 👨‍🔧 [buildiso] Package mkinitcpio-archiso is not installed. Install it first...\e[0m"
     pacman -S mkinitcpio-archiso  --noconfirm
 fi
 
 
 if [[ $1 == create-build-user || $2 == create-build-user || $3 == create-build-user ]]; then
 
-    echo -e "\e[1;92m |⚒️| Create user $builduser for building the AUR packages |\e[0m"
+    echo -e "\e[1;92m ⚒️ [buildiso] Create user $builduser for building the AUR packages...\e[0m"
     ./create_builduser.sh
 fi
 
-echo -e "🔨  \x1b[43m\e[38;5;20m Install needed packages for building custom packages...\e[0m"
+echo -e "\x1b[43m\e[38;5;20m 🔨 [buildiso] Install needed packages for building custom packages...\e[0m"
 pacman -S --needed git base-devel libhandy libadwaita flatpak --noconfirm
 
-echo -e "\e[1;92m | ⬇️ ⚒️| Create directory $airootfs/etc|\e[0m"
+echo -e "\e[1;92m ⬇️ ⚒️ [buildiso] Create directory $airootfs/etc|\e[0m"
 mkdir -p "$airootfs/etc"
-echo -e "\e[1;92m | ⬇️ ⚒️| Create directory $airootfs/etc/mkinitcpio.d|\e[0m"
+echo -e "\e[1;92m ⬇️ ⚒️ [buildiso] Create directory $airootfs/etc/mkinitcpio.d|\e[0m"
 mkdir -p "$airootfs/etc/mkinitcpio.d"
-echo -e "\e[1;92m | ⬇️ ⚒️| Create directory $airootfs/home|\e[0m"
+echo -e "\e[1;92m ⬇️ ⚒️ [buildiso] Create directory $airootfs/home|\e[0m"
 
 mkdir -p "$airootfs/home"
-echo -e "\e[1;92m | ⬇️ ⚒️| Create directory $airootfs/home/liveuser|\e[0m"
+echo -e "\e[1;92m ⬇️ ⚒️ [buildiso] Create directory $airootfs/home/liveuser|\e[0m"
 mkdir -p "$airootfs/home/liveuser"
-echo -e "\e[1;92m | ⬇️ ⚒️| Create directory $airootfs/home/liveuser/Desktop|\e[0m"
+echo -e "\e[1;92m ⬇️ ⚒️ [buildiso] Create directory $airootfs/home/liveuser/Desktop|\e[0m"
 mkdir -p "$airootfs/home/liveuser/Desktop"
 mkdir -p "$airootfs/home/liveuser/.config"
 mkdir -p "$airootfs/home/liveuser/.config/autostart"
@@ -361,59 +362,63 @@ mkdir -p "$airootfs/home/liveuser/.config/autostart"
 
 if [[ $1 == generate-icons || $2 == generate-icons || $3 == generate-icons ]]; then
     echo 
-    echo -e "\x1b[43m\e[1;34m |⚒️|-------------------|\e[0m"
-    echo -e "\x1b[43m\e[1;34m |⚒️| Generate Icons... |\e[0m"
-    echo -e "\x1b[43m\e[1;34m |⚒️|-------------------|\e[0m"
+    echo -e "\x1b[43m\e[1;34m ###################################\e[0m"
+    echo -e "\x1b[43m\e[1;34m # ⚒️ [buildiso] Generate Icons... #\e[0m"
+    echo -e "\x1b[43m\e[1;34m ###################################\e[0m"
 
     icons/generate-icons.sh
 fi
 
-echo "copy local packages to the airootfs..."
-cp -R $LOCAL_PACKAGES "$airootfs" # Directories will be created automatically
-chown -R root:root "$LOCAL_PACKAGES"
-chown -R root:root "$airootfs/packages/custom"
+# echo "[build_iso] copy local packages to the airootfs..."
+# cp -R $LOCAL_PACKAGES "$airootfs" # Directories will be created automatically
+# chown -R root:root "$LOCAL_PACKAGES"
+# chown -R root:root "$airootfs/packages/custom"
 # sudo chown -R root:root "$airootfs/packages/base"
 
-echo -e "\x1b[43m\e[38;5;20m 🗘 Refreshing pacman repositories after building custom packages...\e[0m"
+echo -e "\x1b[43m\e[38;5;20m 🗘 [buildiso] Refreshing pacman repositories after building custom packages...\e[0m"
 pacman -Syyu --noconfirm
 
-echo -e "\x1b[43m\e[38;5;20m ✏️ Adjusting the permissions on /etc/skel\e[0m"
-cp -r etc_conf/* $airootfs/etc
+# 
+# cp -r etc_conf/* $airootfs/etc
 
-echo -e "\x1b[43m\e[38;5;20m 🗐 Copy etc-Configuration-Data\e[0m"
+echo -e "\x1b[43m\e[38;5;20m ✏️ [buildiso] Adjusting the permissions on /etc/skel\e[0m"
 chmod -R 755 $airootfs/etc/skel/
 
-echo -e "\x1b[43m\e[38;5;20m 🗐 Copy usr-data to /usr_temp\e[0m"
-cp -R usr_data/* "$tmpUsr"
+# echo -e "\x1b[43m\e[38;5;20m 🗐 Copy usr-data to /usr_temp\e[0m"
+# cp -R usr_data/* "$tmpUsr"
 
-echo -e "\x1b[43m\e[38;5;20m 🗐 Copy calamares desktop file to liveuser home directory\e[0m"
-cp -R liveuser_home/* "$airootfs/home/liveuser/"
-cp -R liveuser_home/.config "$airootfs/home/liveuser/"
+# echo -e "\x1b[43m\e[38;5;20m 🗐 Copy calamares desktop file to liveuser home directory\e[0m"
+# cp -R liveuser_home/* "$airootfs/home/liveuser/"
+# cp -R liveuser_home/.config "$airootfs/home/liveuser/"
 
-echo -e "\e[1;35m 🗐 Copy some scripts to CHROOT\e[0m"
+echo -e "\e[1;35m 🗐 [buildiso] Copy some scripts to CHROOT\e[0m"
 cp customize_airootfs.sh $rootpath
 
-echo -e "\x1b[43m\e[38;5;20m 🗐 Copy calamares config to CHROOT"
+echo -e "\x1b[43m\e[38;5;20m 🗐 [buildiso] Copy calamares config to CHROOT"
 
 mkdir -p $rootCalamares
 cp -r $kaderCalamares/* $rootCalamares
 
-echo -e "\x1b[43m\e[38;5;20m 🗘 Refreshing pacman repositories...\e[0m"
+echo -e "\x1b[43m\e[38;5;20m 🗘 [buildiso] Refreshing pacman repositories...\e[0m"
 pacman -Syyu --noconfirm
 
 echo 
-echo -e "\x1b[43m\e[1;34m |⚒️|--------------------------------------|\e[0m"
-echo -e "\x1b[43m\e[1;34m |⚒️| Build ISO file with mkarchiso  💿... |\e[0m"
-echo -e "\x1b[43m\e[1;34m |⚒️|--------------------------------------|\e[0m"
+echo -e "\x1b[43m\e[1;34m #####################################################\e[0m"
+echo -e "\x1b[43m\e[1;34m #⚒️ [buildiso] Build ISO file with mkarchiso  💿... #\e[0m"
+echo -e "\x1b[43m\e[1;34m #####################################################\e[0m"
 
 # mkarchiso -r -v -w /build/archiso-work -o /mydata/archlive/out releng -C
-mkarchiso -r -v -w $workDir -o $isoDir releng -C
-chown -R $USER:$USER .
+mkarchiso -r -v -w $workDir -o $isoDir kader42-filesystem -C
+
+# Change the owner back to the logged-in user.
+# $PWD is the current folder. 
+current_user=$(whoami)
+chown -R $current_user:$current_user $PWD 
 
 echo
-echo -e "\x1b[92m\e[1;118m |=================================================| \e[0m"
-echo -e "\x1b[92m\e[1;118m | 👉🗑️ | Remove temporary directories and files..  | \e[0m"
-echo -e "\x1b[92m\e[1;118m |=================================================| \e[0m"
+echo -e "\x1b[92m\e[1;118m ################################################################\e[0m"
+echo -e "\x1b[92m\e[1;118m # 👉🗑️ | [buildiso] Remove temporary directories and files... #\e[0m"
+echo -e "\x1b[92m\e[1;118m ###############################################################\e[0m"
 
 # 1. Make sure nothing is mounted anymore
 sync
@@ -430,14 +435,14 @@ TEMP_DIRS=("$etc_tmp" "$build_temp" "$os_release_tmp" "$bootdir_tmp"  "$tmpUsr" 
 
 for dir in "${TEMP_DIRS[@]}"; do
     if [ -d "$dir" ]; then
-        echo "[Kader42-Builder] Try to delete folder: $dir"
+        echo "[buildiso] Try to delete folder: $dir"
         force_remove "$dir"
-        echo "[Kader42-Builder] Folder $dir deleted"
+        echo "[buildiso] Folder $dir deleted"
     fi
 done
 
 echo
-echo -e "\e[1;92m |============|\e[0m"
-echo -e "\e[1;92m | ✅️ | DONE! |\e[0m"
-echo -e "\e[1;92m |============|\e[0m"
+echo -e "\e[1;92m #####################################################\e[0m"
+echo -e "\e[1;92m # ✅️ | [buildiso] Kader⁴² ISO successfully created! #\e[0m"
+echo -e "\e[1;92m #####################################################\e[0m"
 echo
