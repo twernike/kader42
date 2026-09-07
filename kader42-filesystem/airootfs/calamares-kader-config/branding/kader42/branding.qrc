@@ -1,0 +1,6 @@
+<RCC>
+  <qresource prefix="/kader42">
+    <file>images/checked.png</file>
+    <file>images/unchecked.png</file>
+  </qresource>
+</RCC>
