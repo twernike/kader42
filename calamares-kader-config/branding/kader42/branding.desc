@@ -129,10 +129,11 @@ strings:
     versionedName:       Kader⁴² Mello
     shortVersionedName:  Kader⁴² Mello
     bootloaderEntryName: Kader42
+    bootloaderEntryNameFallback: "Kader42 Mello (Terminal Mode)"
     productUrl:          https://kader42.de
-    supportUrl:          https://kader42.de
-    knownIssuesUrl:      https://kader42.de
-    releaseNotesUrl:     https://kader42.de
+    supportUrl:          https://kader42.de/forum/
+    knownIssuesUrl:      https://kader42.de/issues/
+    releaseNotesUrl:     https://kader42.de/changelog/
     donateUrl:           https://kader42.de
 
 # These images are loaded from the branding module directory.
