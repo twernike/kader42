@@ -47,7 +47,13 @@ kickoff.currentConfigGroup = ["Configuration", "General"];
 kickoff.writeConfig("favorites", "applications:kader42-software-center.desktop,applications:systemsettings.desktop,applications:org.kde.dolphin.desktop");
 
 notebook.addWidget("org.kde.plasma.pager")
-notebook.addWidget("org.kde.plasma.icontasks")
+var tasks = notebook.addWidget("org.kde.plasma.icontasks");
+tasks.currentConfigGroup = ["General"];
+tasks.writeConfig("launchers", [
+    "applications:systemsettings.desktop",
+    "applications:org.kde.dolphin.desktop",
+    "preferred://browser"
+]);
 notebook.addWidget("org.kde.plasma.marginsseparator")
 notebook.addWidget("org.kde.plasma.systemtray")
 notebook.addWidget("org.kde.plasma.digitalclock")

@@ -1,11 +1,19 @@
+post_install() {
+    # Quietly rebuild the icon cache (-f forces a rebuild and suppresses errors)
+    if [ -d /usr/share/icons/Kader42 ]; then
+        gtk-update-icon-cache -q -t -f /usr/share/icons/Kader42 2>/dev/null || true
+    fi
+}
+
 post_upgrade() {
-  echo "--- 🎨 Kader42 Theme-Update: Update Plasma-Look... ---"
-  # Das sorgt dafür, dass Plasma das Theme neu lädt
-  # Aber Achtung: Das funktioniert nur, wenn eine grafische Session läuft!
-  if [ -n "$DISPLAY" ]; then
-     sudo -u $(logname) lookandfeeltool -a Kader42
-  fi
-  
-  # Icon Cache erneuern
-  gtk-update-icon-cache -qt /usr/share/icons/Kader42
+    post_install
+}
+
+pre_upgrade() {
+    # If orphaned files or
+    # unmanaged wallpapers/color schemes from older versions of the package have ended up on the system,
+    # they will be removed here before the new package is extracted.
+    
+    rm -rf /usr/share/wallpapers/Kader42
+    rm -f  /usr/share/color-schemes/Kader42.colors
 }
