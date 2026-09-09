@@ -1,19 +1,17 @@
 # Maintainer: Thomas Wernike<thomas@kader42.de>
 pkgname=kader42-plasma-theme
 pkgver=1.0.1
-pkgrel=4
+pkgrel=5
 pkgdesc="The specific Kader42 Plasma Theme"
 arch=('any')
 install=kader42-plasma-theme.install
-depends=('kader42-core>=1.0.6-1')
 
 package() {
-    install -d "${pkgdir}/usr/share/plasma/look-and-feel/Kader42"
+    install -d "${pkgdir}/usr/share/plasma/look-and-feel/Kader42-Plasmatheme"
     install -d "${pkgdir}/usr/share/color-schemes/"
-    install -d "${pkgdir}/usr/share/wallpapers/Kader42/"
+    install -d "${pkgdir}/usr/share/wallpapers/Kader42-Wallpapers"
 
-
-    cp -r "${startdir}/Kader42/." "${pkgdir}/usr/share/plasma/look-and-feel/Kader42/"
-    cp -r "${startdir}/Kader42.colors" "${pkgdir}/usr/share/color-schemes/"
-    cp -r "${startdir}/wallpaper/." "${pkgdir}/usr/share/wallpapers/Kader42"
+    cp -r "${startdir}/Kader42/." "${pkgdir}/usr/share/plasma/look-and-feel/Kader42-Plasmatheme/"
+    cp -r "${startdir}/Kader42-Colors.colors" "${pkgdir}/usr/share/color-schemes/"
+    cp -r "${startdir}/wallpaper/." "${pkgdir}/usr/share/wallpapers/Kader42-Wallpapers"
 }

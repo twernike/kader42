@@ -7,13 +7,12 @@ post_install() {
 
 post_upgrade() {
     post_install
-}
 
-pre_upgrade() {
-    # If orphaned files or
-    # unmanaged wallpapers/color schemes from older versions of the package have ended up on the system,
-    # they will be removed here before the new package is extracted.
-    
+    install -d "${pkgdir}/usr/share/plasma/look-and-feel/Kader42-Plasmatheme"
+    install -d "${pkgdir}/usr/share/color-schemes"
+    install -d "${pkgdir}/usr/share/wallpapers/Kader42-Wallpapers"
+
+    rm -rf /usr/share/plasma/look-and-feel/Kader42
+    rm -rf /usr/share/color-schemes/Kader42.colors
     rm -rf /usr/share/wallpapers/Kader42
-    rm -f  /usr/share/color-schemes/Kader42.colors
 }
