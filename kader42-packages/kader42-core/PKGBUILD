@@ -1,6 +1,6 @@
 # Maintainer: Thomas Wernike <support@kader42.de>
 pkgname=kader42-core
-pkgver=1.0.5
+pkgver=1.0.9
 pkgrel=0
 pkgdesc="Core configurations and systemd units for Kader42"
 arch=('any')
@@ -48,4 +48,5 @@ package() {
 
     install -Dm644 "${srcdir}/kader42-software-center-favorite.upd" "${pkgdir}/usr/share/kconf_update/kader42-software-center-favorite.upd"
     install -Dm755 "${srcdir}/kader42-software-center-favorite.js" "${pkgdir}/usr/share/kconf_update/kader42-software-center-favorite.js"
+
 }

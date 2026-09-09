@@ -1,0 +1,11 @@
+[Trigger]
+Operation = Install
+Operation = Upgrade
+Type = Package
+Target = filesystem
+Target = kader42-branding
+
+[Action]
+Description = Updating os-release for Kader⁴²...
+When = PostTransaction
+Exec = /usr/bin/sh -c 'cp -f /usr/share/kader42/os-release /usr/lib/os-release && ln -sf ../usr/lib/os-release /etc/os-release'
