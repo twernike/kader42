@@ -1,0 +1,8 @@
+#%PAM-1.0
+# -----------------------------------------------------------------------------
+# Kader42 Live System PAM Configuration (/etc/pam.d/kde)
+# Allows password-less execution of graphical root applications (pkexec)
+# for the ‘liveuser’, since this user has no password (nullok).
+# -----------------------------------------------------------------------------
+auth        required    pam_unix.so try_first_pass nullok
+account     required    pam_unix.so
