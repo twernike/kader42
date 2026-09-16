@@ -1,0 +1,14 @@
+# remove from airootfs!
+[Trigger]
+Operation = Install
+Operation = Upgrade
+Type = Package
+Target = base
+
+[Action]
+Description = Creating user 'liveuser' with UID 1000 and without a password...
+When = PostTransaction
+Depends = shadow
+Exec = /usr/bin/useradd -u 1000 -G adm,wheel,uucp,audio,video,input -c "Live User" -p '' -d /home/liveuser -s /usr/bin/zsh -m liveuser
+
+    

@@ -34,8 +34,20 @@ file_permissions=(
   ["/usr/local/bin/Installation_guide"]="0:0:755"
   ["/usr/local/bin/livecd-sound"]="0:0:755"
   ["/home/liveuser"]="1000:1000:700"
+  ["/home/liveuser/Desktop"]="1000:1000:700"
+  ["/home/liveuser/Desktop/calamares.desktop"]="1000:1000:700"
+  ["/home/liveuser/.config"]="1000:1000:700"
+  ["/home/liveuser/.config/autostart"]="1000:1000:700"
+  ["/home/liveuser/.config/kscreenlockerrc"]="1000:1000:700"
+  ["/home/liveuser/.config/kscreenlockerrc"]="1000:1000:700"
+  ["/home/liveuser/.config/powerdevilrc"]="1000:1000:700"
+  ["/home/liveuser/.config/powermanagementprofilesrc"]="1000:1000:700"
+  ["/home/liveuser/.config/autostart/calamares.desktop"]="1000:1000:700"
   ["/etc/sudoers.d/g_wheel"]="0:0:0440"
   ["/etc/shadow"]="0:0:0600"
   ["/etc/mkinitcpio.conf"]="0:0:755"
+  ["/etc/sddm.conf.d"]="0:0:755"
+  ["/etc/sddm.conf.d/autologin.conf"]="0:0:644"
+
 )
 

@@ -1,7 +1,0 @@
-[Unit]
-Description=KWin Wayland Recovery Service
-After=plasma-plasmashell.service
-
-[Service]
-Type=oneshot
-ExecStart=/usr/bin/kwin-healthcheck

@@ -19,8 +19,6 @@ bootloaderLib="$usrModules/bootloader"
 oneShotPreparerLib="$usrModules/oneshot-preparer"
 tmp_preset="/preset_tmp"
 presetDir="/etc/mkinitcpio.d"
-tmpLiveuserHome="/liveuser_home_tmp"
-liveUserHome="/home/liveuser"
 
 
 echo -e "\e[1;92m ██████████████████████████████████████████████████████████████████████████████████████████████████
@@ -57,24 +55,6 @@ echo -e "\x1b[43m\e[1;31m # 🚀 Start script customize_airootfs.sh # \e[0m"
 echo -e "\x1b[43m\e[1;31m ######################################### \e[0m"
 echo -e "\x1b[43m\e[1;31m                                           \e[0m"
 
-
-# 1. Plain Logging 
-echo "=== [customize_airootfs] Create liveuser ==="
-
-# 2. Create a user & clear the password
-useradd -m -g wheel -G audio,video,input,storage,power -s /bin/bash liveuser 2>/dev/null || true
-passwd -d liveuser
-usermod -s /bin/bash liveuser
-
-# 3. Sanity Check: Immediately aborts the build if `useradd` fails
-if ! getent passwd liveuser > /dev/null 2>&1; then
-    echo -e "\x1b[31;1;208m ========================================================================== \e[0m"
-    echo -e "\x1b[31;1;208m ⚠️ [customize_airootfs] ERROR: Could not create liveuser! \e[0m"
-    echo -e "\x1b[31;1;208m ⚠️ [customize_airootfs] Build is being aborted BEFORE the SquashFS step. \e[0m"
-    echo -e "\x1b[31;1;208m ========================================================================="
-    exit 1
-fi
-
 echo
 echo -e "\x1b[38;1;208m |=====================================================| \e[0m"
 echo -e "\x1b[38;1;208m | 🔑 | [customize_airootfs] Set a clean XDG directory | \e[0m"
@@ -82,29 +62,11 @@ echo -e "\x1b[38;1;208m |=====================================================| 
 
 sed -i 's|#TMPDIR="/tmp"|TMPDIR="/var/tmp"|' /etc/mkinitcpio.conf
 
-
-echo "liveuser ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/liveuser
-chmod 440 /etc/sudoers.d/liveuser
-touch /home/liveuser/.zshrc
-
-echo "Copy needed files for liveuser..."
-
-# 1. The trailing slash copies EVERYTHING (including .config for autostart)
-cp -a "$tmpLiveuserHome/." "$liveUserHome/"
-
-# 2. EXPLICITLY make desktop files executable (Essential for KDE Plasma!)
-chmod +x "$liveUserHome/Desktop/"*.desktop 2>/dev/null || true
-chmod +x "$liveUserHome/.config/autostart/"*.desktop 2>/dev/null || true
-
-# 3. Set the KDE trust flag (stops “Untrusted Application Launcher” warnings)
-for f in "$liveUserHome/Desktop/"*.desktop; do
-    [ -f "$f" ] || continue
-    gio set "$f" metadata::trusted true 2>/dev/null || true
-done
-
-# 4. Recursively assign permissions to liveuser
-chown -R liveuser:liveuser "$liveUserHome"
-
+echo
+echo -e "\x1b[38;1;208m |=======================================================| \e[0m"
+echo -e "\x1b[38;1;208m | 🔑 | [customize_airootfs] Execute create-live-user.sh | \e[0m"
+echo -e "\x1b[38;1;208m |=======================================================| \e[0m"
+echo
 
 echo -e  "\x1b[43m\e[38;5;20m ##############################################################################\e[0m"
 echo -e  "\x1b[43m\e[38;5;20m # ✍🏼 | [customize_airootfs] Set ownership of system directories to root:root #\e[0m"
@@ -157,13 +119,6 @@ cp -r $tmpOneShotPreparer/* $oneShotPreparerLib
 
 chmod +x $calamaresScripts/*.sh
 
-echo
-echo -e "\x1b[92m\e[1;118m #########################################################################\e[0m"
-echo -e "\x1b[92m\e[1;118m # 👉🗑️ | [customize_airootfs] Remove temporary directories and files...# \e[0m"
-echo -e "\x1b[92m\e[1;118m ########################################################################\e[0m"
-
-rm -rf $tmpCalamares
-
 echo -e "\x1b[43m\e[38;5;20m ####################################################\e[0m"
 echo -e "\x1b[43m\e[38;5;20m # ⚙️ | [customize_airootfs] Enable needed services # \e[0m"
 echo -e "\x1b[43m\e[38;5;20m ####################################################\e[0m"
@@ -209,6 +164,29 @@ if id plasmalogin &>/dev/null; then
     usermod -aG video,render plasmalogin
 fi
 
+# echo -e "\x1b[43m\e[38;5;20m ###########################################################################################################\e[0m"
+# echo -e "\x1b[43m\e[38;5;20m # 📑 [customize_airootfs] Copy the configuration files, autostart and calamares.desktop to /home/liveuser #\e[0m"
+# echo -e "\x1b[43m\e[38;5;20m ###########################################################################################################\e[0m"
+# echo
+# cp -a /liveuser_home_tmp/. /home/liveuser/
+
+echo -e "\x1b[43m\e[38;5;20m ##################################################\e[0m"
+echo -e "\x1b[43m\e[38;5;20m # 📁 [customize_airootfs] Add missing XDG folder #\e[0m"
+echo -e "\x1b[43m\e[38;5;20m ##################################################\e[0m"
+echo
+su - liveuser -c "xdg-user-dirs-update"
+
+# echo -e "\x1b[43m\e[38;5;20m ###################################################################################################\e[0m"
+# echo -e "\x1b[43m\e[38;5;20m # ⚡ [customize_airootfs] Set the executable bit for all *.desktop files in the autostart folder. #\e[0m"
+# echo -e "\x1b[43m\e[38;5;20m ###################################################################################################\e[0m"
+# echo
+# chmod +x /home/liveuser/.config/autostart/*.desktop 2>/dev/null || true
+
+echo -e "\x1b[43m\e[38;5;20m #########################################################################\e[0m"
+echo -e "\x1b[43m\e[38;5;20m # 🤝 [customize_airootfs] Set ownership of /home/liveuser to liveuser...#\e[0m"
+echo -e "\x1b[43m\e[38;5;20m #########################################################################\e[0m"
+echo
+chown -R 1000:1000 /home/liveuser
 
 echo
 echo -e "\x1b[44m\e[1;118m  ##################################\e[0m"

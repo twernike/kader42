@@ -28,7 +28,7 @@ Meta=org.kde.plasmashell,/PlasmaShell,org.kde.PlasmaShell,activateApplicationLau
 [kwinrc][TouchEdges]
 
 [kdeglobals][General]
-ColorScheme=Kader42
+ColorScheme=Kader42-Colors
 
 [kdeglobals][Icons]
 Theme=Kader42
@@ -37,7 +37,7 @@ Theme=Kader42
 cursorTheme=breeze_cursors
 
 [Wallpaper]
-Image=Kader42
+Image=Kader42-Wallpapers
 
 [plasmarc][Theme]
 name=Dream-Color-Plasma
@@ -45,7 +45,3 @@ name=Dream-Color-Plasma
 [org.kde.kdecoration2]
 library=org.kde.kwin.aurorae
 theme=kwin4_decoration_qml_plastik
-
-[kdeglobals][KSplash]
-Theme=Kader42
-Engine=KSplashQML

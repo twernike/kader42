@@ -1,8 +1,0 @@
-[Desktop Entry]
-Type=Application
-Name=Install Kader⁴²
-Exec=/usr/bin/bash /usr/bin/kader-install.sh
-Icon=/usr/share/pixmaps/kader42.png
-Terminal=false
-Categories=System;Installer;
-X-KDE-Authorized-Link=true

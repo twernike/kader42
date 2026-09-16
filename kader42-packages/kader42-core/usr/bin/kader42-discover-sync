@@ -1,0 +1,25 @@
+#!/bin/bash
+# Kader42-Discover-Sync.sh: Synchronizes Plasma layouts depending on whether Discover is installed
+
+# Finde alle Layout-Skripte (ignoriere bereits erstellte .orig Backups)
+find /usr/share/plasma/ -name "*.js" ! -name "*.orig" -type f | while read -r file; do
+    
+    # If the file contains the “Discover” string, it is the unmodified original
+    # (e.g., freshly installed or updated via a Plasma update)
+    if grep -q "applications:org.kde.discover.desktop" "$file"; then
+        cp -a "$file" "${file}.orig"
+    fi
+    
+    # Just to be safe: If (for whatever reason) there is no original, skip this step
+    [ ! -f "${file}.orig" ] && continue
+
+    if [ -x /usr/bin/plasma-discover ]; then
+        # Discover IST Installed -> Restore to Original State
+        cp -a "${file}.orig" "$file"
+    else
+        # Discover MISSING -> Generate a cleaned-up version from the original
+        sed -e 's/,applications:org.kde.discover.desktop//g' \
+            -e 's/applications:org.kde.discover.desktop,//g' \
+            "${file}.orig" > "$file"
+    fi
+done

@@ -66,7 +66,8 @@ echo -e "\e[1;92m ████████████████████�
     Creates a user named 'builduser' with passwordless sudo rights for building 
     the AUR packages. If no user with the name 'builduser' exists, it will be created.
     You have to this parameter, if you set the build-custom parameter and the user doesn't exist, 
-    because the AUR packages need to be built as a non-root user."
+    because the AUR packages need to be built as a non-root user.
+    This only works if the ‘passwd’ file has not been mounted as read-only inside a Docker container. "
     echo
     echo -e "\e[1;92m generate-icons ➤
  ============== 
@@ -115,7 +116,7 @@ buildUser="admin"
 # ==============================
 # Configuration
 # ==============================
-releng="releng"
+releng="kader42-filesystem"
 airootfs="$releng/airootfs"
 LOCAL_PACKAGES="/packages"
 LOCAL_REPO="$LOCAL_PACKAGES/custom"
@@ -142,7 +143,6 @@ rootpath="$airootfs/root"
 kaderCalamares="calamares-kader-config"
 shareCalamares="$airootfs/usr/share/calamares"
 etcCalamares="$airootfs/etc/calamares"
-liveuserHome="$airootfs/home/liveuser"
 os_release="os-release-info/os-release"
 etc_conf="etc_conf"
 builduser="builduser"
@@ -156,6 +156,7 @@ rootCalamares="$airootfs/$kaderCalamares"
 bootdir_tmp="$airootfs/boot_tmp"
 packages="$airootfs/packages/"
 customRepo="$packages/custom"
+
 
 
 # Get the line “ID=” from /etc/os-release
@@ -193,6 +194,10 @@ EOF
 echo
 echo -e "\e[1;92m ✅ Arch Linux detected. Script will continue...⏩\e[0m"
 
+echo -e "\e[1;92m 🔍 Determine current owner of the folder $PWD...\e[0m"
+origOwner=$(stat -c '%U' $PWD)
+
+echo -e "\e[1;92m 🔍 The original owner of $PWD is $origOwner.\e[0m"
 echo -e "\e[1;92m 🧹 Clear package cache \e[0m"
 pacman -Scc --noconfirm
 
@@ -208,11 +213,8 @@ rm -rf $work_dir
 rm -rf out
 rm -rf "$airootfs/etc/systemd"
 rm -rf "$airootfs/tmp"
-rm -rf "$airootfs/usr_tmp"
-rm -rf "$airootfs/etc_tmp"
 rm -rf "$usr_share"
 rm -rf "$usr_lib"
-rm -rf "$liveuserHome"
 rm -rf "$rootCalamares"
 
 # chown root:root -R *
@@ -220,8 +222,6 @@ rm -rf "$rootCalamares"
 # Instead of `chown -R root:root *`
 # Only change the directories you're actually using to build the ISO:
 # chown -R root:root releng data 2>/dev/null || true
-
-# ./create-live-user.sh
 
 echo
 echo -e  "\x1b[43m\e[38;5;20m #############################################\e[0m"
@@ -232,7 +232,6 @@ echo
 mkdir -p build
 mkdir -p "$build_temp"
 mkdir -p "$workDir"
-mkdir -p "$liveuserHome"
 mkdir -p "$rootpath"
 mkdir -p "$usr_share"
 mkdir -p "$usr_share"
@@ -332,7 +331,7 @@ else
 fi
 
 
-if [[ $1 == create-build-user || $2 == create-build-user || $3 == create-build-user ]]; then
+if [[ $1 == create-build-user || $2 == create-build-user || $3 == create-build-user || $4 == create-build-user ]]; then
 
     echo -e "\e[1;92m ⚒️ [buildiso] Create user $builduser for building the AUR packages...\e[0m"
     ./create_builduser.sh
@@ -360,14 +359,14 @@ mkdir -p "$airootfs/home/liveuser/.config/autostart"
 # cp $releng/pacman.conf /etc/pacman.conf
 # cp $os_release $os_release_tmp
 
-if [[ $1 == generate-icons || $2 == generate-icons || $3 == generate-icons ]]; then
-    echo 
-    echo -e "\x1b[43m\e[1;34m ###################################\e[0m"
-    echo -e "\x1b[43m\e[1;34m # ⚒️ [buildiso] Generate Icons... #\e[0m"
-    echo -e "\x1b[43m\e[1;34m ###################################\e[0m"
+# if [[ $1 == generate-icons || $2 == generate-icons || $3 == generate-icons || $4 == generate-icons ]]; then
+#     echo 
+#     echo -e "\x1b[43m\e[1;34m ###################################\e[0m"
+#     echo -e "\x1b[43m\e[1;34m # ⚒️ [buildiso] Generate Icons... #\e[0m"
+#     echo -e "\x1b[43m\e[1;34m ###################################\e[0m"
 
-    icons/generate-icons.sh
-fi
+#     icons/generate-icons.sh
+# fi
 
 # echo "[build_iso] copy local packages to the airootfs..."
 # cp -R $LOCAL_PACKAGES "$airootfs" # Directories will be created automatically
@@ -378,26 +377,17 @@ fi
 echo -e "\x1b[43m\e[38;5;20m 🗘 [buildiso] Refreshing pacman repositories after building custom packages...\e[0m"
 pacman -Syyu --noconfirm
 
-# 
-# cp -r etc_conf/* $airootfs/etc
-
 echo -e "\x1b[43m\e[38;5;20m ✏️ [buildiso] Adjusting the permissions on /etc/skel\e[0m"
 chmod -R 755 $airootfs/etc/skel/
 
-# echo -e "\x1b[43m\e[38;5;20m 🗐 Copy usr-data to /usr_temp\e[0m"
-# cp -R usr_data/* "$tmpUsr"
-
-# echo -e "\x1b[43m\e[38;5;20m 🗐 Copy calamares desktop file to liveuser home directory\e[0m"
-# cp -R liveuser_home/* "$airootfs/home/liveuser/"
-# cp -R liveuser_home/.config "$airootfs/home/liveuser/"
-
-echo -e "\e[1;35m 🗐 [buildiso] Copy some scripts to CHROOT\e[0m"
-cp customize_airootfs.sh $rootpath
+echo -e "\e[1;35m 🗐 [buildiso] Copy the customize_airootfs.sh and create-live-user.sh script to CHROOT\e[0m"
+cp -f customize_airootfs.sh $rootpath
+cp -f create-live-user.sh $rootPath
 
 echo -e "\x1b[43m\e[38;5;20m 🗐 [buildiso] Copy calamares config to CHROOT"
 
 mkdir -p $rootCalamares
-cp -r $kaderCalamares/* $rootCalamares
+cp -r -f $kaderCalamares/* $rootCalamares
 
 echo -e "\x1b[43m\e[38;5;20m 🗘 [buildiso] Refreshing pacman repositories...\e[0m"
 pacman -Syyu --noconfirm
@@ -410,10 +400,23 @@ echo -e "\x1b[43m\e[1;34m #####################################################\
 # mkarchiso -r -v -w /build/archiso-work -o /mydata/archlive/out releng -C
 mkarchiso -r -v -w $workDir -o $isoDir kader42-filesystem -C
 
-# Change the owner back to the logged-in user.
+exitCode=$
+
+# if [ $exitCode -ne 0 ]; then
+#     echo "An error occured! The ISO file wasn't build!"
+
+#     if [[ $1 == keepWork || $2 == keepWork || $3 == keepWork || $4 == keepWork ]]; then
+#         exit 1
+#     fi
+# fi
+
+# Change the owner back to the original user.
 # $PWD is the current folder. 
-current_user=$(whoami)
-chown -R $current_user:$current_user $PWD 
+
+# current_user=$(whoami)
+# echo "The current user is $current_user."
+# echo "The current folder is $PWD."
+# chown -R $origOwner:$origOwner $PWD 
 
 echo
 echo -e "\x1b[92m\e[1;118m ################################################################\e[0m"
@@ -423,23 +426,15 @@ echo -e "\x1b[92m\e[1;118m #####################################################
 # 1. Make sure nothing is mounted anymore
 sync
 
-etc_tmp="$airootfs/etc_tmp"
 build_temp="/build-temp"
-os_release_tmp="$airootfs/os-release-tmp"
-tmpUsr="$airootfs/usr_tmp"
-rootCalamares="$airootfs/$kaderCalamares"
-bootdir_tmp="$airootfs/boot_tmp"
 
 # 2. Aggressive deletion with verification
-TEMP_DIRS=("$etc_tmp" "$build_temp" "$os_release_tmp" "$bootdir_tmp"  "$tmpUsr" "$rootCalamares")
 
-for dir in "${TEMP_DIRS[@]}"; do
-    if [ -d "$dir" ]; then
-        echo "[buildiso] Try to delete folder: $dir"
-        force_remove "$dir"
-        echo "[buildiso] Folder $dir deleted"
-    fi
-done
+if [ -d "$build_temp" ]; then
+    echo "[buildiso] Try to delete folder: $build_temp"
+    force_remove "$dir"
+    echo "[buildiso] Folder $build_temp deleted"
+fi
 
 echo
 echo -e "\e[1;92m #####################################################\e[0m"

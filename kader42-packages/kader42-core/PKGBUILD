@@ -1,52 +1,224 @@
 # Maintainer: Thomas Wernike <support@kader42.de>
 pkgname=kader42-core
-pkgver=1.0.9
-pkgrel=0
+pkgver=1.0.10
+pkgrel=8
 pkgdesc="Core configurations and systemd units for Kader42"
 arch=('any')
-depends=('bash' 'dbus' 'kernel-modules-hook' 'pacback' 'systemd-boot-pacman-hook' 'system-config-printer' 'cups' 'libreoffice-fresh-de' 'kader42-software-center')
+depends=('bash' 'dbus' 'kernel-modules-hook' 'pacback' 'systemd-boot-pacman-hook' 'system-config-printer' 'cups' 'libreoffice-fresh-de' 'kader42-software-center' 'kader42-plasma-theme')
 install=kader42-core.install
-source=('kader42-cleanup.service' 'kader42-software-center-favorite.upd' 'kader42-software-center-favorite.js')
-md5sums=('SKIP' 'SKIP' 'SKIP')
+
+source=(
+    'kader42-cleanup.service'
+    'kader42-software-center-favorite.upd'
+    'kader42-software-center-favorite.js'
+)
+
+sha256sums=(
+    'SKIP'
+    'SKIP'
+    'SKIP'
+)
+
 conflicts=('kader42-hooks')
 replaces=('kader42-hooks')
 
-
 package() {
-    local tmp_overlay="${pkgdir}/usr/share/kader42/core-overlay"
-    local perm_overrides="${pkgdir}/usr/share/kader42/upstream-overrides"
-    
-    mkdir -p "$tmp_overlay" "$perm_overrides"
+    install -Dm644 "${startdir}/etc/bluetooth/main.conf.d/61-kader42.conf" "${pkgdir}/etc/bluetooth/main.conf.d/61-kader42.conf"
+    install -Dm644 "${startdir}/etc/firefox/mozilla.cfg" "${pkgdir}/etc/firefox/mozilla.cfg"
+    install -Dm644 "${startdir}/etc/firefox/syspref.js" "${pkgdir}/etc/firefox/syspref.js"
+    install -Dm644 "${startdir}/etc/modprobe.d/kader42-framework-fixes.conf" "${pkgdir}/etc/modprobe.d/kader42-framework-fixes.conf"
+    install -Dm755 "${startdir}/etc/NetworkManager/conf.d/10-kader42-globally-managed.conf" "${pkgdir}/etc/NetworkManager/conf.d/10-kader42-globally-managed.conf"
+    install -Dm644 "${startdir}/etc/NetworkManager/system-connections/20-kader42-wired-default.nmconnection" "${pkgdir}/etc/NetworkManager/system-connections/20-kader42-wired-default.nmconnection"
+    install -Dm755 "${startdir}/etc/profile.d/kader42-libreoffice-gtk-fix.sh" "${pkgdir}/etc/profile.d/kader42-libreoffice-gtk-fix.sh"
+    install -Dm644 "${startdir}/etc/sddm.conf.d/61-kader42-login.conf" "${pkgdir}/etc/sddm.conf.d/61-kader42-login.conf"
+    install -Dm644 "${startdir}/etc/systemd/iio-sensor-proxy.d/61-kader42-override.conf" "${pkgdir}/etc/systemd/iio-sensor-proxy.d/61-kader42-override.conf"
+    install -Dm644 "${startdir}/etc/systemd/logind.conf.d/61-kader42-live.conf" "${pkgdir}/etc/systemd/logind.conf.d/61-kader42-live.conf"
+    install -Dm644 "${startdir}/etc/systemd/system/io-sensor-proxy.service.d/61-kader42-order.conf" "${pkgdir}/etc/systemd/system/io-sensor-proxy.service.d/61-kader42-order.conf"
+    install -Dm644 "${startdir}/etc/udev/hwdb.d/61-kader42-framework.hwdb" "${pkgdir}/etc/udev/hwdb.d/61-kader42-framework.hwdb"
+    install -Dm755 "${startdir}/etc/xdg/.config/autostart/kader42-welcome.desktop" "${pkgdir}/etc/xdg/.config/autostart/kader42-welcome.desktop"
+    install -Dm644 "${startdir}/etc/xdg/.config/defaults" "${pkgdir}/etc/xdg/.config/defaults"
+    install -Dm644 "${startdir}/etc/xdg/.config/kdeglobals" "${pkgdir}/etc/xdg/.config/kdeglobals"
+    install -Dm644 "${startdir}/etc/xdg/.config/kickerrc" "${pkgdir}/etc/xdg/.config/kickerrc"
+    install -Dm644 "${startdir}/etc/xdg/.config/konsolerc" "${pkgdir}/etc/xdg/.config/konsolerc"
+    install -Dm644 "${startdir}/etc/xdg/.config/ksplashrc" "${pkgdir}/etc/xdg/.config/ksplashrc"
+    install -Dm644 "${startdir}/etc/xdg/.config/kvantum.conf" "${pkgdir}/etc/xdg/.config/kvantum.conf"
+    install -Dm644 "${startdir}/etc/xdg/.config/Kvantum/kvantum.conf" "${pkgdir}/etc/xdg/.config/Kvantum/kvantum.conf"
+    install -Dm644 "${startdir}/etc/xdg/.config/Kvantum/kvantum.kvconfig" "${pkgdir}/etc/xdg/.config/Kvantum/kvantum.kvconfig"
+    install -Dm644 "${startdir}/etc/xdg/.config/Kvantum/KvGlassDarkRound/KvGlassDarkRound.kvconfig" "${pkgdir}/etc/xdg/.config/Kvantum/KvGlassDarkRound/KvGlassDarkRound.kvconfig"
+    install -Dm644 "${startdir}/etc/xdg/.config/kwinrc" "${pkgdir}/etc/xdg/.config/kwinrc"
+    install -Dm644 "${startdir}/etc/xdg/.config/plasmarc" "${pkgdir}/etc/xdg/.config/plasmarc"
+    install -Dm644 "${startdir}/etc/xdg/.config/plasmashellrc" "${pkgdir}/etc/xdg/.config/plasmashellrc"
+    install -Dm644 "${startdir}/etc/xdg/.config/powerdevilrc" "${pkgdir}/etc/xdg/.config/powerdevilrc"
+    install -Dm644 "${startdir}/etc/xdg/.config/powermanagementprofilesrc" "${pkgdir}/etc/xdg/.config/powermanagementprofilesrc"
+    install -Dm644 "${startdir}/etc/xdg/.config/xsettingsd/xsettingsd.conf" "${pkgdir}/etc/xdg/.config/xsettingsd/xsettingsd.conf"
+    install -Dm644 "${startdir}/etc/xdg/.config/.zshrc" "${pkgdir}/etc/xdg/.config/.zshrc"
+    install -Dm755 "${startdir}/usr/bin/kader42-discover-sync" "${pkgdir}/usr/bin/kader42-discover-sync"
+    install -Dm755 "${startdir}/usr/bin/kader42-hello" "${pkgdir}/usr/bin/kader42-hello"
+    install -Dm644 "${startdir}/usr/lib/systemd/system/display-manager.service.d/kader42-plymouth.conf" "${pkgdir}/usr/lib/systemd/system/display-manager.service.d/kader42-plymouth.conf"
+    install -Dm755 "${startdir}/usr/lib/systemd/system-preset/61-kader-2.preset" "${pkgdir}/usr/lib/systemd/system-preset/61-kader-2.preset"
+    install -Dm644 "${startdir}/usr/lib/systemd/system/sddm.service.d/42-kader42-override.conf" "${pkgdir}/usr/lib/systemd/system/sddm.service.d/42-kader42-override.conf"
+    install -Dm644 "${startdir}/usr/lib/systemd/system/sddm.service.d/42-kader42-plymouth.conf" "${pkgdir}/usr/lib/systemd/system/sddm.service.d/42-kader42-plymouth.conf"
+    install -Dm644 "${startdir}/usr/lib/systemd/user-preset/62-kader-user-2.preset" "${pkgdir}/usr/lib/systemd/user-preset/62-kader-user-2.preset"
+    install -Dm755 "${startdir}/usr/lib/vconsole.conf" "${pkgdir}/usr/lib/vconsole.conf"
+    install -Dm644 "${startdir}/usr/share/konsole/kader42-2.colorscheme" "${pkgdir}/usr/share/konsole/kader42-2.colorscheme"
+    install -Dm644 "${startdir}/usr/share/konsole/Kader42-2.profile" "${pkgdir}/usr/share/konsole/Kader42-2.profile"
+    install -Dm644 "${startdir}/usr/share/pixmaps/mello_with_tablet.png" "${pkgdir}/usr/share/pixmaps/mello_with_tablet.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello/animation-001.png" "${pkgdir}/usr/share/plymouth/themes/mello/animation-001.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello/animation-002.png" "${pkgdir}/usr/share/plymouth/themes/mello/animation-002.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello/animation-003.png" "${pkgdir}/usr/share/plymouth/themes/mello/animation-003.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello/animation-004.png" "${pkgdir}/usr/share/plymouth/themes/mello/animation-004.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello/bullet.png" "${pkgdir}/usr/share/plymouth/themes/mello/bullet.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello/capslock.png" "${pkgdir}/usr/share/plymouth/themes/mello/capslock.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello/entry.png" "${pkgdir}/usr/share/plymouth/themes/mello/entry.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello-kader42/mello42.plymouth" "${pkgdir}/usr/share/plymouth/themes/mello-kader42/mello42.plymouth"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello/kader42-mello.plymouth" "${pkgdir}/usr/share/plymouth/themes/mello/kader42-mello.plymouth"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello-kader42/progress-01.png" "${pkgdir}/usr/share/plymouth/themes/mello-kader42/progress-01.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello-kader42/progress-02.png" "${pkgdir}/usr/share/plymouth/themes/mello-kader42/progress-02.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello-kader42/progress-03.png" "${pkgdir}/usr/share/plymouth/themes/mello-kader42/progress-03.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello-kader42/progress-04.png" "${pkgdir}/usr/share/plymouth/themes/mello-kader42/progress-04.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello-kader42/progress-05.png" "${pkgdir}/usr/share/plymouth/themes/mello-kader42/progress-05.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello-kader42/progress-06.png" "${pkgdir}/usr/share/plymouth/themes/mello-kader42/progress-06.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello-kader42/progress-07.png" "${pkgdir}/usr/share/plymouth/themes/mello-kader42/progress-07.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello-kader42/progress-08.png" "${pkgdir}/usr/share/plymouth/themes/mello-kader42/progress-08.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello-kader42/progress-09.png" "${pkgdir}/usr/share/plymouth/themes/mello-kader42/progress-09.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello-kader42/progress-100.png" "${pkgdir}/usr/share/plymouth/themes/mello-kader42/progress-100.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello-kader42/progress-101.png" "${pkgdir}/usr/share/plymouth/themes/mello-kader42/progress-101.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello-kader42/progress-102.png" "${pkgdir}/usr/share/plymouth/themes/mello-kader42/progress-102.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello-kader42/progress-103.png" "${pkgdir}/usr/share/plymouth/themes/mello-kader42/progress-103.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello-kader42/progress-104.png" "${pkgdir}/usr/share/plymouth/themes/mello-kader42/progress-104.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello-kader42/progress-105.png" "${pkgdir}/usr/share/plymouth/themes/mello-kader42/progress-105.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello-kader42/progress-106.png" "${pkgdir}/usr/share/plymouth/themes/mello-kader42/progress-106.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello-kader42/progress-107.png" "${pkgdir}/usr/share/plymouth/themes/mello-kader42/progress-107.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello-kader42/progress-108.png" "${pkgdir}/usr/share/plymouth/themes/mello-kader42/progress-108.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello-kader42/progress-109.png" "${pkgdir}/usr/share/plymouth/themes/mello-kader42/progress-109.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello-kader42/progress-10.png" "${pkgdir}/usr/share/plymouth/themes/mello-kader42/progress-10.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello-kader42/progress-110.png" "${pkgdir}/usr/share/plymouth/themes/mello-kader42/progress-110.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello-kader42/progress-111.png" "${pkgdir}/usr/share/plymouth/themes/mello-kader42/progress-111.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello-kader42/progress-112.png" "${pkgdir}/usr/share/plymouth/themes/mello-kader42/progress-112.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello-kader42/progress-11.png" "${pkgdir}/usr/share/plymouth/themes/mello-kader42/progress-11.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello-kader42/progress-12.png" "${pkgdir}/usr/share/plymouth/themes/mello-kader42/progress-12.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello-kader42/progress-13.png" "${pkgdir}/usr/share/plymouth/themes/mello-kader42/progress-13.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello-kader42/progress-14.png" "${pkgdir}/usr/share/plymouth/themes/mello-kader42/progress-14.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello-kader42/progress-15.png" "${pkgdir}/usr/share/plymouth/themes/mello-kader42/progress-15.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello-kader42/progress-16.png" "${pkgdir}/usr/share/plymouth/themes/mello-kader42/progress-16.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello-kader42/progress-17.png" "${pkgdir}/usr/share/plymouth/themes/mello-kader42/progress-17.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello-kader42/progress-18.png" "${pkgdir}/usr/share/plymouth/themes/mello-kader42/progress-18.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello-kader42/progress-19.png" "${pkgdir}/usr/share/plymouth/themes/mello-kader42/progress-19.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello-kader42/progress-20.png" "${pkgdir}/usr/share/plymouth/themes/mello-kader42/progress-20.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello-kader42/progress-21.png" "${pkgdir}/usr/share/plymouth/themes/mello-kader42/progress-21.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello-kader42/progress-22.png" "${pkgdir}/usr/share/plymouth/themes/mello-kader42/progress-22.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello-kader42/progress-23.png" "${pkgdir}/usr/share/plymouth/themes/mello-kader42/progress-23.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello-kader42/progress-24.png" "${pkgdir}/usr/share/plymouth/themes/mello-kader42/progress-24.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello-kader42/progress-25.png" "${pkgdir}/usr/share/plymouth/themes/mello-kader42/progress-25.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello-kader42/progress-26.png" "${pkgdir}/usr/share/plymouth/themes/mello-kader42/progress-26.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello-kader42/progress-27.png" "${pkgdir}/usr/share/plymouth/themes/mello-kader42/progress-27.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello-kader42/progress-28.png" "${pkgdir}/usr/share/plymouth/themes/mello-kader42/progress-28.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello-kader42/progress-29.png" "${pkgdir}/usr/share/plymouth/themes/mello-kader42/progress-29.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello-kader42/progress-30.png" "${pkgdir}/usr/share/plymouth/themes/mello-kader42/progress-30.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello-kader42/progress-31.png" "${pkgdir}/usr/share/plymouth/themes/mello-kader42/progress-31.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello-kader42/progress-32.png" "${pkgdir}/usr/share/plymouth/themes/mello-kader42/progress-32.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello-kader42/progress-33.png" "${pkgdir}/usr/share/plymouth/themes/mello-kader42/progress-33.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello-kader42/progress-34.png" "${pkgdir}/usr/share/plymouth/themes/mello-kader42/progress-34.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello-kader42/progress-35.png" "${pkgdir}/usr/share/plymouth/themes/mello-kader42/progress-35.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello-kader42/progress-36.png" "${pkgdir}/usr/share/plymouth/themes/mello-kader42/progress-36.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello-kader42/progress-37.png" "${pkgdir}/usr/share/plymouth/themes/mello-kader42/progress-37.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello-kader42/progress-38.png" "${pkgdir}/usr/share/plymouth/themes/mello-kader42/progress-38.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello-kader42/progress-39.png" "${pkgdir}/usr/share/plymouth/themes/mello-kader42/progress-39.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello-kader42/progress-40.png" "${pkgdir}/usr/share/plymouth/themes/mello-kader42/progress-40.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello-kader42/progress-41.png" "${pkgdir}/usr/share/plymouth/themes/mello-kader42/progress-41.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello-kader42/progress-42.png" "${pkgdir}/usr/share/plymouth/themes/mello-kader42/progress-42.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello-kader42/progress-43.png" "${pkgdir}/usr/share/plymouth/themes/mello-kader42/progress-43.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello-kader42/progress-44.png" "${pkgdir}/usr/share/plymouth/themes/mello-kader42/progress-44.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello-kader42/progress-45.png" "${pkgdir}/usr/share/plymouth/themes/mello-kader42/progress-45.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello-kader42/progress-46.png" "${pkgdir}/usr/share/plymouth/themes/mello-kader42/progress-46.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello-kader42/progress-47.png" "${pkgdir}/usr/share/plymouth/themes/mello-kader42/progress-47.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello-kader42/progress-48.png" "${pkgdir}/usr/share/plymouth/themes/mello-kader42/progress-48.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello-kader42/progress-49.png" "${pkgdir}/usr/share/plymouth/themes/mello-kader42/progress-49.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello-kader42/progress-50.png" "${pkgdir}/usr/share/plymouth/themes/mello-kader42/progress-50.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello-kader42/progress-51.png" "${pkgdir}/usr/share/plymouth/themes/mello-kader42/progress-51.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello-kader42/progress-52.png" "${pkgdir}/usr/share/plymouth/themes/mello-kader42/progress-52.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello-kader42/progress-53.png" "${pkgdir}/usr/share/plymouth/themes/mello-kader42/progress-53.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello-kader42/progress-54.png" "${pkgdir}/usr/share/plymouth/themes/mello-kader42/progress-54.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello-kader42/progress-55.png" "${pkgdir}/usr/share/plymouth/themes/mello-kader42/progress-55.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello-kader42/progress-56.png" "${pkgdir}/usr/share/plymouth/themes/mello-kader42/progress-56.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello-kader42/progress-57.png" "${pkgdir}/usr/share/plymouth/themes/mello-kader42/progress-57.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello-kader42/progress-58.png" "${pkgdir}/usr/share/plymouth/themes/mello-kader42/progress-58.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello-kader42/progress-59.png" "${pkgdir}/usr/share/plymouth/themes/mello-kader42/progress-59.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello-kader42/progress-60.png" "${pkgdir}/usr/share/plymouth/themes/mello-kader42/progress-60.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello-kader42/progress-61.png" "${pkgdir}/usr/share/plymouth/themes/mello-kader42/progress-61.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello-kader42/progress-62.png" "${pkgdir}/usr/share/plymouth/themes/mello-kader42/progress-62.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello-kader42/progress-63.png" "${pkgdir}/usr/share/plymouth/themes/mello-kader42/progress-63.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello-kader42/progress-64.png" "${pkgdir}/usr/share/plymouth/themes/mello-kader42/progress-64.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello-kader42/progress-65.png" "${pkgdir}/usr/share/plymouth/themes/mello-kader42/progress-65.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello-kader42/progress-66.png" "${pkgdir}/usr/share/plymouth/themes/mello-kader42/progress-66.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello-kader42/progress-67.png" "${pkgdir}/usr/share/plymouth/themes/mello-kader42/progress-67.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello-kader42/progress-68.png" "${pkgdir}/usr/share/plymouth/themes/mello-kader42/progress-68.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello-kader42/progress-69.png" "${pkgdir}/usr/share/plymouth/themes/mello-kader42/progress-69.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello-kader42/progress-70.png" "${pkgdir}/usr/share/plymouth/themes/mello-kader42/progress-70.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello-kader42/progress-71.png" "${pkgdir}/usr/share/plymouth/themes/mello-kader42/progress-71.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello-kader42/progress-72.png" "${pkgdir}/usr/share/plymouth/themes/mello-kader42/progress-72.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello-kader42/progress-73.png" "${pkgdir}/usr/share/plymouth/themes/mello-kader42/progress-73.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello-kader42/progress-74.png" "${pkgdir}/usr/share/plymouth/themes/mello-kader42/progress-74.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello-kader42/progress-75.png" "${pkgdir}/usr/share/plymouth/themes/mello-kader42/progress-75.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello-kader42/progress-76.png" "${pkgdir}/usr/share/plymouth/themes/mello-kader42/progress-76.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello-kader42/progress-77.png" "${pkgdir}/usr/share/plymouth/themes/mello-kader42/progress-77.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello-kader42/progress-78.png" "${pkgdir}/usr/share/plymouth/themes/mello-kader42/progress-78.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello-kader42/progress-79.png" "${pkgdir}/usr/share/plymouth/themes/mello-kader42/progress-79.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello-kader42/progress-80.png" "${pkgdir}/usr/share/plymouth/themes/mello-kader42/progress-80.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello-kader42/progress-81.png" "${pkgdir}/usr/share/plymouth/themes/mello-kader42/progress-81.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello-kader42/progress-82.png" "${pkgdir}/usr/share/plymouth/themes/mello-kader42/progress-82.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello-kader42/progress-83.png" "${pkgdir}/usr/share/plymouth/themes/mello-kader42/progress-83.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello-kader42/progress-84.png" "${pkgdir}/usr/share/plymouth/themes/mello-kader42/progress-84.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello-kader42/progress-85.png" "${pkgdir}/usr/share/plymouth/themes/mello-kader42/progress-85.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello-kader42/progress-86.png" "${pkgdir}/usr/share/plymouth/themes/mello-kader42/progress-86.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello-kader42/progress-87.png" "${pkgdir}/usr/share/plymouth/themes/mello-kader42/progress-87.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello-kader42/progress-88.png" "${pkgdir}/usr/share/plymouth/themes/mello-kader42/progress-88.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello-kader42/progress-89.png" "${pkgdir}/usr/share/plymouth/themes/mello-kader42/progress-89.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello-kader42/progress-90.png" "${pkgdir}/usr/share/plymouth/themes/mello-kader42/progress-90.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello-kader42/progress-91.png" "${pkgdir}/usr/share/plymouth/themes/mello-kader42/progress-91.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello-kader42/progress-92.png" "${pkgdir}/usr/share/plymouth/themes/mello-kader42/progress-92.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello-kader42/progress-93.png" "${pkgdir}/usr/share/plymouth/themes/mello-kader42/progress-93.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello-kader42/progress-94.png" "${pkgdir}/usr/share/plymouth/themes/mello-kader42/progress-94.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello-kader42/progress-95.png" "${pkgdir}/usr/share/plymouth/themes/mello-kader42/progress-95.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello-kader42/progress-96.png" "${pkgdir}/usr/share/plymouth/themes/mello-kader42/progress-96.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello-kader42/progress-97.png" "${pkgdir}/usr/share/plymouth/themes/mello-kader42/progress-97.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello-kader42/progress-98.png" "${pkgdir}/usr/share/plymouth/themes/mello-kader42/progress-98.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello-kader42/progress-99.png" "${pkgdir}/usr/share/plymouth/themes/mello-kader42/progress-99.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello-kader42/README.md" "${pkgdir}/usr/share/plymouth/themes/mello-kader42/README.md"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello/keyboard.png" "${pkgdir}/usr/share/plymouth/themes/mello/keyboard.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello/keymap-render.png" "${pkgdir}/usr/share/plymouth/themes/mello/keymap-render.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello/lock.png" "${pkgdir}/usr/share/plymouth/themes/mello/lock.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello/README.md" "${pkgdir}/usr/share/plymouth/themes/mello/README.md"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello/throbber-001.png" "${pkgdir}/usr/share/plymouth/themes/mello/throbber-001.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello/throbber-002.png" "${pkgdir}/usr/share/plymouth/themes/mello/throbber-002.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello/throbber-003.png" "${pkgdir}/usr/share/plymouth/themes/mello/throbber-003.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello/throbber-004.png" "${pkgdir}/usr/share/plymouth/themes/mello/throbber-004.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/mello/watermark.png" "${pkgdir}/usr/share/plymouth/themes/mello/watermark.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/minimal-kader42/animation-0001.png" "${pkgdir}/usr/share/plymouth/themes/minimal-kader42/animation-0001.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/minimal-kader42/animation-0002.png" "${pkgdir}/usr/share/plymouth/themes/minimal-kader42/animation-0002.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/minimal-kader42/animation-0003.png" "${pkgdir}/usr/share/plymouth/themes/minimal-kader42/animation-0003.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/minimal-kader42/animation-0004.png" "${pkgdir}/usr/share/plymouth/themes/minimal-kader42/animation-0004.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/minimal-kader42/bullet.png" "${pkgdir}/usr/share/plymouth/themes/minimal-kader42/bullet.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/minimal-kader42/capslock.png" "${pkgdir}/usr/share/plymouth/themes/minimal-kader42/capslock.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/minimal-kader42/entry.png" "${pkgdir}/usr/share/plymouth/themes/minimal-kader42/entry.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/minimal-kader42/kader42-minimal.plymouth" "${pkgdir}/usr/share/plymouth/themes/minimal-kader42/kader42-minimal.plymouth"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/minimal-kader42/keyboard.png" "${pkgdir}/usr/share/plymouth/themes/minimal-kader42/keyboard.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/minimal-kader42/keymap-render.png" "${pkgdir}/usr/share/plymouth/themes/minimal-kader42/keymap-render.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/minimal-kader42/lock.png" "${pkgdir}/usr/share/plymouth/themes/minimal-kader42/lock.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/minimal-kader42/README.md" "${pkgdir}/usr/share/plymouth/themes/minimal-kader42/README.md"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/minimal-kader42/throbber-0001.png" "${pkgdir}/usr/share/plymouth/themes/minimal-kader42/throbber-0001.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/minimal-kader42/throbber-0002.png" "${pkgdir}/usr/share/plymouth/themes/minimal-kader42/throbber-0002.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/minimal-kader42/throbber-0003.png" "${pkgdir}/usr/share/plymouth/themes/minimal-kader42/throbber-0003.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/minimal-kader42/throbber-0004.png" "${pkgdir}/usr/share/plymouth/themes/minimal-kader42/throbber-0004.png"
+    install -Dm644 "${startdir}/usr/share/plymouth/themes/minimal-kader42/watermark.png" "${pkgdir}/usr/share/plymouth/themes/minimal-kader42/watermark.png"
+    install -Dm644 "${startdir}/usr/share/sddm/themes/kader42/login-screen.png" "${pkgdir}/usr/share/sddm/themes/kader42/login-screen.png"
+    install -Dm644 "${startdir}/usr/share/sddm/themes/kader42/theme.conf.user" "${pkgdir}/usr/share/sddm/themes/kader42/theme.conf.user"
 
-    # 1. Copy your repository to the temporary folder
-    if [ -d "${startdir}/etc" ]; then cp -R "${startdir}/etc" "$tmp_overlay/"; fi
-    if [ -d "${startdir}/usr" ]; then cp -R "${startdir}/usr" "$tmp_overlay/"; fi
-
-    # Cleaning up dynamic files
-    rm -f "$tmp_overlay/etc/pacman.conf"
-    rm -f "$tmp_overlay/etc/pacman.d/mirrorlist"
-
-    # 2. MOVE critical system files for the hooks to the permanent folder
-    local system_conflicts=(
-        "etc/os-release"
-        "etc/pam.d/kde"
-    )
-
-    for file in "${system_conflicts[@]}"; do
-        if [ -f "$tmp_overlay/$file" ]; then
-            mkdir -p "$perm_overrides/$(dirname "$file")"
-            mv "$tmp_overlay/$file" "$perm_overrides/$file"
-        fi
-    done
-
-    # Copy service
-    install -Dm644 "kader42-cleanup.service" "${pkgdir}/usr/lib/systemd/system/kader42-cleanup.service"
-    
-    # Create a symlink equivalent to “systemctl enable”
+    # Spezielle Services & KConf-Symlinks
+    install -Dm644 "${srcdir}/kader42-cleanup.service" "${pkgdir}/usr/lib/systemd/system/kader42-cleanup.service"
     mkdir -p "${pkgdir}/usr/lib/systemd/system/multi-user.target.wants"
-    ln -s "../kader42-cleanup.service" "${pkgdir}/usr/lib/systemd/system/multi-user.target.wants/kader42-cleanup.service"
+    ln -sf "../kader42-cleanup.service" "${pkgdir}/usr/lib/systemd/system/multi-user.target.wants/kader42-cleanup.service"
 
     install -Dm644 "${srcdir}/kader42-software-center-favorite.upd" "${pkgdir}/usr/share/kconf_update/kader42-software-center-favorite.upd"
     install -Dm755 "${srcdir}/kader42-software-center-favorite.js" "${pkgdir}/usr/share/kconf_update/kader42-software-center-favorite.js"
-
 }

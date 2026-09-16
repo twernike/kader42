@@ -28,7 +28,7 @@ echo -e  "\x1b[43m\e[38;5;20m |🕵| or still needs to be installed...          
 echo -e  "\x1b[43m\e[38;5;20m |🕵|================================================|\e[0m"
 echo
 
-pacman -Q imagemagick > /dev/null 2>&1
+sudo pacman -Q imagemagick > /dev/null 2>&1
 
 #$? contains the exit code of the last command
 if [ $? -eq 0 ]; then
@@ -48,25 +48,25 @@ echo "Start convert for theme: $2..."
 # Search for all PNGs in the current directory
 for FILE in "$1"/*.png
 do
-    # Verhindere Fehler, falls keine PNGs gefunden werden
+    # Prevent errors if no PNGs are found
     [ -e "$FILE" ] || continue
     
-    # Dateiname ohne Endung extrahieren (z.B. 'start-here-kde')
+    # Extract the filename without the extension (e.g., ‘start-here-kde’)
     FILENAME=$(basename "$FILE" .png)
     
     echo "Process: $FILE"
 
     for SIZE in "${SIZES[@]}"
     do
-        # Zielordner erstellen
+        # Create destination folder
         mkdir -p "$2"
         mkdir -p "$2/${SIZE}x${SIZE}"
         DEST_DIR="$2/${SIZE}x${SIZE}/$3"
         mkdir -p "$DEST_DIR"
         
-        # Knallharte Skalierung (Pixel-Art freundlich)
-        # -sample sorgt für Schärfe
-        # -extent sorgt für das 1:1 Quadrat (Padding)
+        # Hard scaling (pixel art-friendly)
+        # -sample ensures sharpness
+        # -extent ensures a 1:1 square (padding)
         magick "$FILE" -sample ${SIZE}x${SIZE} \
                -background none -gravity center -extent ${SIZE}x${SIZE} \
                "$DEST_DIR/$FILENAME.png"
@@ -77,11 +77,11 @@ echo "Create symlinks for Recycle Bin in the theme folder..."
 
 for SIZE in "${SIZES[@]}"
 do
-    # Pfad innerhalb des frisch erstellten Theme-Ordners
+    # Path within the newly created theme folder
     REL_DIR="$2/${SIZE}x${SIZE}/$3"
     
     if [ -d "$REL_DIR" ]; then
-        # Wichtig: Wir gehen in den Ordner, damit der Link 'kurz' bleibt
+        # Important: We'll go into the folder so the link stays “short”
         pushd "$REL_DIR" > /dev/null
             if [ -f "user-trash-empty.png" ]; then
                 ln -sf "user-trash-empty.png" "trash-empty.png"

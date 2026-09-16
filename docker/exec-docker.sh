@@ -11,7 +11,7 @@ if ! sudo docker ps -q -f name=kaderbuilder | grep -q .; then
     if sudo docker ps -aq -f name=kaderbuilder | grep -q .; then
         sudo docker start kaderbuilder
     else
-    sudo docker run --privileged --name $CONTAINER_NAME -it \
+    sudo docker run  --privileged --net=host --name $CONTAINER_NAME -it \
             -v "$PARENT_DIR":/mydata \
             -v "$PARENT_DIR/packages":/packages \
             -v "$PARENT_DIR/docker-work":/build-temp \

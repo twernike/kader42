@@ -3,7 +3,7 @@
     "KPlugin": {
         "Authors": [
             {
-                "Email": "thomas.wernike@theirtist.de",
+                "Email": "support@kader42.de",
                 "Name": "Thomas Wernike"
             }
         ],
@@ -14,9 +14,8 @@
         "EnabledByDefault": true,
         "Name": "Kader⁴²",
         "Description": "Default Plasma 6 theme for Kader⁴²",
-        "Id": "Kader42",
+        "Id": "Kader42-Plasmatheme",
         "Version": "1.0",
-        "License": "GPLv3",
-        "Website": "https://github.com/L4ki/Slot-Plasma-Themes"
+        "License": "GPLv3"
     }
 }

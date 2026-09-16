@@ -36,24 +36,16 @@ notebook.writeConfig("managedBy", "convertible")
 notebook.writeConfig("panelRole", "notebook")
 notebook.writeConfig("visibilityMode", "desktop")
 
-
-// notebook.currentConfigGroup = ["General"]
-// notebook.writeConfig("defaultLauncher", "org.kde.plasma.kickerdash")
 var kickoff=notebook.addWidget("org.kde.plasma.kickoff")
-// kickoff.currentConfigGroup = ["Shortcuts"];
-// kickoff.writeConfig("globalShortcut", "Meta");
 
 kickoff.currentConfigGroup = ["Configuration", "General"];
-kickoff.writeConfig("favorites", "applications:kader42-software-center.desktop,applications:systemsettings.desktop,applications:org.kde.dolphin.desktop");
+kickoff.writeConfig("favorites", "applications:systemsettings.desktop,applications:org.kde.dolphin.desktop");
 
 notebook.addWidget("org.kde.plasma.pager")
 var tasks = notebook.addWidget("org.kde.plasma.icontasks");
 tasks.currentConfigGroup = ["General"];
-tasks.writeConfig("launchers", [
-    "applications:systemsettings.desktop",
-    "applications:org.kde.dolphin.desktop",
-    "preferred://browser"
-]);
+// MUST be passed as a single, unbroken string, just like with the favorites!
+tasks.writeConfig("launchers", "applications:systemsettings.desktop,applications:org.kde.dolphin.desktop,preferred://browser");
 notebook.addWidget("org.kde.plasma.marginsseparator")
 notebook.addWidget("org.kde.plasma.systemtray")
 notebook.addWidget("org.kde.plasma.digitalclock")
@@ -101,29 +93,3 @@ var langIds = ["as",    // Assamese
 if (langIds.indexOf(languageId) != -1) {
     notebook.addWidget("org.kde.plasma.kimpanel");
 }
-
-// notebook.enabled = true
-
-// // Tablet Panel
-// var tablet = new Panel
-// tablet.location = "bottom"
-// tablet.height = 64
-// tablet.addWidget("org.kde.plasma.icontasks")
-
-// var tabletScreen = tablet.screen
-
-// // Tablet Panel zunächst deaktivieren
-// tablet.enabled = false
-// tablet.writeConfig("panelType", "tablet")
-// tablet.writeConfig("convertibleManaged", true)
-// tablet.writeConfig("managedBy", "convertible")
-// tablet.writeConfig("panelRole", "tablet")
-// tablet.writeConfig("visibilityMode", "tablet")
-
-// tablet.hiding = "dodgewindows"
-// tablet.enabled = false
-// var dash = tablet.addWidget("org.kde.plasma.kickerdash");
-
-// dash.currentConfigGroup = ["General"];
-// dash.writeConfig("showCategories", false); 
-// dash.writeConfig("icon", "dashboard-show");
