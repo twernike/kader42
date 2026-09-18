@@ -149,9 +149,6 @@ builduser="builduser"
 BUILD_DIR="/build"
 
 # temporary folders for the build process (will be deleted afterwards)
-etc_tmp="$airootfs/etc_tmp"
-os_release_tmp="$airootfs/os-release-tmp"
-tmpUsr="$airootfs/usr_tmp"
 rootCalamares="$airootfs/$kaderCalamares"
 bootdir_tmp="$airootfs/boot_tmp"
 packages="$airootfs/packages/"
@@ -242,11 +239,8 @@ mkdir -p "$kader42Wallpapers"
 mkdir -p "$share_plymouth"
 mkdir -p "$sharePolkit"
 mkdir -p "$polkitActions"
-mkdir -p "$tmpUsr"
 mkdir -p "$LOCAL_PACKAGES"
 mkdir -p "$LOCAL_REPO"
-mkdir -p "$etc_tmp"
-mkdir -p "$os_release_tmp"
 mkdir -p "$packages"
 mkdir -p "$customRepo"
 
@@ -301,7 +295,6 @@ echo
 echo -e "\e[1;92m ✍🏼 [buildiso] Copy linux.preset to airootfs \e[0m"
 mkdir -p "$kaderCalamares/linux-preset"
 cp /etc/mkinitcpio.d/linux.preset "$kaderCalamares/linux-preset"
-# cp -r "$etc_conf/." "$etc_tmp" 
 
 echo 
 echo -e  "\x1b[43m\e[38;5;20m ##################################################################\e[0m"
@@ -346,18 +339,8 @@ echo -e "\e[1;92m ⬇️ ⚒️ [buildiso] Create directory $airootfs/etc/mkinit
 mkdir -p "$airootfs/etc/mkinitcpio.d"
 echo -e "\e[1;92m ⬇️ ⚒️ [buildiso] Create directory $airootfs/home|\e[0m"
 
-mkdir -p "$airootfs/home"
-echo -e "\e[1;92m ⬇️ ⚒️ [buildiso] Create directory $airootfs/home/liveuser|\e[0m"
-mkdir -p "$airootfs/home/liveuser"
-echo -e "\e[1;92m ⬇️ ⚒️ [buildiso] Create directory $airootfs/home/liveuser/Desktop|\e[0m"
-mkdir -p "$airootfs/home/liveuser/Desktop"
-mkdir -p "$airootfs/home/liveuser/.config"
-mkdir -p "$airootfs/home/liveuser/.config/autostart"
-
-
 # echo -e "\e[1;92m Copy pacman.conf to container... \e[0m"
 # cp $releng/pacman.conf /etc/pacman.conf
-# cp $os_release $os_release_tmp
 
 # if [[ $1 == generate-icons || $2 == generate-icons || $3 == generate-icons || $4 == generate-icons ]]; then
 #     echo 
@@ -398,7 +381,7 @@ echo -e "\x1b[43m\e[1;34m #⚒️ [buildiso] Build ISO file with mkarchiso  💿
 echo -e "\x1b[43m\e[1;34m #####################################################\e[0m"
 
 # mkarchiso -r -v -w /build/archiso-work -o /mydata/archlive/out releng -C
-mkarchiso -r -v -w $workDir -o $isoDir kader42-filesystem -C
+mkarchiso -r -v -w $workDir -L kader42mello -P 'Thomas Wernike' -o $isoDir kader42-filesystem 
 
 exitCode=$
 
