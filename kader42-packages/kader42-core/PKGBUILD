@@ -1,7 +1,7 @@
 # Maintainer: Thomas Wernike <support@kader42.de>
 pkgname=kader42-core
-pkgver=1.0.10
-pkgrel=8
+pkgver=1.0.11
+pkgrel=1
 pkgdesc="Core configurations and systemd units for Kader42"
 arch=('any')
 depends=('bash' 'dbus' 'kernel-modules-hook' 'pacback' 'systemd-boot-pacman-hook' 'system-config-printer' 'cups' 'libreoffice-fresh-de' 'kader42-software-center' 'kader42-plasma-theme')
@@ -34,24 +34,19 @@ package() {
     install -Dm644 "${startdir}/etc/systemd/iio-sensor-proxy.d/61-kader42-override.conf" "${pkgdir}/etc/systemd/iio-sensor-proxy.d/61-kader42-override.conf"
     install -Dm644 "${startdir}/etc/systemd/logind.conf.d/61-kader42-live.conf" "${pkgdir}/etc/systemd/logind.conf.d/61-kader42-live.conf"
     install -Dm644 "${startdir}/etc/systemd/system/io-sensor-proxy.service.d/61-kader42-order.conf" "${pkgdir}/etc/systemd/system/io-sensor-proxy.service.d/61-kader42-order.conf"
+    install -Dm644 "${startdir}/etc/udev/hwdb.d/60-kader42-sensor-dell-latitude.hwdb" "${pkgdir}/etc/udev/hwdb.d/60-kader42-sensor-dell-latitude.hwdb"
     install -Dm644 "${startdir}/etc/udev/hwdb.d/61-kader42-framework.hwdb" "${pkgdir}/etc/udev/hwdb.d/61-kader42-framework.hwdb"
-    install -Dm755 "${startdir}/etc/xdg/.config/autostart/kader42-welcome.desktop" "${pkgdir}/etc/xdg/.config/autostart/kader42-welcome.desktop"
-    install -Dm644 "${startdir}/etc/xdg/.config/defaults" "${pkgdir}/etc/xdg/.config/defaults"
-    install -Dm644 "${startdir}/etc/xdg/.config/kdeglobals" "${pkgdir}/etc/xdg/.config/kdeglobals"
-    install -Dm644 "${startdir}/etc/xdg/.config/kickerrc" "${pkgdir}/etc/xdg/.config/kickerrc"
-    install -Dm644 "${startdir}/etc/xdg/.config/konsolerc" "${pkgdir}/etc/xdg/.config/konsolerc"
-    install -Dm644 "${startdir}/etc/xdg/.config/ksplashrc" "${pkgdir}/etc/xdg/.config/ksplashrc"
-    install -Dm644 "${startdir}/etc/xdg/.config/kvantum.conf" "${pkgdir}/etc/xdg/.config/kvantum.conf"
-    install -Dm644 "${startdir}/etc/xdg/.config/Kvantum/kvantum.conf" "${pkgdir}/etc/xdg/.config/Kvantum/kvantum.conf"
-    install -Dm644 "${startdir}/etc/xdg/.config/Kvantum/kvantum.kvconfig" "${pkgdir}/etc/xdg/.config/Kvantum/kvantum.kvconfig"
-    install -Dm644 "${startdir}/etc/xdg/.config/Kvantum/KvGlassDarkRound/KvGlassDarkRound.kvconfig" "${pkgdir}/etc/xdg/.config/Kvantum/KvGlassDarkRound/KvGlassDarkRound.kvconfig"
-    install -Dm644 "${startdir}/etc/xdg/.config/kwinrc" "${pkgdir}/etc/xdg/.config/kwinrc"
-    install -Dm644 "${startdir}/etc/xdg/.config/plasmarc" "${pkgdir}/etc/xdg/.config/plasmarc"
-    install -Dm644 "${startdir}/etc/xdg/.config/plasmashellrc" "${pkgdir}/etc/xdg/.config/plasmashellrc"
-    install -Dm644 "${startdir}/etc/xdg/.config/powerdevilrc" "${pkgdir}/etc/xdg/.config/powerdevilrc"
-    install -Dm644 "${startdir}/etc/xdg/.config/powermanagementprofilesrc" "${pkgdir}/etc/xdg/.config/powermanagementprofilesrc"
-    install -Dm644 "${startdir}/etc/xdg/.config/xsettingsd/xsettingsd.conf" "${pkgdir}/etc/xdg/.config/xsettingsd/xsettingsd.conf"
-    install -Dm644 "${startdir}/etc/xdg/.config/.zshrc" "${pkgdir}/etc/xdg/.config/.zshrc"
+    install -Dm755 "${startdir}/etc/xdg/autostart/kader42-hello.desktop" "${pkgdir}/etc/xdg/autostart/kader42-hello.desktop"
+    install -Dm755 "${startdir}/etc/xdg/defaults" "${pkgdir}/etc/xdg/defaults"
+    install -Dm755 "${startdir}/etc/xdg/kdeglobals" "${pkgdir}/etc/xdg/kdeglobals"
+    install -Dm755 "${startdir}/etc/xdg/kickerrc" "${pkgdir}/etc/xdg/kickerrc"
+    install -Dm755 "${startdir}/etc/xdg/konsolerc" "${pkgdir}/etc/xdg/konsolerc"
+    install -Dm755 "${startdir}/etc/xdg/ksplashrc" "${pkgdir}/etc/xdg/ksplashrc"
+    install -Dm755 "${startdir}/etc/xdg/kwinrc" "${pkgdir}/etc/xdg/kwinrc"
+    install -Dm755 "${startdir}/etc/xdg/plasmarc" "${pkgdir}/etc/xdg/plasmarc"
+    install -Dm755 "${startdir}/etc/xdg/plasmashellrc" "${pkgdir}/etc/xdg/plasmashellrc"
+    install -Dm755 "${startdir}/etc/xdg/powerdevilrc" "${pkgdir}/etc/xdg/powerdevilrc"
+    install -Dm755 "${startdir}/etc/xdg/powermanagementprofilesrc" "${pkgdir}/etc/xdg/powermanagementprofilesrc"
     install -Dm755 "${startdir}/usr/bin/kader42-discover-sync" "${pkgdir}/usr/bin/kader42-discover-sync"
     install -Dm755 "${startdir}/usr/bin/kader42-hello" "${pkgdir}/usr/bin/kader42-hello"
     install -Dm644 "${startdir}/usr/lib/systemd/system/display-manager.service.d/kader42-plymouth.conf" "${pkgdir}/usr/lib/systemd/system/display-manager.service.d/kader42-plymouth.conf"

@@ -1,0 +1,8 @@
+[KDE]
+LookAndFeelPackage=Kader42-Plasmatheme
+ColorScheme=Kader42-Colors
+
+[OrientationSensor]
+# true  = Auto-rotation works ONLY when the device is in tablet mode
+# false = Auto-rotation is ALWAYS active (the display reliably rotates according to the sensor)
+OnlyInTabletMode=false
