@@ -1,0 +1,4 @@
+# Dell Latitude 5320 2-in-1 Sensor Mount Matrix Correction
+sensor:modalias:acpi:INT33D0*:dmi:*svnDellInc.:*pnLatitude5320*
+ ACCEL_MOUNT_MATRIX=0, 1, 0; 1, 0, 0; 0, 0, 1
+ 
