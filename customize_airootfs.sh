@@ -174,6 +174,23 @@ mkdir -p /home/liveuser
 cp -aT /etc/skel/ /home/liveuser/
 chown -R 1000:1000 /home/liveuser 
 
+echo -e "\x1b[43m\e[38;5;20m ########################################\e[0m"
+echo -e "\x1b[43m\e[38;5;20m # ℹ️ Add OS release info to /usr/lib...#\e[0m"
+echo -e "\x1b[43m\e[38;5;20m ########################################\e[0m"
+echo 
+
+cp /os-release-info/os-release /usr/lib
+
+echo -e "\x1b[43m\e[38;5;20m ##################################################################e[0m"
+echo -e "\x1b[43m\e[38;5;20m # 🖊 Create symlink for /usr/lib/os-release to /etc/os-release...#\e[0m"
+echo -e "\x1b[43m\e[38;5;20m ##################################################################e[0m"
+echo
+ln -sf /usr/lib/os-release /etc/os-release
+
+echo "Refresh icon cache..."
+gtk-update-icon-cache -f /usr/share/icons/hicolor
+gtk-update-icon-cache -f /usr/share/icons/Kader42
+
 echo
 echo -e "\x1b[44m\e[1;118m  ##################################\e[0m"
 echo -e "\x1b[44m\e[1;118m  # customize_airootfs.sh DONE! ✅️ #\e[0m"

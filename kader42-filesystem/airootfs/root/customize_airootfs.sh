@@ -74,8 +74,8 @@ echo -e  "\x1b[43m\e[38;5;20m # ✍🏼 | [customize_airootfs] and set read/writ
 echo -e  "\x1b[43m\e[38;5;20m ##############################################################################\e[0m"
 echo 
 
-chmod 755 /home/liveuser/* || true
-chmod +x /home/liveuser/* || true
+# chmod 755 /home/liveuser/* || true
+# chmod +x /home/liveuser/* || true
 
 chmod 777 /etc/skel/.config/autostart/* || true
 chmod +x /etc/skel/.config/autostart/* || true
@@ -85,7 +85,7 @@ chmod 644 /etc/systemd/user/*.service || true
 
 chmod 0644 /etc/sudo.conf
 chmod 0644 /etc/sudoers
-chmod 777 /home/liveuser/Desktop/calamares.desktop
+# chmod 777 /home/liveuser/Desktop/calamares.desktop
 
 echo -e "\x1b[43m\e[38;5;20m 🧹 clean up calamares directories \e[0m"
 rm -rf $shareCalamares
@@ -164,29 +164,32 @@ if id plasmalogin &>/dev/null; then
     usermod -aG video,render plasmalogin
 fi
 
-# echo -e "\x1b[43m\e[38;5;20m ###########################################################################################################\e[0m"
-# echo -e "\x1b[43m\e[38;5;20m # 📑 [customize_airootfs] Copy the configuration files, autostart and calamares.desktop to /home/liveuser #\e[0m"
-# echo -e "\x1b[43m\e[38;5;20m ###########################################################################################################\e[0m"
-# echo
-# cp -a /liveuser_home_tmp/. /home/liveuser/
-
 echo -e "\x1b[43m\e[38;5;20m ##################################################\e[0m"
 echo -e "\x1b[43m\e[38;5;20m # 📁 [customize_airootfs] Add missing XDG folder #\e[0m"
 echo -e "\x1b[43m\e[38;5;20m ##################################################\e[0m"
 echo
 su - liveuser -c "xdg-user-dirs-update"
 
-# echo -e "\x1b[43m\e[38;5;20m ###################################################################################################\e[0m"
-# echo -e "\x1b[43m\e[38;5;20m # ⚡ [customize_airootfs] Set the executable bit for all *.desktop files in the autostart folder. #\e[0m"
-# echo -e "\x1b[43m\e[38;5;20m ###################################################################################################\e[0m"
-# echo
-# chmod +x /home/liveuser/.config/autostart/*.desktop 2>/dev/null || true
+mkdir -p /home/liveuser
+cp -aT /etc/skel/ /home/liveuser/
+chown -R 1000:1000 /home/liveuser 
 
-echo -e "\x1b[43m\e[38;5;20m #########################################################################\e[0m"
-echo -e "\x1b[43m\e[38;5;20m # 🤝 [customize_airootfs] Set ownership of /home/liveuser to liveuser...#\e[0m"
-echo -e "\x1b[43m\e[38;5;20m #########################################################################\e[0m"
+echo -e "\x1b[43m\e[38;5;20m ########################################\e[0m"
+echo -e "\x1b[43m\e[38;5;20m # ℹ️ Add OS release info to /usr/lib...#\e[0m"
+echo -e "\x1b[43m\e[38;5;20m ########################################\e[0m"
+echo 
+
+cp /os-release-info/os-release /usr/lib
+
+echo -e "\x1b[43m\e[38;5;20m ##################################################################e[0m"
+echo -e "\x1b[43m\e[38;5;20m # 🖊 Create symlink for /usr/lib/os-release to /etc/os-release...#\e[0m"
+echo -e "\x1b[43m\e[38;5;20m ##################################################################e[0m"
 echo
-chown -R 1000:1000 /home/liveuser
+ln -sf /usr/lib/os-release /etc/os-release
+
+echo "Refresh icon cache..."
+gtk-update-icon-cache -f /usr/share/icons/hicolor
+gtk-update-icon-cache -f /usr/share/icons/Kader42
 
 echo
 echo -e "\x1b[44m\e[1;118m  ##################################\e[0m"

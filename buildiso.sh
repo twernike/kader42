@@ -79,27 +79,27 @@ echo -e "\e[1;92m ████████████████████�
     exit 1
 }
 
-# Funktion: Sicherstellen, dass Verzeichnisse wirklich weg sind
-# Nutzung: force_remove "/pfad/zum/ordner"
+# Function: Ensure that directories are actually deleted
+# Usage: force_remove “/path/to/folder”
 force_remove() {
     local target="$1"
     
     if [ -d "$target" ] || [ -f "$target" ]; then
-        echo "[force_remove] Try to delete: $target ..."
+        echo "[⚡ force_remove] Try to delete: $target ..."
         
         # 1. Attempt: Normal deletion
         rm -rf "$target" 2>/dev/null
         
         # 2. Check: Is it still there? (Due to mounts or Docker locks)
         if [ -e "$target" ]; then
-            echo "[force_remove] WARNING: $target is persistent. Attempting to unmount..."
+            echo "[⚠️ force_remove] WARNING: $target is persistent. Attempting to unmount..."
             umount -l "$target" 2>/dev/null
             rm -rf "$target"
         fi
         
         # 3. Final check: If it's still there -> Abort!
         if [ -e "$target" ]; then
-            echo "!!! ERROR: Could not remove $target. Build will be stopped!" >&2
+            echo "[🚨 force_remove] !!! ERROR !!! : Could not remove $target. Build will be stopped!" >&2
             exit 1
         fi
         echo "[✅️ force_remove] Success: $target has been removed."
@@ -206,8 +206,20 @@ echo -e  "\x1b[45m\e[33;1;20m|🧹|=======================|\e[0m"
 echo -e  "\x1b[45m\e[33;1;20m|🧹| Start cleanup first...|\e[0m"
 echo -e  "\x1b[45m\e[33;1;20m|🧹|=======================|\e[0m"
 
-rm -rf $work_dir
-rm -rf out
+if [ -d "$workDir" ]; then
+    echo "[buildiso] Try to delete folder: $workDir"
+    force_remove "$workDir"
+    echo "[buildiso] Folder $workDir deleted"
+fi
+
+if [[ $1 == clear-out || $2 == clear-out || $3 == clear-out || $4 == clear-out ]]; then
+    if [ -d "$isoDir" ]; then
+        echo "[buildiso] Try to delete folder: $isoDir"
+        force_remove "$isoDir"
+        echo "[buildiso] Folder $isoDir deleted"
+    fi
+fi
+
 rm -rf "$airootfs/etc/systemd"
 rm -rf "$airootfs/tmp"
 rm -rf "$usr_share"
@@ -413,10 +425,10 @@ build_temp="/build-temp"
 
 # 2. Aggressive deletion with verification
 
-if [ -d "$build_temp" ]; then
-    echo "[buildiso] Try to delete folder: $build_temp"
-    force_remove "$dir"
-    echo "[buildiso] Folder $build_temp deleted"
+if [ -d "$workDir" ]; then
+    echo "[buildiso] Try to delete folder: $workDir"
+    force_remove "$workDir"
+    echo "[buildiso] Folder $workDir deleted"
 fi
 
 echo
