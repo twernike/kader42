@@ -22,4 +22,5 @@ releng/airootfs/calamares-kader-config/
 releng/airootfs/preset_tmp/
 releng/airootfs/os-release-tmp/
 releng/airootfs/boot_tmp/
+gitpush
 
