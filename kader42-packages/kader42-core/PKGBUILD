@@ -1,7 +1,7 @@
 # Maintainer: Thomas Wernike <support@kader42.de>
 pkgname=kader42-core
-pkgver=1.0.11
-pkgrel=1
+pkgver=1.0.12
+pkgrel=3
 pkgdesc="Core configurations and systemd units for Kader42"
 arch=('any')
 depends=('bash' 'dbus' 'kernel-modules-hook' 'pacback' 'systemd-boot-pacman-hook' 'system-config-printer' 'cups' 'libreoffice-fresh-de' 'kader42-software-center' 'kader42-plasma-theme')
@@ -37,7 +37,6 @@ package() {
     install -Dm644 "${startdir}/etc/udev/hwdb.d/60-kader42-sensor-dell-latitude.hwdb" "${pkgdir}/etc/udev/hwdb.d/60-kader42-sensor-dell-latitude.hwdb"
     install -Dm644 "${startdir}/etc/udev/hwdb.d/61-kader42-framework.hwdb" "${pkgdir}/etc/udev/hwdb.d/61-kader42-framework.hwdb"
     install -Dm755 "${startdir}/etc/xdg/autostart/kader42-hello.desktop" "${pkgdir}/etc/xdg/autostart/kader42-hello.desktop"
-    install -Dm755 "${startdir}/etc/xdg/defaults" "${pkgdir}/etc/xdg/defaults"
     install -Dm755 "${startdir}/etc/xdg/kdeglobals" "${pkgdir}/etc/xdg/kdeglobals"
     install -Dm755 "${startdir}/etc/xdg/kickerrc" "${pkgdir}/etc/xdg/kickerrc"
     install -Dm755 "${startdir}/etc/xdg/konsolerc" "${pkgdir}/etc/xdg/konsolerc"
@@ -49,6 +48,7 @@ package() {
     install -Dm755 "${startdir}/etc/xdg/powermanagementprofilesrc" "${pkgdir}/etc/xdg/powermanagementprofilesrc"
     install -Dm755 "${startdir}/usr/bin/kader42-discover-sync" "${pkgdir}/usr/bin/kader42-discover-sync"
     install -Dm755 "${startdir}/usr/bin/kader42-hello" "${pkgdir}/usr/bin/kader42-hello"
+    install -Dm755 "${startdir}/usr/bin/kader-install.sh" "${pkgdir}/usr/bin/kader-install.sh"
     install -Dm644 "${startdir}/usr/lib/systemd/system/display-manager.service.d/kader42-plymouth.conf" "${pkgdir}/usr/lib/systemd/system/display-manager.service.d/kader42-plymouth.conf"
     install -Dm755 "${startdir}/usr/lib/systemd/system-preset/61-kader-2.preset" "${pkgdir}/usr/lib/systemd/system-preset/61-kader-2.preset"
     install -Dm644 "${startdir}/usr/lib/systemd/system/sddm.service.d/42-kader42-override.conf" "${pkgdir}/usr/lib/systemd/system/sddm.service.d/42-kader42-override.conf"
@@ -57,6 +57,7 @@ package() {
     install -Dm755 "${startdir}/usr/lib/vconsole.conf" "${pkgdir}/usr/lib/vconsole.conf"
     install -Dm644 "${startdir}/usr/share/konsole/kader42-2.colorscheme" "${pkgdir}/usr/share/konsole/kader42-2.colorscheme"
     install -Dm644 "${startdir}/usr/share/konsole/Kader42-2.profile" "${pkgdir}/usr/share/konsole/Kader42-2.profile"
+    install -Dm644 "${startdir}/usr/share/pixmaps/mello.svg" "${pkgdir}/usr/share/pixmaps/mello.svg"
     install -Dm644 "${startdir}/usr/share/pixmaps/mello_with_tablet.png" "${pkgdir}/usr/share/pixmaps/mello_with_tablet.png"
     install -Dm644 "${startdir}/usr/share/plymouth/themes/mello/animation-001.png" "${pkgdir}/usr/share/plymouth/themes/mello/animation-001.png"
     install -Dm644 "${startdir}/usr/share/plymouth/themes/mello/animation-002.png" "${pkgdir}/usr/share/plymouth/themes/mello/animation-002.png"

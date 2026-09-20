@@ -1,8 +1,6 @@
+[General]
+ColorScheme=Kader42-Colors
+ColorSchemeHash=ef7381b179c027ee22d892afcd0a02020f14a75e
+
 [KDE]
 LookAndFeelPackage=Kader42-Plasmatheme
-ColorScheme=Kader42-Colors
-
-[OrientationSensor]
-# true  = Auto-rotation works ONLY when the device is in tablet mode
-# false = Auto-rotation is ALWAYS active (the display reliably rotates according to the sensor)
-OnlyInTabletMode=false

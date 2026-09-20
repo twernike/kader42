@@ -48,7 +48,7 @@ class Kader42Welcome(QWidget):
     def __init__(self):
         super().__init__()
 
-        DISTRO_ICON = "/usr/share/pixmaps/kader42.png" 
+        DISTRO_ICON = "/usr/share/pixmaps/mello.svg" 
 
         # 1. Initialize QSettings (Saves to ~/.config/Kader42/Welcome.conf)
         self.settings = QSettings("Kader42", "Welcome")
