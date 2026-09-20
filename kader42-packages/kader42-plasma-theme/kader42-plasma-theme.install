@@ -8,10 +8,6 @@ post_install() {
 post_upgrade() {
     post_install
 
-    install -d "${pkgdir}/usr/share/plasma/look-and-feel/Kader42-Plasmatheme"
-    install -d "${pkgdir}/usr/share/color-schemes"
-    install -d "${pkgdir}/usr/share/wallpapers/Kader42-Wallpapers"
-
     rm -rf /usr/share/plasma/look-and-feel/Kader42
     rm -rf /usr/share/color-schemes/Kader42.colors
     rm -rf /usr/share/wallpapers/Kader42

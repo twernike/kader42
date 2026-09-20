@@ -1,17 +1,27 @@
 # Maintainer: Thomas Wernike<thomas@kader42.de>
 pkgname=kader42-plasma-theme
-pkgver=1.0.1
-pkgrel=9
+pkgver=1.0.2
+pkgrel=8
 pkgdesc="The specific Kader42 Plasma Theme"
 arch=('any')
 install=kader42-plasma-theme.install
 
 package() {
-    install -d "${pkgdir}/usr/share/plasma/look-and-feel/Kader42-Plasmatheme"
-    install -d "${pkgdir}/usr/share/color-schemes/"
-    install -d "${pkgdir}/usr/share/wallpapers/Kader42-Wallpapers"
 
-    cp -r "${startdir}/Kader42/." "${pkgdir}/usr/share/plasma/look-and-feel/Kader42-Plasmatheme/"
-    cp -r "${startdir}/Kader42-Colors.colors" "${pkgdir}/usr/share/color-schemes/"
-    cp -r "${startdir}/wallpaper/." "${pkgdir}/usr/share/wallpapers/Kader42-Wallpapers"
+    install -Dm644 "${startdir}/usr/share/color-schemes/Kader42Colors.colors" "${pkgdir}/usr/share/color-schemes/Kader42Colors.colors"
+    install -Dm644 "${startdir}/usr/share/plasma/look-and-feel/Kader42-Plasmatheme/LICENSE" "${pkgdir}/usr/share/plasma/look-and-feel/Kader42-Plasmatheme/LICENSE"
+    install -Dm644 "${startdir}/usr/share/plasma/look-and-feel/Kader42-Plasmatheme/metadata.json" "${pkgdir}/usr/share/plasma/look-and-feel/Kader42-Plasmatheme/metadata.json"
+    install -Dm644 "${startdir}/usr/share/plasma/look-and-feel/Kader42-Plasmatheme/README" "${pkgdir}/usr/share/plasma/look-and-feel/Kader42-Plasmatheme/README"
+    install -Dm644 "${startdir}/usr/share/plasma/look-and-feel/Kader42-Plasmatheme/contents/defaults" "${pkgdir}/usr/share/plasma/look-and-feel/Kader42-Plasmatheme/contents/defaults"
+    install -Dm644 "${startdir}/usr/share/plasma/look-and-feel/Kader42-Plasmatheme/contents/layouts/org.kde.plasma.desktop-layout.js" "${pkgdir}/usr/share/plasma/look-and-feel/Kader42-Plasmatheme/contents/layouts/org.kde.plasma.desktop-layout.js"
+    install -Dm644 "${startdir}/usr/share/plasma/look-and-feel/Kader42-Plasmatheme/contents/previews/fullscreenpreview.jpg" "${pkgdir}/usr/share/plasma/look-and-feel/Kader42-Plasmatheme/contents/previews/fullscreenpreview.jpg"
+    install -Dm644 "${startdir}/usr/share/plasma/look-and-feel/Kader42-Plasmatheme/contents/previews/preview.png" "${pkgdir}/usr/share/plasma/look-and-feel/Kader42-Plasmatheme/contents/previews/preview.png"
+    install -Dm644 "${startdir}/usr/share/wallpapers/Kader42-Wallpapers/metadata.json" "${pkgdir}/usr/share/wallpapers/Kader42-Wallpapers/metadata.json"
+    install -Dm644 "${startdir}/usr/share/wallpapers/Kader42-Wallpapers/contents/login-screen.png" "${pkgdir}/usr/share/wallpapers/Kader42-Wallpapers/contents/login-screen.png"
+    install -Dm644 "${startdir}/usr/share/wallpapers/Kader42-Wallpapers/contents/screenshot.png" "${pkgdir}/usr/share/wallpapers/Kader42-Wallpapers/contents/screenshot.png"
+    install -Dm644 "${startdir}/usr/share/wallpapers/Kader42-Wallpapers/contents/images/720x1440.jpg" "${pkgdir}/usr/share/wallpapers/Kader42-Wallpapers/contents/images/720x1440.jpg"
+    install -Dm644 "${startdir}/usr/share/wallpapers/Kader42-Wallpapers/contents/images/5120x2880.jpg" "${pkgdir}/usr/share/wallpapers/Kader42-Wallpapers/contents/images/5120x2880.jpg"
+    install -Dm644 "${startdir}/usr/share/plasma/look-and-feel/Kader42-Plasmatheme/contents/colors/Kader42Colors.colors" "${pkgdir}/usr/share/plasma/look-and-feel/Kader42-Plasmatheme/contents/colors/Kader42Colors.colors"
+
+
 }

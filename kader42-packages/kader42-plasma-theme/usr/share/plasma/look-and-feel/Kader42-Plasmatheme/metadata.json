@@ -1,0 +1,21 @@
+{
+    "KPackageStructure": "Plasma/LookAndFeel",
+    "KPlugin": {
+        "Authors": [
+            {
+                "Email": "support@kader42.de",
+                "Name": "Thomas Wernike"
+            }
+        ],
+        "Category": "Global Themes (Plasma 6)",
+        "ServiceTypes": [
+            "Plasma/LookAndFeel"
+        ],
+        "EnabledByDefault": true,
+        "Name": "Kader⁴²",
+        "Description": "Default Plasma 6 theme for Kader⁴²",
+        "Id": "Kader42-Plasmatheme",
+        "Version": "1.0",
+        "License": "GPLv3"
+    }
+}
