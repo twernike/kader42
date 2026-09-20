@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Kader⁴² Hello
+Exec=/usr/bin/python3 /usr/bin/kader42-hello
+Icon=/usr/share/pixmaps/mello_with_tablet.png
+Terminal=false
+Categories=System;Installer;
+X-KDE-Authorized-Link=true
+X-GNOME-Autostart-enabled=true
