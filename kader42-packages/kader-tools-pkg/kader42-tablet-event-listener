@@ -1,11 +1,11 @@
 #!/bin/bash
 export DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/$(id -u)/bus"
 
-echo "[Kader42 Tablet Event Listener] Service started..."
+echo "[kader42-tablet-event-listener] Service started..."
 
 # Read the chassis type from the system BIOS
 CHASSIS_TYPE=$(cat /sys/class/dmi/id/chassis_type 2>/dev/null)
-echo "[Kader42 Tablet Event Listener] Detected Chassis Type: ${CHASSIS_TYPE:-unknown}"
+echo "[kader42-tablet-event-listener] Detected Chassis Type: ${CHASSIS_TYPE:-unknown}"
 
 LAST_MODE=""
 STATE_FILE="/run/kader42/chassis_state"
@@ -29,7 +29,7 @@ get_mode_by_keyboard_count() {
 case "$CHASSIS_TYPE" in
     31)
         # --- CONVERTIBLE MODE (KWin DBus mit Hardware-Fallback) ---
-        echo "[Kader42 Tablet Event Listener] Convertible detected. Initializing hybrid listener..."
+        echo "[kader42-tablet-event-listener] Convertible detected. Initializing hybrid listener..."
 
         run_kwin_dbus_listener() {
             # We query the property directly and assign the result (or an error) to the variable.
@@ -39,12 +39,12 @@ case "$CHASSIS_TYPE" in
             # TRUE ERROR CHECK: Fallback only if the command fails, 
             # the response is empty, or the string explicitly contains “Error.”
             if [ $exit_code -ne 0 ] || [ -z "$CURRENT_STATE" ] || [[ "$CURRENT_STATE" == *"Error"* ]]; then
-                echo "[Kader42] KWin DBus-Schnittstelle wirft Fehler oder ist nicht bereit: $CURRENT_STATE"
-                return 1 # Hier ist der Fallback gerechtfertigt
+                echo "[kader42-tablet-event-listener] The KWin DBus interface returns an error or is not ready:: $CURRENT_STATE"
+                return 1 # This is where the fallback is justified
             fi
 
             # When we get to this point, KWin has returned a clear “true” or “false” (even on the dock!)
-            echo "[Kader42] DBus-Verbindung erfolgreich. Initialer Zustand: $CURRENT_STATE"
+            echo "[kader42-tablet-event-listener] DBus connection successful. Initial state: $CURRENT_STATE"
             
             if [ "$CURRENT_STATE" = "true" ]; then
                 LAST_MODE=1
@@ -60,16 +60,16 @@ case "$CHASSIS_TYPE" in
                 
                 # Same here: Only abort if KWin really crashes (the value becomes empty or throws an error)
                 if [ -z "$NEW_STATE" ] || [[ "$NEW_STATE" == *"Error"* ]]; then 
-                    echo "[Kader42 DBus] Verbindung zu KWin während des Betriebs verloren!"
+                    echo "[kader42-tablet-event-listener | Kader42 DBus] Connection to KWin lost whilst running!"
                     break 
                 fi
 
                 if [ "$NEW_STATE" = "true" ] && [ "$LAST_MODE" -ne 1 ]; then
-                    echo "[Kader42 DBus Event] Mode changed → 1"
+                    echo "[kader42-tablet-event-listener | Kader42 DBus Event] Mode changed → 1"
                     /usr/bin/kader42-plasma-convertible-switcher "1"
                     LAST_MODE=1
                 elif [ "$NEW_STATE" = "false" ] && [ "$LAST_MODE" -ne 0 ]; then
-                    echo "[Kader42 DBus Event] Mode changed → 0"
+                    echo "[kader42-tablet-event-listener | Kader42 DBus Event] Mode changed → 0"
                     /usr/bin/kader42-plasma-convertible-switcher "0"
                     LAST_MODE=0
                 fi
@@ -79,17 +79,17 @@ case "$CHASSIS_TYPE" in
         }
 
         if ! run_kwin_dbus_listener; then
-            echo "[Kader42 Tablet Event Listener] DBus listener failed or terminated."
-            echo "[Kader42 Tablet Event Listener] Start STABLE FALLBACK: Dedicated hardware hinge switch..."
+            echo "[kader42-tablet-event-listener] DBus listener failed or terminated."
+            echo "[kader42-tablet-event-listener] Start STABLE FALLBACK: Dedicated hardware hinge switch..."
             
             TARGET_EV=$(grep -E 'Name="Intel Virtual Buttons"|Name="gpio-keys"' -B5 -A10 /proc/bus/input/devices | grep -oE 'event[0-9]+' | head -n 1)
             
             if [ -z "$TARGET_EV" ]; then
-                echo "[Kader42 Tablet Event Listener] WARNING: No dedicated hardware device found. Use the global filter."
+                echo "[kader42-tablet-event-listener] WARNING: No dedicated hardware device found. Use the global filter."
                 DEV_ARG=""
             else
                 DEV_ARG="--device /dev/input/$TARGET_EV"
-                echo "[Kader42 Tablet Event Listener] Target Device Identified: /dev/input/$TARGET_EV"
+                echo "[kader42-tablet-event-listener] Target Device Identified: /dev/input/$TARGET_EV"
             fi
 
             stdbuf -oL libinput debug-events $DEV_ARG | while read -r line; do
@@ -104,7 +104,7 @@ case "$CHASSIS_TYPE" in
                     
                     # Debounce: Fire only when the state has actually changed
                     if [ "$MODE" != "$LAST_MODE" ]; then
-                        echo "[Kader42 Tablet Event Listener] Hardware Mode changed → $MODE"
+                        echo "[kader42-tablet-event-listener] Hardware Mode changed → $MODE"
                         /usr/bin/kader42-plasma-convertible-switcher "$MODE"
                         LAST_MODE="$MODE"
                     fi
@@ -115,31 +115,31 @@ case "$CHASSIS_TYPE" in
 
     32)
         # --- DETACHABLE MODE (Detachable Devices) ---
-        echo "[Kader42 Tablet Event Listener] Detachable detected. Launching dynamic counting logic..."
+        echo "[kader42-tablet-event-listener] Detachable detected. Launching dynamic counting logic..."
         
         mkdir -p "$(dirname "$STATE_FILE")"
         touch "$STATE_FILE"
 
         # Determine initial state at service startup
         MODE=$(get_mode_by_keyboard_count)
-        echo "[Kader42 Tablet Event Listener] Initial Detachable Mode → $MODE (Keyboards: $(count_real_keyboards))"
+        echo "[kader42-tablet-event-listener] Initial Detachable Mode → $MODE (Keyboards: $(count_real_keyboards))"
         /usr/bin/kader42-plasma-convertible-switcher "$MODE"
         LAST_MODE="$MODE"
 
         # Event loop: Wait for the udev signal in the state file in a resource-efficient manner
         if command -v inotifywait >/dev/null 2>&1; then
-            echo "[Kader42 Tablet Event Listener] Using inotifywait for event triggering."
+            echo "[kader42-tablet-event-listener] Using inotifywait for event triggering."
             while inotifywait -q -e modify "$STATE_FILE" >/dev/null; do
                 MODE=$(get_mode_by_keyboard_count)
                 if [ "$MODE" != "$LAST_MODE" ]; then
-                    echo "[Kader42 Tablet Event Listener] Detachable mode changed → $MODE"
+                    echo "[kader42-tablet-event-listener] Detachable mode changed → $MODE"
                     /usr/bin/kader42-plasma-convertible-switcher "$MODE"
                     LAST_MODE="$MODE"
                 fi
             done
         else
             # Fallback if inotify-tools are missing
-            echo "[Kader42 Tablet Event Listener] WARNING: 'inotifywait' not found! Falling back to 1s polling..."
+            echo "[kader42-tablet-event-listener] WARNING: 'inotifywait' not found! Falling back to 1s polling..."
             while true; do
                 MODE=$(get_mode_by_keyboard_count)
                 if [ "$MODE" != "$LAST_MODE" ]; then
@@ -156,7 +156,7 @@ case "$CHASSIS_TYPE" in
         # --- PASSIVE FALLBACK (Standard Laptops / Desktops) ---
         # The device does not require tablet optimizations. 
         # The service exits gracefully immediately and uses 0% of resources.
-        echo "[Kader42 Tablet Event Listener] Chassis Type '${CHASSIS_TYPE:-unknown}' does not require tablet mode. Exiting gracefully."
+        echo "[kader42-tablet-event-listener] Chassis Type '${CHASSIS_TYPE:-unknown}' does not require tablet mode. Exiting gracefully."
         exit 0
         ;;
 esac
