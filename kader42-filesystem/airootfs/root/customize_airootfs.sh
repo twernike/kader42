@@ -191,6 +191,8 @@ echo "Refresh icon cache..."
 gtk-update-icon-cache -f /usr/share/icons/hicolor
 gtk-update-icon-cache -f /usr/share/icons/Kader42
 
+plymouth-set-default-theme -R MelloAndMira
+
 echo
 echo -e "\x1b[44m\e[1;118m  ##################################\e[0m"
 echo -e "\x1b[44m\e[1;118m  # customize_airootfs.sh DONE! ✅️ #\e[0m"
