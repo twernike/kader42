@@ -25,7 +25,7 @@ STATE_FILE="/tmp/plasma-convertible-state"
 [ -f "$STATE_FILE" ] && [ "$(cat "$STATE_FILE")" = "$MODE" ] && exit 0
 echo "$MODE" > "$STATE_FILE"
 
-# 🔥 WICHTIG: nur Launcher ersetzen
+# 🔥 IMPORTANT: Replace the launcher only
 read -r -d '' JS <<EOF
 var isTablet = ${IS_TABLET};
 var panelsList = panels();
@@ -118,7 +118,7 @@ EOF
     esac
 
     notify-send -a "System" -i "$icon" "$title" "$msg"
-    echo "[Kader42-Hybrid-Switch] Switched mode: $MODE ➡️ $msg"
+    echo "[kader42-plasma-convertible-switcher] Switched mode: $MODE ➡️ $msg"
 }
 
 switch_launcher $1

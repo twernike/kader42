@@ -1,4 +1,7 @@
 #!/bin/bash
+# Shebang: Specifies that the script is to be executed by the Bash shell.
+
+# Ensure that the script has access to the D-Bus of the current user session (important for systemd user services).
 export DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/$(id -u)/bus"
 
 echo "[kader42-tablet-event-listener] Service started..."
@@ -32,6 +35,26 @@ case "$CHASSIS_TYPE" in
         echo "[kader42-tablet-event-listener] Convertible detected. Initializing hybrid listener..."
 
         run_kwin_dbus_listener() {
+
+            # Retry loop for session start (waits a maximum of 15 seconds for KWin)
+            local retries=0
+                while [ $retries -lt 15 ]; do
+                    CURRENT_STATE=$(qdbus6 org.kde.KWin /org/kde/KWin org.kde.KWin.TabletModeManager.tabletMode 2>&1)
+                    local exit_code=$?
+
+                    if [ $exit_code -eq 0 ] && [ -n "$CURRENT_STATE" ] && [[ "$CURRENT_STATE" != *"Error"* ]]; then
+                        break
+                    fi
+                sleep 1
+                ((retries++))
+                done
+
+            # If KWin still does not respond after 15 seconds: switch to the fallback
+            if [ $retries -eq 15 ]; then
+                echo "[kader42-tablet-event-listener] Timeout: KWin DBus interface not accessible."
+                return 1
+            fi
+
             # We query the property directly and assign the result (or an error) to the variable.
             CURRENT_STATE=$(qdbus6 org.kde.KWin /org/kde/KWin org.kde.KWin.TabletModeManager.tabletMode 2>&1)
             local exit_code=$?

@@ -1,10 +1,13 @@
 [Unit]
 Description=Kader42 Tablet Mode Listener
+PartOf=graphical-session.target
 After=graphical-session.target
 
 [Service]
+Type=exec
 ExecStart=/usr/bin/bash /usr/bin/kader42-tablet-event-listener
-Restart=always
+Restart=on-failure
+RestartSec=3s
 
 [Install]
-WantedBy=default.target
+WantedBy=graphical-session.target
