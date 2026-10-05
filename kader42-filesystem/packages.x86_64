@@ -404,8 +404,9 @@ bluez-obex
 bluez-mesh
 bluedevil
 
-# Gaming
-#steam
+# Bootscreen
+plymouth
+plymouth-kcm
 
 # AUR packages
 calamares
@@ -427,3 +428,4 @@ kader42-icons
 kader42-plasma-theme
 kader42-convertible-tools
 kader42-software-center
+#kader42-plymouth-themes
