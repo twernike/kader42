@@ -1,1 +1,0 @@
-sudo userdel -f -r liveuser
