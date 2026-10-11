@@ -19,7 +19,7 @@ else
     IS_TABLET=false
 fi
 
-STATE_FILE="/tmp/plasma-convertible-state"
+STATE_FILE="/run/user/$(id -u)/chassis_state"
 
 # Debounce
 [ -f "$STATE_FILE" ] && [ "$(cat "$STATE_FILE")" = "$MODE" ] && exit 0

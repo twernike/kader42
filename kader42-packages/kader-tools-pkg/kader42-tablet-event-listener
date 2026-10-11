@@ -11,7 +11,9 @@ CHASSIS_TYPE=$(cat /sys/class/dmi/id/chassis_type 2>/dev/null)
 echo "[kader42-tablet-event-listener] Detected Chassis Type: ${CHASSIS_TYPE:-unknown}"
 
 LAST_MODE=""
-STATE_FILE="/run/kader42/chassis_state"
+
+# statefile is properly isolated for each user
+STATE_FILE="/run/user/$(id -u)/chassis_state"
 
 # HELPER FUNCTION: Counts real, physical keyboards in the system (filters out power buttons, etc.)
 count_real_keyboards() {
