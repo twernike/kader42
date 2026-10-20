@@ -1,0 +1,8 @@
+[Plymouth Theme]
+Name=Mello42
+Description=Kader42 Boot Logo with mascot Mello
+ModuleName=script
+
+[script]
+ImageDir=/usr/share/plymouth/themes/Mello42
+ScriptFile=/usr/share/plymouth/themes/Mello42/Mello42.script

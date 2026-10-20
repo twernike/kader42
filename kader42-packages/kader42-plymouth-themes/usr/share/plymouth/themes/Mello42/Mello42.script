@@ -1,0 +1,53 @@
+Window.SetBackgroundTopColor(0, 0, 0);
+Window.SetBackgroundBottomColor(0, 0, 0);
+
+num_frames = 240;
+images = [];
+sprites = [];
+
+// 1. Bilder & Sprites sauber initialisieren
+for (i = 1; i <= num_frames; i++) {
+    images[i] = Image("image-" + i + ".png");
+    sprites[i] = Sprite(images[i]);
+    
+    // Zentrieren auf dem Bildschirm
+    x = Window.GetX() + Window.GetWidth() / 2 - images[i].GetWidth() / 2;
+    y = Window.GetY() + Window.GetHeight() / 2 - images[i].GetHeight() / 2;
+    sprites[i].SetPosition(x, y, 0);
+    
+    // Alle Bilder erst einmal unsichtbar schalten
+    sprites[i].SetOpacity(0);
+}
+
+// Ersten Frame sichtbar machen
+current_frame = 1;
+sprites[current_frame].SetOpacity(1);
+
+// 2. Bildwechsel-Funktion
+// Drossel-Faktor: Höhere Zahl = Langsamere Animation
+// 2 = halbes Tempo (ca. 30 FPS bei 60Hz Display)
+// 3 = drittel Tempo (ca. 20 FPS)
+speed_divider = 2; 
+tick_count = 0;
+
+fun refresh_callback() {
+    tick_count++;
+    
+    // Nur jeden X-ten Aufruf den Frame weiterschalten
+    if (tick_count >= speed_divider) {
+        tick_count = 0;
+        
+        sprites[current_frame].SetOpacity(0);
+        
+        current_frame++;
+        if (current_frame > num_frames) {
+            current_frame = 1;
+        }
+        
+        sprites[current_frame].SetOpacity(1);
+    }
+}
+
+Plymouth.SetRefreshFunction(refresh_callback);
+
+Plymouth.SetRefreshFunction(refresh_callback);
