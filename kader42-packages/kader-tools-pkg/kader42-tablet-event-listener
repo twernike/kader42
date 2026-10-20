@@ -8,7 +8,25 @@ echo "[kader42-tablet-event-listener] Service started..."
 
 # Read the chassis type from the system BIOS
 CHASSIS_TYPE=$(cat /sys/class/dmi/id/chassis_type 2>/dev/null)
+PRODUCT_NAME=$(cat /sys/class/dmi/id/product_name 2>/dev/null)
+
 echo "[kader42-tablet-event-listener] Detected Chassis Type: ${CHASSIS_TYPE:-unknown}"
+
+# AUTOMATIC OVERRIDE FOR CHASSIS TYPE 8, 9, 10 (Notebooks/Laptops)
+# Catches devices like Dell Latitude 5320 2-in-1 with generic BIOS chassis IDs
+if [[ "$CHASSIS_TYPE" =~ ^(8|9|10)$ ]]; then
+    if grep -qE -i "Intel Virtual Buttons|gpio-keys|Tablet Mode Switch|Intel HID switches" /proc/bus/input/devices 2>/dev/null; then
+        echo "[kader42-tablet-event-listener] Convertible switch hardware detected via input devices."
+        echo "[kader42-tablet-event-listener] Overriding Chassis Type ${CHASSIS_TYPE:-unknown} -> 31"
+        CHASSIS_TYPE=31
+    elif [[ "$PRODUCT_NAME" =~ (2-in-1|2in1|Convertible|Flip|Yoga|x360) ]]; then
+        echo "[kader42-tablet-event-listener] Convertible keyword found in DMI Product Name: '$PRODUCT_NAME'"
+        echo "[kader42-tablet-event-listener] Overriding Chassis Type ${CHASSIS_TYPE:-unknown} -> 31"
+        CHASSIS_TYPE=31
+    fi
+fi
+
+echo "[kader42-tablet-event-listener] Effective Chassis Type: ${CHASSIS_TYPE:-unknown}"
 
 LAST_MODE=""
 
