@@ -6,6 +6,24 @@ export DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/$(id -u)/bus"
 
 echo "[kader42-tablet-event-listener] Service started..."
 
+NEW_MODE="$1"
+STATE_FILE="/run/user/$(id -u)/kader42-plasma-convertible-state"
+
+# Aktuellen Zustand lesen (falls vorhanden)
+OLD_MODE=""
+if [ -f "$STATE_FILE" ]; then
+    OLD_MODE=$(cat "$STATE_FILE" 2>/dev/null)
+fi
+
+# Wenn der geforderte Modus identisch mit dem aktuellen ist: Gar nichts tun!
+if [ "$NEW_MODE" = "$OLD_MODE" ]; then
+    echo "[Kader42-Switch] Mode is already $NEW_MODE. Skipping re-configuration."
+    exit 0
+fi
+
+# Ab hier folgt dein normaler Switch-Code...
+echo "$NEW_MODE" > "$STATE_FILE"
+
 # Read the chassis type from the system BIOS
 CHASSIS_TYPE=$(cat /sys/class/dmi/id/chassis_type 2>/dev/null)
 PRODUCT_NAME=$(cat /sys/class/dmi/id/product_name 2>/dev/null)

@@ -5,6 +5,7 @@ After=graphical-session.target
 
 [Service]
 Type=exec
+ExecStartPre=/usr/bin/sleep 2
 ExecStart=/usr/bin/bash /usr/bin/kader42-tablet-event-listener
 Restart=on-failure
 RestartSec=3s
