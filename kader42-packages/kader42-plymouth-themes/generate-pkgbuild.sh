@@ -4,7 +4,7 @@ set -euo pipefail
 # Configuration
 PKGNAME="kader42-plymouth-themes"
 PKGVER="1.0.0"
-PKGREL="3"
+PKGREL="4"
 PKGDESC="Plymouth themes for Kader42"
 MAINTAINER="Thomas Wernike <support@kader42.de>"
 
@@ -49,4 +49,6 @@ $(printf "%s\n" "${install_lines[@]}")
 }
 EOF
 
-echo "==> PKGBUILD wurde erfolgreich aktualisiert!"
+echo "==> PKGBUILD generated successful!"
+echo "Generate package"
+makepkg -s

@@ -1,7 +1,7 @@
 # Maintainer: Thomas Wernike <support@kader42.de>
 pkgname=kader42-plymouth-themes
 pkgver=1.0.0
-pkgrel=3
+pkgrel=4
 pkgdesc="Plymouth themes for Kader42"
 arch=('any')
 depends=('bash' 'dbus' 'kernel-modules-hook' 'pacback' 'systemd-boot-pacman-hook' 'system-config-printer' 'cups' 'libreoffice-fresh-de' 'kader42-software-center' 'kader42-plasma-theme')
@@ -25,24 +25,6 @@ package() {
     install -Dm644 "${startdir}/usr/share/plymouth/themes/Kader42-Mello/throbber-003.png" "${pkgdir}/usr/share/plymouth/themes/Kader42-Mello/throbber-003.png"
     install -Dm644 "${startdir}/usr/share/plymouth/themes/Kader42-Mello/throbber-004.png" "${pkgdir}/usr/share/plymouth/themes/Kader42-Mello/throbber-004.png"
     install -Dm644 "${startdir}/usr/share/plymouth/themes/Kader42-Mello/watermark.png" "${pkgdir}/usr/share/plymouth/themes/Kader42-Mello/watermark.png"
-    install -Dm644 "${startdir}/usr/share/plymouth/themes/Kader42-Minimal/animation-0001.png" "${pkgdir}/usr/share/plymouth/themes/Kader42-Minimal/animation-0001.png"
-    install -Dm644 "${startdir}/usr/share/plymouth/themes/Kader42-Minimal/animation-0002.png" "${pkgdir}/usr/share/plymouth/themes/Kader42-Minimal/animation-0002.png"
-    install -Dm644 "${startdir}/usr/share/plymouth/themes/Kader42-Minimal/animation-0003.png" "${pkgdir}/usr/share/plymouth/themes/Kader42-Minimal/animation-0003.png"
-    install -Dm644 "${startdir}/usr/share/plymouth/themes/Kader42-Minimal/animation-0004.png" "${pkgdir}/usr/share/plymouth/themes/Kader42-Minimal/animation-0004.png"
-    install -Dm644 "${startdir}/usr/share/plymouth/themes/Kader42-Minimal/bullet.png" "${pkgdir}/usr/share/plymouth/themes/Kader42-Minimal/bullet.png"
-    install -Dm644 "${startdir}/usr/share/plymouth/themes/Kader42-Minimal/capslock.png" "${pkgdir}/usr/share/plymouth/themes/Kader42-Minimal/capslock.png"
-    install -Dm644 "${startdir}/usr/share/plymouth/themes/Kader42-Minimal/entry.png" "${pkgdir}/usr/share/plymouth/themes/Kader42-Minimal/entry.png"
-    install -Dm644 "${startdir}/usr/share/plymouth/themes/Kader42-Minimal/kader42-minimal.plymouth" "${pkgdir}/usr/share/plymouth/themes/Kader42-Minimal/kader42-minimal.plymouth"
-    install -Dm644 "${startdir}/usr/share/plymouth/themes/Kader42-Minimal/keyboard.png" "${pkgdir}/usr/share/plymouth/themes/Kader42-Minimal/keyboard.png"
-    install -Dm644 "${startdir}/usr/share/plymouth/themes/Kader42-Minimal/keymap-render.png" "${pkgdir}/usr/share/plymouth/themes/Kader42-Minimal/keymap-render.png"
-    install -Dm644 "${startdir}/usr/share/plymouth/themes/Kader42-Minimal/lock.png" "${pkgdir}/usr/share/plymouth/themes/Kader42-Minimal/lock.png"
-    install -Dm644 "${startdir}/usr/share/plymouth/themes/Kader42-Minimal/preview.png" "${pkgdir}/usr/share/plymouth/themes/Kader42-Minimal/preview.png"
-    install -Dm644 "${startdir}/usr/share/plymouth/themes/Kader42-Minimal/README.md" "${pkgdir}/usr/share/plymouth/themes/Kader42-Minimal/README.md"
-    install -Dm644 "${startdir}/usr/share/plymouth/themes/Kader42-Minimal/throbber-0001.png" "${pkgdir}/usr/share/plymouth/themes/Kader42-Minimal/throbber-0001.png"
-    install -Dm644 "${startdir}/usr/share/plymouth/themes/Kader42-Minimal/throbber-0002.png" "${pkgdir}/usr/share/plymouth/themes/Kader42-Minimal/throbber-0002.png"
-    install -Dm644 "${startdir}/usr/share/plymouth/themes/Kader42-Minimal/throbber-0003.png" "${pkgdir}/usr/share/plymouth/themes/Kader42-Minimal/throbber-0003.png"
-    install -Dm644 "${startdir}/usr/share/plymouth/themes/Kader42-Minimal/throbber-0004.png" "${pkgdir}/usr/share/plymouth/themes/Kader42-Minimal/throbber-0004.png"
-    install -Dm644 "${startdir}/usr/share/plymouth/themes/Kader42-Minimal/watermark.png" "${pkgdir}/usr/share/plymouth/themes/Kader42-Minimal/watermark.png"
     install -Dm644 "${startdir}/usr/share/plymouth/themes/Mello42/bullet.png" "${pkgdir}/usr/share/plymouth/themes/Mello42/bullet.png"
     install -Dm644 "${startdir}/usr/share/plymouth/themes/Mello42/capslock.png" "${pkgdir}/usr/share/plymouth/themes/Mello42/capslock.png"
     install -Dm644 "${startdir}/usr/share/plymouth/themes/Mello42/entry.png" "${pkgdir}/usr/share/plymouth/themes/Mello42/entry.png"

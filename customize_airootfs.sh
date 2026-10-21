@@ -191,7 +191,7 @@ echo "Refresh icon cache..."
 gtk-update-icon-cache -f /usr/share/icons/hicolor
 gtk-update-icon-cache -f /usr/share/icons/Kader42
 
-plymouth-set-default-theme -R Mello42
+# plymouth-set-default-theme -R Kader42-Mello
 
 echo
 echo -e "\x1b[44m\e[1;118m  ##################################\e[0m"
