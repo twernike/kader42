@@ -5,7 +5,7 @@ import json
 import locale
 import subprocess
 import time
-from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, 
+from PySide6.QtWidgets import (QApplication, QMainWindow, QMessageBox, QSpinBox, QWidget, QVBoxLayout, 
                              QHBoxLayout, QLabel, QLineEdit, QPushButton, 
                              QListWidget, QListWidgetItem, QScrollArea, QFrame, QGridLayout, QSizePolicy, QScroller, QScrollerProperties, QTimeEdit, QTextEdit)
 from PySide6.QtCore import Qt, QSize, QTimer, QUrl, Signal, QEvent, QTime
@@ -35,31 +35,35 @@ TRANSLATIONS = {
         "status_available": "Verfügbar",
         "status_checking": "Prüfe...",
         "status_queue": "⌛ In Warteschlange...",
-        "update_state": "",
-        "desc_update_available": "⚠️ Update im %s verfügbar!",
-        "desc_installed_repo": "Installierte Anwendung (Repository)",
-        "desc_installed_aur": "Installierte Anwendung (AUR)",
-        "desc_generic_system": "System-Paket aus Kader⁴² (%s).",
-        "desc_core_code": "Offizieller Open-Source Build von Visual Studio Code.",
-        "desc_core_vscode_bin": "Microsoft Visual Studio Code (Binärversion aus dem AUR).",
-        "desc_core_vscodium": "Telemetriefreier Community-Build von VS Code.",
-        "desc_core_firefox": "Sicherer und flexibler Open-Source Webbrowser.",
-        "desc_core_chromium": "Die Open-Source Basis hinter Google Chrome.",
-        "desc_core_gimp": "Professionelles Programm zur Bildbearbeitung und Manipulation.",
-        "desc_core_vlc": "Universeller Medienabspieler für nahezu alle Formate.",
-        "desc_core_libreoffice": "Umfangreiche und freie Office-Suite (Aktuellster Zweig).",
-        "desc_core_openboard": "Interaktive Whiteboard-Software für den Bildungsbereich.",
         "menu_updates": "Updates",
+        "menu_activity": "Aufgaben",
         "menu_settings": "Einstellungen",
         "system_up_to_date": "Dein System ist auf dem neuesten Stand.",
         "updates_available_title": "%s Updates verfügbar",
         "update_all_btn": "Alle aktualisieren",
         "setting_auto_update": "Automatische System-Updates aktivieren",
         "setting_time": "Geplante Uhrzeit:",
+        "setting_retention_completed": "Erfolgreiche Jobs aufbewahren (Tage):",
+        "setting_retention_failed": "Fehlerhafte Jobs aufbewahren (Tage):",
         "setting_save": "Einstellungen speichern",
         "setting_success": "Konfiguration erfolgreich gesichert!",
-        "update_failed_conflict": "❌ Update abgebrochen (min. ein Paketkonflikt existiert im System)",
-        "update_success": "✅ System erfolgreich aktualisiert!"
+        "update_failed_conflict": "❌ Update abgebrochen",
+        "update_success": "✅ System erfolgreich aktualisiert!",
+        "self_update_title": "🚀 Software Center Update verfügbar",
+        "self_update_msg": "Eine neue Version des Kader⁴² Software Centers ist verfügbar. Möchtest du das Update jetzt ausführen?",
+        "self_update_btn": "Jetzt aktualisieren",
+        "cancel": "Später",
+        "delete_job": "Löschen",
+        "show_log": "Log anzeigen",
+        "hide_log": "Log verbergen",
+        "no_jobs": "Keine Aufgaben vorhanden.",
+        "status_running": "Aktiv",
+        "status_installing": "Wird installiert...",
+        "status_removing": "Wird entfernt...",
+        "status_completed": "Erfolgreich",
+        "status_failed": "Fehlgeschlagen",
+        "status_interrupted": "Unterbrochen",
+        "status_queued": "In Warteschlange"
     },
     "en": {
         "search_placeholder": "🔎 Search for apps...",
@@ -69,31 +73,35 @@ TRANSLATIONS = {
         "status_available": "Available",
         "status_checking": "Checking...",
         "status_queue": "Queued...",
-        "update_state": "",
-        "desc_update_available": "⚠️ Update available in %s!",
-        "desc_installed_repo": "Installed application (Repository)",
-        "desc_installed_aur": "Installed application (AUR)",
-        "desc_generic_system": "System package from Kader⁴² (%s).",
-        "desc_core_code": "Official open-source build of Visual Studio Code.",
-        "desc_core_vscode_bin": "Microsoft Visual Studio Code (Binary version from AUR).",
-        "desc_core_vscodium": "Telemetry-free community build of VS Code.",
-        "desc_core_firefox": "Secure and flexible open-source web browser.",
-        "desc_core_chromium": "The open-source project behind Google Chrome.",
-        "desc_core_gimp": "Professional image manipulation and editing program.",
-        "desc_core_vlc": "Universal media player for almost all formats.",
-        "desc_core_libreoffice": "Powerful and free office suite (Fresh branch).",
-        "desc_core_openboard": "Interactive whiteboard software for education.",
         "menu_updates": "Updates",
+        "menu_activity": "Tasks",
         "menu_settings": "Settings",
         "system_up_to_date": "Your system is up to date.",
         "updates_available_title": "%s updates available",
         "update_all_btn": "Update All",
         "setting_auto_update": "Enable automatic system updates",
         "setting_time": "Scheduled Time:",
+        "setting_retention_completed": "Keep completed jobs (days):",
+        "setting_retention_failed": "Keep failed jobs (days):",
         "setting_save": "Save Settings",
         "setting_success": "Configuration saved successfully!",
-        "update_failed_conflict": "❌ Update aborted (Package conflict detected)",
-        "update_success": "✅ System updated successfully!"
+        "update_failed_conflict": "❌ Update aborted",
+        "update_success": "✅ System updated successfully!",
+        "self_update_title": "🚀 Software Center Update Available",
+        "self_update_msg": "A new version of the Kader⁴² Software Center is available. Do you want to update now?",
+        "self_update_btn": "Update Now",
+        "cancel": "Later",
+        "delete_job": "Delete",
+        "show_log": "Show Log",
+        "hide_log": "Hide Log",
+        "no_jobs": "No tasks recorded.",
+        "status_running": "Running",
+        "status_installing": "Installing...",
+        "status_removing": "Removing...",
+        "status_completed": "Completed",
+        "status_failed": "Failed",
+        "status_interrupted": "Interrupted",
+        "status_queued": "Queued"
     }
 }
 
@@ -101,7 +109,7 @@ def _(key):
     return TRANSLATIONS[SYSTEM_LANG].get(key, key)
 
 # ==========================================================
-# EINSTELLUNGS-ANSICHT (AUTO-UPDATES)
+# SETTINGS VIEW (AUTO-UPDATES)
 # ==========================================================
 class SettingsView(QWidget):
     def __init__(self, network_manager):
@@ -110,7 +118,7 @@ class SettingsView(QWidget):
         
         layout = QVBoxLayout(self)
         layout.setAlignment(Qt.AlignTop | Qt.AlignLeft)
-        layout.setSpacing(25)
+        layout.setSpacing(20)
         layout.setContentsMargins(30, 30, 30, 30)
         
         title = QLabel(_("menu_settings"))
@@ -120,39 +128,58 @@ class SettingsView(QWidget):
         
         self.card = QFrame()
         self.card.setStyleSheet("background-color: #131926; border-radius: 14px; border: 1px solid #232e48;")
-        self.card.setFixedWidth(500)
+        self.card.setFixedWidth(550)
         card_layout = QVBoxLayout(self.card)
-        card_layout.setSpacing(20)
+        card_layout.setSpacing(18)
         card_layout.setContentsMargins(20, 20, 20, 20)
         
+        from PySide6.QtWidgets import QCheckBox
         self.auto_cb = QCheckBox(_("setting_auto_update"))
         self.auto_cb.setFont(QFont("Cantarell", 12))
         self.auto_cb.setStyleSheet("QCheckBox { color: white; border: none; } QCheckBox::indicator { width: 18px; height: 18px; }")
         card_layout.addWidget(self.auto_cb)
         
         time_layout = QHBoxLayout()
-        time_layout.setSpacing(10)
         time_label = QLabel(_("setting_time"))
         time_label.setStyleSheet("color: #8fa0c4; border: none; font-size: 13px;")
-        
         self.time_edit = QTimeEdit()
         self.time_edit.setDisplayFormat("HH:mm")
         self.time_edit.setFixedWidth(100)
         self.time_edit.setStyleSheet("""
             QTimeEdit { background: #0b0f19; color: white; border: 1px solid #232e48; padding: 5px; border-radius: 6px; }
             QTimeEdit:disabled { background: #1a1f2c; color: #556585; border: 1px solid #1f2736; }
-        """) # Styling für den ausgegrauten Zustand hinzugefügt!
-        
+        """)
         time_layout.addWidget(time_label)
         time_layout.addWidget(self.time_edit)
         time_layout.addStretch()
         card_layout.addLayout(time_layout)
         
-        # Links the checkbox directly to the activation status of the time selection
         self.auto_cb.toggled.connect(self.time_edit.setEnabled)
-        # Disable by default for now (this will be overridden immediately by `load_settings()`)
         self.time_edit.setEnabled(False)
         
+        # RETENTION SETTINGS
+        ret_comp_layout = QHBoxLayout()
+        ret_comp_label = QLabel(_("setting_retention_completed"))
+        ret_comp_label.setStyleSheet("color: #8fa0c4; border: none; font-size: 13px;")
+        self.ret_comp_spin = QSpinBox()
+        self.ret_comp_spin.setRange(1, 30)
+        self.ret_comp_spin.setStyleSheet("background: #0b0f19; color: white; border: 1px solid #232e48; padding: 5px; border-radius: 6px;")
+        ret_comp_layout.addWidget(ret_comp_label)
+        ret_comp_layout.addWidget(self.ret_comp_spin)
+        ret_comp_layout.addStretch()
+        card_layout.addLayout(ret_comp_layout)
+
+        ret_fail_layout = QHBoxLayout()
+        ret_fail_label = QLabel(_("setting_retention_failed"))
+        ret_fail_label.setStyleSheet("color: #8fa0c4; border: none; font-size: 13px;")
+        self.ret_fail_spin = QSpinBox()
+        self.ret_fail_spin.setRange(1, 60)
+        self.ret_fail_spin.setStyleSheet("background: #0b0f19; color: white; border: 1px solid #232e48; padding: 5px; border-radius: 6px;")
+        ret_fail_layout.addWidget(ret_fail_label)
+        ret_fail_layout.addWidget(self.ret_fail_spin)
+        ret_fail_layout.addStretch()
+        card_layout.addLayout(ret_fail_layout)
+
         self.save_btn = QPushButton(_("setting_save"))
         self.save_btn.setCursor(Qt.PointingHandCursor)
         self.save_btn.setStyleSheet("""
@@ -167,86 +194,300 @@ class SettingsView(QWidget):
         card_layout.addWidget(self.status_msg)
         
         layout.addWidget(self.card)
-        
         self.load_settings()
-        
+
     def load_settings(self):
-        """Wird aufgerufen, sobald der User in der Sidebar auf 'Einstellungen' klickt."""
+        # Eigener Manager für isolierte Settings-Anfragen
+        self.local_manager = QNetworkAccessManager(self)
         req = QNetworkRequest(QUrl(f"{API_URL}/settings"))
-        reply = self.network_manager.get(req)
+        reply = self.local_manager.get(req)
         
         def on_loaded():
-            # First, check whether there is a network error
-            if reply.error() != QNetworkReply.NoError:
-                print(f"Netzwerkfehler beim Laden der Settings: {reply.errorString()}")
-                reply.deleteLater()
-                return
-
-            # Read Bytes
-            raw_bytes = reply.readAll().data()
-            
-            # IMPORTANT: If the buffer in the async request is still empty, abort!
-            if not raw_bytes or len(raw_bytes) == 0:
-                reply.deleteLater()
-                return
-                
-            try:
-                # Decoding and Parsing
-                json_str = raw_bytes.decode("utf-8").strip()
-                
-                # Safety net: Is the string empty JSON?
-                if not json_str or json_str in ["", "null"]:
-                    reply.deleteLater()
-                    return
-                    
-                data = json.loads(json_str)
-                is_active = data.get("auto_updates", False)
-                
-                # UI elements briefly block signals to prevent infinite loops
-                self.auto_cb.blockSignals(True)
-                self.auto_cb.setChecked(is_active)
-                self.time_edit.setEnabled(is_active)
-                self.auto_cb.blockSignals(False)
-                
-                t_str = data.get("update_time", "04:00")
-                h, m = map(int, t_str.split(":"))
-                self.time_edit.setTime(QTime(h, m))
-                
-            except Exception as e:
-                # This print statement is no longer triggered because empty responses are intercepted at the top
-                print(f"Error parsing the settings in the GUI: {e}")
-                
+            if reply.error() == QNetworkReply.NoError:
+                raw_bytes = reply.readAll().data()
+                if raw_bytes and len(raw_bytes) > 0:
+                    try:
+                        data = json.loads(raw_bytes.decode("utf-8").strip())
+                        is_active = data.get("auto_updates", False)
+                        self.auto_cb.setChecked(is_active)
+                        self.time_edit.setEnabled(is_active)
+                        
+                        t_str = data.get("update_time", "04:00")
+                        h, m = map(int, t_str.split(":"))
+                        self.time_edit.setTime(QTime(h, m))
+                        
+                        self.ret_comp_spin.setValue(data.get("retention_completed_days", 1))
+                        self.ret_fail_spin.setValue(data.get("retention_failed_days", 3))
+                    except Exception as e:
+                        print(f"Error parsing settings: {e}")
             reply.deleteLater()
             
         reply.finished.connect(on_loaded)
-        
+
+
     def save_settings(self):
-        """Called when the user clicks “Save Settings.”"""
-        # 1. Read the current status from the widgets
         payload_data = {
             "auto_updates": self.auto_cb.isChecked(),
-            "update_time": self.time_edit.time().toString("HH:mm")
+            "update_time": self.time_edit.time().toString("HH:mm"),
+            "retention_completed_days": self.ret_comp_spin.value(),
+            "retention_failed_days": self.ret_fail_spin.value()
         }
-        
-        # 2. Prepare the JSON payload
         req = QNetworkRequest(QUrl(f"{API_URL}/settings"))
         req.setHeader(QNetworkRequest.ContentTypeHeader, "application/json")
         payload = json.dumps(payload_data).encode("utf-8")
         
-        # Send via POST to the API (which then controls systemd via pkexec)
         reply = self.network_manager.post(req, payload)
-        
         def on_saved():
             if reply.error() == QNetworkReply.NoError:
-                # Display a success message in the GUI
                 self.status_msg.setText(_("setting_success"))
-                # Automatically hide the text again after 3 seconds
                 QTimer.singleShot(3000, lambda: self.status_msg.setText(""))
-            else:
-                print(f"API error when saving settings: {reply.errorString()}")
             reply.deleteLater()
-            
         reply.finished.connect(on_saved)
+
+# ==========================================================
+# AKTIVITÄTEN / QUEUE VIEW
+# ==========================================================
+class ActivityJobWidget(QFrame):
+    job_deleted_signal = Signal()
+
+    def __init__(self, job, network_manager):
+        super().__init__()
+        self.job_id = job["id"]
+        self.network_manager = network_manager
+        
+        self.setStyleSheet("background-color: #131926; border-radius: 10px; border: 1px solid #232e48;")
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(15, 12, 15, 12)
+
+        header_layout = QHBoxLayout()
+        
+        self.pkg_label = QLabel()
+        self.pkg_label.setStyleSheet("font-size: 14px; color: white; border: none;")
+        
+        self.status_label = QLabel()
+        
+        self.time_label = QLabel(job.get("created_at", ""))
+        self.time_label.setStyleSheet("font-size: 11px; color: #8fa0c4; border: none;")
+
+        header_layout.addWidget(self.pkg_label)
+        header_layout.addWidget(self.status_label)
+        header_layout.addStretch()
+        header_layout.addWidget(self.time_label)
+
+        self.toggle_log_btn = QPushButton(_("show_log"))
+        self.toggle_log_btn.setStyleSheet("background: #1f2736; color: white; border-radius: 5px; padding: 5px 10px;")
+        self.toggle_log_btn.clicked.connect(self.toggle_log)
+
+        delete_btn = QPushButton(_("delete_job"))
+        delete_btn.setStyleSheet("background: #c0392b; color: white; border-radius: 5px; padding: 5px 10px;")
+        delete_btn.clicked.connect(self.delete_job)
+
+        header_layout.addWidget(self.toggle_log_btn)
+        header_layout.addWidget(delete_btn)
+        layout.addLayout(header_layout)
+
+        self.log_edit = QTextEdit()
+        self.log_edit.setReadOnly(True)
+        self.log_edit.setMinimumHeight(300)
+        self.log_edit.setStyleSheet("""
+            QTextEdit {
+                background: #050811; 
+                color: #00f0ff; 
+                font-family: monospace; 
+                font-size: 11px; 
+                border: 1px solid #232e48;
+                border-radius: 6px;
+                padding: 8px;
+            }
+        """)
+        self.log_edit.hide()
+        layout.addWidget(self.log_edit)
+
+        # Erstmalige Daten-Befüllung
+        self.update_data(job)
+
+    def update_data(self, job):
+        """Aktualisiert Status und Log-Text im laufenden Betrieb."""
+        status = job.get("status", "queued").lower()
+        
+        status_colors = {
+            "completed": "#2ecc71",
+            "failed": "#e74c3c",
+            "interrupted": "#e67e22",
+            "running": "#00f0ff",
+            "installing": "#00f0ff",
+            "removing": "#e74c3c",
+            "queued": "#f1c40f"
+        }
+        color = status_colors.get(status, "#ffffff")
+
+        # Holt die deutsche/englische Übersetzung für den Status
+        translated_status = _(f"status_{status}")
+        # Fallback, falls ein unbekannter Status auftaucht
+        if translated_status.startswith("status_"):
+            translated_status = status.upper()
+
+        self.pkg_label.setText(f"<b>{job['package_name']}</b> ({job['action']})")
+        
+        # Zeigt z. B. "● FEHLGESCHLAGEN" oder "● WIRD INSTALLIERT..." an
+        self.status_label.setText(f"● {translated_status.upper()}")
+        self.status_label.setStyleSheet(f"font-size: 12px; color: {color}; font-weight: bold; border: none;")
+
+        # Log-Update Logik...
+        new_log = job.get("log_output", "")
+        if self.log_edit.toPlainText() != new_log:
+            self.log_edit.setPlainText(new_log)
+            if self.log_edit.isVisible():
+                self.log_edit.verticalScrollBar().setValue(
+                    self.log_edit.verticalScrollBar().maximum()
+                )
+
+    def toggle_log(self):
+        if self.log_edit.isVisible():
+            self.log_edit.hide()
+            self.toggle_log_btn.setText(_("show_log"))
+        else:
+            self.log_edit.show()
+            self.toggle_log_btn.setText(_("hide_log"))
+            self.log_edit.verticalScrollBar().setValue(
+                self.log_edit.verticalScrollBar().maximum()
+            )
+
+    def delete_job(self):
+        req = QNetworkRequest(QUrl(f"{API_URL}/job/{self.job_id}"))
+        reply = self.network_manager.sendCustomRequest(req, b"DELETE")
+        def on_del():
+            if reply.error() == QNetworkReply.NoError:
+                self.job_deleted_signal.emit()
+            reply.deleteLater()
+        reply.finished.connect(on_del)
+
+class ActivityView(QWidget):
+    def __init__(self, network_manager):
+        super().__init__()
+        self.network_manager = network_manager
+        
+        layout = QVBoxLayout(self)
+        layout.setAlignment(Qt.AlignTop)
+        layout.setSpacing(15)
+        layout.setContentsMargins(30, 30, 30, 30)
+
+        title = QLabel(_("menu_activity"))
+        title.setFont(QFont("Cantarell", 18, QFont.Weight.Bold))
+        title.setStyleSheet("color: #00f0ff;")
+        layout.addWidget(title)
+
+        self.scroll = QScrollArea()
+        self.scroll.setWidgetResizable(True)
+        self.scroll.setStyleSheet("border: none; background: transparent;")
+
+        self.container = QWidget()
+        self.list_layout = QVBoxLayout(self.container)
+        self.list_layout.setAlignment(Qt.AlignTop)
+        self.list_layout.setSpacing(10)
+        self.scroll.setWidget(self.container)
+
+        layout.addWidget(self.scroll)
+
+class ActivityView(QWidget):
+    def __init__(self, network_manager, parent=None):
+        super().__init__(parent)
+        self.network_manager = network_manager
+        
+        layout = QVBoxLayout(self)
+        layout.setAlignment(Qt.AlignTop)
+        layout.setSpacing(15)
+        layout.setContentsMargins(30, 30, 30, 30)
+
+        title = QLabel(_("menu_activity"))
+        title.setFont(QFont("Cantarell", 18, QFont.Weight.Bold))
+        title.setStyleSheet("color: #00f0ff;")
+        layout.addWidget(title)
+
+        self.scroll = QScrollArea()
+        self.scroll.setWidgetResizable(True)
+        self.scroll.setStyleSheet("border: none; background: transparent;")
+
+        self.container = QWidget()
+        self.list_layout = QVBoxLayout(self.container)
+        self.list_layout.setAlignment(Qt.AlignTop)
+        self.list_layout.setSpacing(10)
+        self.scroll.setWidget(self.container)
+
+        layout.addWidget(self.scroll)
+
+        # Polling-Timer für automatische Updates initialisieren
+        self.poll_timer = QTimer(self)
+        self.poll_timer.setInterval(1500)  # Alle 1,5 Sekunden aktualisieren
+        self.poll_timer.timeout.connect(self.load_activity)
+
+    def showEvent(self, event):
+        """Wird von Qt automatisch aufgerufen, wenn das Widget sichtbar wird."""
+        super().showEvent(event)
+        self.load_activity()
+        if not self.poll_timer.isActive():
+            self.poll_timer.start()
+
+    def hideEvent(self, event):
+        """Wird aufgerufen, wenn der Nutzer die Ansicht verlässt (spart CPU & Netzwerk)."""
+        super().hideEvent(event)
+        if self.poll_timer.isActive():
+            self.poll_timer.stop()
+
+    def load_activity(self):
+        req = QNetworkRequest(QUrl(f"{API_URL}/jobs"))
+        reply = self.network_manager.get(req)
+
+        def on_loaded():
+            if reply.error() == QNetworkReply.NoError:
+                raw_bytes = reply.readAll().data()
+                if raw_bytes:
+                    try:
+                        raw_str = raw_bytes.decode("utf-8").strip()
+                        jobs = json.loads(raw_str) if raw_str else []
+                        
+                        if not jobs:
+                            # Liste leeren und "Keine Jobs" anzeigen
+                            self.clear_list_layout()
+                            lbl = QLabel(_("no_jobs"))
+                            lbl.setStyleSheet("color: #8fa0c4; font-size: 14px; padding: 10px;")
+                            self.list_layout.addWidget(lbl)
+                        else:
+                            self.update_or_render_jobs(jobs)
+                    except Exception as e:
+                        print(f"Error loading activity jobs: {e}")
+            reply.deleteLater()
+
+        reply.finished.connect(on_loaded)
+
+    def clear_list_layout(self):
+        while self.list_layout.count():
+            item = self.list_layout.takeAt(0)
+            if item.widget():
+                item.widget().deleteLater()
+
+    def update_or_render_jobs(self, jobs):
+        """Aktualisiert bestehende Widgets ohne Neuzeichnen (verhindert Flackern)."""
+        existing_widgets = {}
+        for i in range(self.list_layout.count()):
+            w = self.list_layout.itemAt(i).widget()
+            if isinstance(w, ActivityJobWidget):
+                existing_widgets[w.job_id] = w
+
+        # Wenn sich die Anzahl oder Reihenfolge der Jobs geändert hat: Komplett neu aufbauen
+        job_ids = [j["id"] for j in jobs]
+        if set(existing_widgets.keys()) != set(job_ids):
+            self.clear_list_layout()
+            for job in jobs:
+                w = ActivityJobWidget(job, self.network_manager)
+                w.job_deleted_signal.connect(self.load_activity)
+                self.list_layout.addWidget(w)
+        else:
+            # Nur die Daten in den bestehenden Karten aktualisieren
+            for job in jobs:
+                widget = existing_widgets.get(job["id"])
+                if widget:
+                    widget.update_data(job)
 
 # Dummy class for clean CSS inlining of the checkbox
 from PySide6.QtWidgets import QCheckBox
@@ -256,7 +497,6 @@ from PySide6.QtWidgets import QCheckBox
 # ==========================================================
 class AppCard(QFrame):
     job_completed_signal = Signal()
-
     def __init__(self, name, description, pkg_name, icon_name=None, source="repo", flatpak_id=None, status="available"):
         super().__init__()
         self.pkg_name = pkg_name
@@ -268,12 +508,10 @@ class AppCard(QFrame):
         
         self.setObjectName("AppCard")
         self.setFixedSize(240, 280)
-        
         self.setStyleSheet("""
             #AppCard { background-color: #131926; border-radius: 14px; border: 2px solid #232e48; }
             #AppCard:hover { border: 2px solid #00f0ff; background-color: #1a233a; }
         """)
-        
         layout = QVBoxLayout(self)
         layout.setAlignment(Qt.AlignCenter)
         layout.setSpacing(10)
@@ -303,23 +541,17 @@ class AppCard(QFrame):
         layout.addWidget(self.status_label)
         
         self.button_container = QHBoxLayout()
-        self.button_container.setSpacing(12)
-        self.button_container.setAlignment(Qt.AlignCenter)
-        self.button_container.setContentsMargins(0, 0, 0, 0)
-        
         self.btn = QPushButton()
         self.btn.setFixedSize(90, 50)
         self.btn.setCursor(Qt.PointingHandCursor)
         self.btn.setIcon(QIcon.fromTheme("update-none", QIcon.fromTheme("go-up")))
         self.btn.setIconSize(QSize(25, 25))
-        self.btn.setAttribute(Qt.WA_TouchPadAcceptSingleTouchEvents, True)
         self.btn.clicked.connect(self.trigger_api_action)
         
         self.extra_remove_btn = QPushButton()
         self.extra_remove_btn.setFixedSize(90, 50)
         self.extra_remove_btn.setCursor(Qt.PointingHandCursor)
         self.extra_remove_btn.setIconSize(QSize(25, 25))
-        self.extra_remove_btn.setAttribute(Qt.WA_TouchPadAcceptSingleTouchEvents, True)
         self.extra_remove_btn.clicked.connect(self.trigger_extra_remove)
 
         self.button_container.addWidget(self.btn)
@@ -327,47 +559,29 @@ class AppCard(QFrame):
         layout.addLayout(self.button_container)
         
         self.nav_manager = QNetworkAccessManager(self)
-        if self.flatpak_id and self.flatpak_id.strip():
-            self.load_flathub_icon()
-            
         self.initial_status = status
         self.update_status_local()
- 
+
     def update_status_local(self, status_override=None):
         status = status_override if status_override else getattr(self, "initial_status", "available")
-        if not hasattr(self, 'extra_remove_btn'): return
-        
         self.btn.setEnabled(True)
         self.extra_remove_btn.setEnabled(True)
         
-        if status == "removed_success":
-            self.status_label.setText("🗑️ Paket entfernt") if SYSTEM_LANG == "de" else self.status_label.setText("🗑️ Package removed")
-            self.status_label.setStyleSheet("font-size: 10px; color: #e74c3c; font-weight: bold;")
-            self.btn.setEnabled(False)
-            self.btn.setStyleSheet("background-color: #232e48; border-radius: 8px; border: none; opacity: 0.5;")
-            self.extra_remove_btn.setIcon(QIcon.fromTheme("system-software-install", QIcon.fromTheme("go-down")))
-            self.extra_remove_btn.setStyleSheet("background-color: #3daee9; border-radius: 8px; border: none;")
-
-        elif status in ["installed_success", "installed"]:
-            if status == "installed_success":
-                self.status_label.setText("✅ Installiert") if SYSTEM_LANG == "de" else self.status_label.setText("✅ Installed")
-            else:
-                self.status_label.setText(_("status_installed"))
+        if status in ["installed_success", "installed"]:
+            self.status_label.setText("✅ " + _("status_installed"))
             self.status_label.setStyleSheet("font-size: 10px; color: #2ecc71; font-weight: bold;")
             self.btn.setEnabled(False)
             self.btn.setStyleSheet("background-color: #232e48; border-radius: 8px; border: none; opacity: 0.5;")
             self.extra_remove_btn.setIcon(QIcon.fromTheme("user-trash"))
             self.extra_remove_btn.setStyleSheet("background-color: #e74c3c; border-radius: 8px; border: none;")
-
         elif status == "update_available":
-            self.status_label.setText(_("update_state") if _("update_state") else "⚠️ Update")
+            self.status_label.setText("⚠️ Update")
             self.status_label.setStyleSheet("font-size: 10px; color: #e67e22; font-weight: bold;")
             self.btn.setEnabled(True)
             self.btn.setStyleSheet("background-color: #2ecc71; border-radius: 8px; border: none;")
             self.action_mode = "update"
             self.extra_remove_btn.setIcon(QIcon.fromTheme("user-trash"))
             self.extra_remove_btn.setStyleSheet("background-color: #e74c3c; border-radius: 8px; border: none;")
-            
         else:
             self.status_label.setText(_("status_available"))
             self.status_label.setStyleSheet("font-size: 10px; color: #00f0ff; font-weight: bold;")
@@ -377,41 +591,16 @@ class AppCard(QFrame):
             self.extra_remove_btn.setStyleSheet("background-color: #3daee9; border-radius: 8px; border: none;")
 
     def set_system_fallback_icon(self):
-        if os.path.isabs(self.icon_name) and os.path.exists(self.icon_name):
-            pixmap = QPixmap(self.icon_name)
-            self.icon_label.setPixmap(pixmap.scaled(64, 64, Qt.KeepAspectRatio, Qt.SmoothTransformation))
-        else:
-            icon = QIcon.fromTheme(self.icon_name, QIcon.fromTheme("package-x-generic"))
-            self.icon_label.setPixmap(icon.pixmap(QSize(64, 64)))
-
-    # We only retrieve the icons from the Flathub server. However, we do not support Flatpaks.
-    def load_flathub_icon(self):
-        url = QUrl(f"https://dl.flathub.org/repo/appstream/x86_64/icons/128x128/{self.flatpak_id.strip()}.png")
-        req = QNetworkRequest(url)
-        req.setRawHeader(b"User-Agent", b"Mozilla/5.0 (X11; Linux x86_64)")
-        self.reply = self.nav_manager.get(req)
-        self.reply.finished.connect(self.on_icon_downloaded)
-
-    def on_icon_downloaded(self):
-        if self.reply.error() == QNetworkReply.NoError:
-            pixmap = QPixmap()
-            if pixmap.loadFromData(self.reply.readAll()):
-                self.icon_label.setPixmap(pixmap.scaled(64, 64, Qt.KeepAspectRatio, Qt.SmoothTransformation))
-        self.reply.deleteLater()
+        icon = QIcon.fromTheme(self.icon_name, QIcon.fromTheme("package-x-generic"))
+        self.icon_label.setPixmap(icon.pixmap(QSize(64, 64)))
 
     def trigger_api_action(self):
-        print(f"➔ API Trigger: Update geklickt für {self.pkg_name}")
         self.send_api_job(self.action_mode)
         self.lock_ui_for_job()
 
     def trigger_extra_remove(self):
-        print(f"➔ API Trigger: Install/Remove geklickt für {self.pkg_name}")
         current_status_text = self.status_label.text()
-        if "install" in current_status_text.lower() or "update" in current_status_text.lower() or "✅" in current_status_text:
-            target_action = "remove"
-        else:
-            target_action = "install"
-            
+        target_action = "remove" if "✅" in current_status_text or "update" in current_status_text.lower() else "install"
         self.send_api_job(target_action)
         self.lock_ui_for_job()
 
@@ -421,7 +610,6 @@ class AppCard(QFrame):
         self.status_label.setText(_("status_queue"))
 
     def send_api_job(self, action):
-        print(f"📡 Sende POST an API: {API_URL}/job | Paket: {self.pkg_name} | Aktion: {action}")
         req = QNetworkRequest(QUrl(f"{API_URL}/job"))
         req.setHeader(QNetworkRequest.ContentTypeHeader, "application/json")
         job_data = {"package_name": self.pkg_name, "source": self.source, "action": action}
@@ -435,15 +623,12 @@ class AppCard(QFrame):
             try:
                 response_data = json.loads(reply.readAll().data().decode())
                 self.current_job_id = response_data.get("id")
-                print(f"✅ Job erfolgreich erstellt! ID: {self.current_job_id}")
                 self.poll_timer = QTimer(self)
                 self.poll_timer.timeout.connect(self.poll_job_status)
                 self.poll_timer.start(1000)
-            except Exception as e:
-                print(f"❌ Fehler beim Parsen der Job-ID: {e}")
+            except Exception:
                 self.update_status_local()
         else:
-            print(f"❌ API error while submitting the job: {reply.errorString()}")
             self.update_status_local()
         reply.deleteLater()
 
@@ -456,32 +641,19 @@ class AppCard(QFrame):
     def on_poll_finished(self, reply):
         if reply.error() == QNetworkReply.NoError:
             try:
-                data = reply.readAll().data().decode()
-                job = json.loads(data)
+                job = json.loads(reply.readAll().data().decode())
                 status = job.get("status")
-                
-                if status in ["installing", "removing", "building_aur", "running"]:
+                if status in ["installing", "removing", "running"]:
                     self.status_label.setText(f"⌛ {status}")
                 elif status == "completed":
-                    print(f"➔ AppCard ({self.pkg_name}): State is completed! Stop timer...")
                     self.poll_timer.stop()
-                    
-                    if "remov" in self.status_label.text().lower():
-                        self.update_status_local("removed_success")
-                    else:
-                        self.update_status_local("installed_success")
-                        
+                    self.update_status_local("installed_success")
                     self.job_completed_signal.emit()
                 elif status == "failed":
-                    print(f"❌ Job failed for {self.pkg_name}")
                     self.poll_timer.stop()
                     self.update_status_local()
-            except Exception as e:
-                print(f"❌ FEHLER in on_poll_finished für {self.pkg_name}: {e}")
-        else:
-            print(f"❌ Network error during polling: {reply.errorString()}")
-            self.poll_timer.stop()
-            self.update_status_local()
+            except Exception:
+                pass
         reply.deleteLater()
 
 # ==========================================================
@@ -619,12 +791,18 @@ class KaderStore(QMainWindow):
         self.grid_layout.setSpacing(22)
         self.scroll.setWidget(self.grid_widget)
         
-        # NEU: Settings View als persistente Schicht registrieren
+        # Register Settings View and Activity View as a persistent layer
         self.settings_view = SettingsView(self.network_manager)
         self.settings_view.hide()
+
+        self.activity_view = ActivityView(self.network_manager)
+        self.activity_view.hide()
+
+
         
         right_layout.addWidget(self.scroll)
-        right_layout.addWidget(self.settings_view) # Wird flexibel ein-/ausgeblendet
+        right_layout.addWidget(self.settings_view) # Can be flexibly shown or hidden
+        right_layout.addWidget(self.activity_view)
         content.addLayout(right_layout)
         self.root.addLayout(content)
         
@@ -637,6 +815,43 @@ class KaderStore(QMainWindow):
             self.start_view = "updates"
 
         self.fetch_data()
+        QTimer.singleShot(1500, self.check_self_update)
+
+    def check_self_update(self):
+        req = QNetworkRequest(QUrl(f"{API_URL}/self-update-check"))
+        reply = self.network_manager.get(req)
+        
+        def on_check():
+            if reply.error() == QNetworkReply.NoError:
+                raw_bytes = reply.readAll().data()
+                if raw_bytes and len(raw_bytes) > 0:
+                    try:
+                        json_str = raw_bytes.decode("utf-8").strip()
+                        if json_str and json_str not in ["", "null"]:
+                            data = json.loads(json_str)
+                            if data.get("update_available", False):
+                                self.show_self_update_dialog()
+                    except Exception as e:
+                        print(f"Self-update parse error: {e}")
+            reply.deleteLater()
+            
+        reply.finished.connect(on_check)
+
+    def show_self_update_dialog(self):
+        msg = QMessageBox(self)
+        msg.setWindowTitle(_("self_update_title"))
+        msg.setText(_("self_update_msg"))
+        msg.setIcon(QMessageBox.Information)
+        
+        update_btn = msg.addButton(_("self_update_btn"), QMessageBox.AcceptRole)
+        cancel_btn = msg.addButton(_("cancel"), QMessageBox.RejectRole)
+        
+        msg.exec()
+        if msg.clickedButton() == update_btn:
+            req = QNetworkRequest(QUrl(f"{API_URL}/job"))
+            req.setHeader(QNetworkRequest.ContentTypeHeader, "application/json")
+            job_data = {"package_name": "kader42-software-center", "source": "repo", "action": "update"}
+            self.network_manager.post(req, json.dumps(job_data).encode("utf-8"))
 
     def reset_update_banner(self):
         """Resets the banner, the log console, and any polling properly."""
@@ -661,44 +876,42 @@ class KaderStore(QMainWindow):
         if reply.error() == QNetworkReply.NoError:
             path = reply.url().path()
             
-            # IMPORTANT: Ignore /job and /settings requests so that their own handlers
-            # can read from the response buffer!
-            if path.startswith("/job") or path == "/settings":
+            # Strikter Filter: Ignoriere alle Spezial-Routen!
+            if path in ["/job", "/settings", "/self-update-check", "/jobs"] or path.startswith("/job/"):
+                reply.deleteLater()
                 return
-                
+            
+            raw_data = reply.readAll().data().decode("utf-8").strip()
+            if not raw_data:
+                reply.deleteLater()
+                return
+
             try:
-                raw_data = reply.readAll().data().decode()
-                if not raw_data: return
-                
                 data = json.loads(raw_data)
-                
                 if path == "/categories":
                     self.apps_data = {"categories": data}
                     self.setup_sidebar()
                 elif path in ["/apps", "/installed", "/updates"]:
                     self.clear_grid()
-                    
                     if path == "/updates":
-                        self.reset_update_banner()
                         total_updates = data.get("total_updates", 0)
                         packages = data.get("packages", [])
-                        
                         if total_updates > 0:
-                            self.update_status_title.setText(_("updates_available_title") % total_updates)
+                            tmpl = _("updates_available_title")
+                            title_text = tmpl % total_updates if "%s" in tmpl else f"{total_updates} Updates verfügbar"
+                            self.update_status_title.setText(title_text)
                             self.update_all_btn.show()
-                            self.update_all_btn.setEnabled(True)
                         else:
                             self.update_status_title.setText(_("system_up_to_date"))
                             self.update_all_btn.hide()
-                        
                         self.render_category_apps(packages)
                     else:
                         self.render_category_apps(data)
                         
             except Exception as e:
-                print(f"❌ JSON Parse Fehler in GUI: {e}")
+                print(f"❌ GUI Processing Error in {path}: {e}")
         else:
-            print(f"❌ JSON Parsing Error in the GUI: {reply.errorString()}")
+            print(f"❌ Network Error in GUI: {reply.errorString()}")
         reply.deleteLater()
 
     def setup_sidebar(self):
@@ -723,8 +936,13 @@ class KaderStore(QMainWindow):
             item = QListWidgetItem(icon, name)
             item.setData(Qt.UserRole, c["id"])
             self.sidebar.addItem(item)
-            
-        # NEU: Settings Item ganz unten anfügen
+
+        # Activities & Settings at the End
+        act = QListWidgetItem(QIcon.fromTheme("utilities-system-monitor"), _("menu_activity"))
+        act.setData(Qt.UserRole, "kader_activity_view")
+        self.sidebar.addItem(act)
+
+        # Add a “Settings” item at the very bottom
         settings_icon = QIcon.fromTheme("preferences-system", QIcon.fromTheme("settings-configure"))
         settings_item = QListWidgetItem(settings_icon, _("menu_settings"))
         settings_item.setData(Qt.UserRole, "kader_settings_view")
@@ -765,37 +983,45 @@ class KaderStore(QMainWindow):
         self.load_category()
 
     def load_category(self):
-        self.clear_grid()
         cur = self.sidebar.currentItem()
         cb = int(time.time())
-        if not cur: return
+        if not cur: 
+            return
         
         cat_id = cur.data(Qt.UserRole)
         
-        # Intercept UI switching for the settings widget
+        # 1. IMMER ZUERST ALLE SPEZIAL-ANSICHTEN VERSTECKEN!
+        self.scroll.hide()
+        self.settings_view.hide()
+        self.activity_view.hide()
+        self.banner_label.hide()
+        self.update_header_frame.hide()
+
+        # Grid-Inhalte der vorherigen Ansicht leeren
+        self.clear_grid()
+
+        # 2. Spezial-Views abfangen
         if cat_id == "kader_settings_view":
-            self.scroll.hide()
-            self.banner_label.hide()
-            self.update_header_frame.hide()
             self.settings_view.show()
-            self.settings_view.load_settings() # Query the API in real time
+            self.settings_view.load_settings()
             return
             
-        # Restore the default view if settings were active
-        self.settings_view.hide()
+        if cat_id == "kader_activity_view":
+            self.activity_view.show()
+            self.activity_view.load_activity()
+            return
+
+        # 3. Normale App-Grid-Ansicht aktivieren
         self.scroll.show()
         
         if cat_id == "kader_updates_view":
-            self.banner_label.hide()
             self.update_header_frame.show()
             self.update_status_title.setText(_("status_checking"))
             self.update_all_btn.hide()
             url = QUrl(f"{API_URL}/updates?cb={cb}")
             self.network_manager.get(QNetworkRequest(url))
         else:
-            self.update_header_frame.hide()
             self.banner_label.show()
-            
             if cat_id == "kader_installed_view":
                 url = QUrl(f"{API_URL}/installed?cb={cb}")
                 self.network_manager.get(QNetworkRequest(url))
@@ -817,9 +1043,7 @@ class KaderStore(QMainWindow):
     def render_category_apps(self, apps):
         columns = 3
         for index, a in enumerate(apps):
-            pkg_lower = a['package_name'].lower()
-            
-            # Your own Software Center is completely hidden from all views
+            pkg_lower = a.get('package_name', '').lower()
             if pkg_lower == "kader42-software-center":
                 continue
                 
@@ -831,29 +1055,32 @@ class KaderStore(QMainWindow):
             elif "vlc" in pkg_lower: flat_id = "org.videolan.VLC"
             
             desc_key = a.get('description', '')
-            source_upper = a.get('source', '').upper()
+            source_str = str(a.get('source', 'repo')).upper()
             
             if desc_key == "desc_update_available":
-                final_description = _("desc_update_available") % source_upper
+                # Fängt fehlerhafte Format-Strings ab
+                tmpl = _("desc_update_available")
+                final_description = tmpl % source_str if "%s" in tmpl else f"Update in {source_str} verfügbar!"
             elif desc_key == "desc_installed_repo":
                 final_description = _("desc_installed_repo")
             elif desc_key == "desc_installed_aur":
                 final_description = _("desc_installed_aur")
             elif desc_key == "desc_generic_system":
-                final_description = _("desc_generic_system") % source_upper
+                tmpl = _("desc_generic_system")
+                final_description = tmpl % source_str if "%s" in tmpl else f"System-Paket ({source_str})"
             elif desc_key.startswith("desc_core_"):
                 final_description = _(desc_key)
             else:
                 final_description = desc_key
 
             card = AppCard(
-                a['name'], 
+                a.get('name', pkg_lower.capitalize()), 
                 final_description, 
-                a['package_name'], 
+                a.get('package_name', ''), 
                 icon_name="package-x-generic",
-                source=a['source'],
+                source=a.get('source', 'repo'),
                 flatpak_id=flat_id,
-                status=a['status']
+                status=a.get('status', 'available')
             )
 
             card.job_completed_signal.connect(
@@ -861,6 +1088,7 @@ class KaderStore(QMainWindow):
             )
 
             self.grid_layout.addWidget(card, row, col)
+
 
     def trigger_all_updates(self):
         print("📡 Sending POST request for global system update...")
@@ -987,8 +1215,21 @@ class KaderStore(QMainWindow):
         url = QUrl(f"{API_URL}/apps?search={query}&cb={cb}")
         self.network_manager.get(QNetworkRequest(url))
 
+    def trigger_all_updates(self):
+        job_data = {"package_name": "system-update", "source": "repo", "action": "update"}
+        req = QNetworkRequest(QUrl(f"{API_URL}/job"))
+        req.setHeader(QNetworkRequest.ContentTypeHeader, "application/json")
+        self.network_manager.post(req, json.dumps(job_data).encode("utf-8"))
+
     def clear_grid(self):
         self.reset_update_banner()
+        
+        # Sicherheitshalber Spezial-Views verbergen, falls aus der Suche aufgerufen
+        if hasattr(self, "activity_view"):
+            self.activity_view.hide()
+        if hasattr(self, "settings_view"):
+            self.settings_view.hide()
+
         if self.grid_layout is not None:
             while self.grid_layout.count():
                 item = self.grid_layout.takeAt(0)

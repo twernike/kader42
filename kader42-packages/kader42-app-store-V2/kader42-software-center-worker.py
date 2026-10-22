@@ -6,39 +6,80 @@ import subprocess
 import os
 import sys
 import re
+import json
+from datetime import datetime, timedelta
 from shared import DB_PATH, prepare_alpm_handle
 
 handle = prepare_alpm_handle()
+SETTINGS_FILE = "/etc/kader42/software-center.json"
+
+def get_retention_settings():
+    """Liest die Retention-Tage aus den Einstellungen (Defaults: Completed=1, Failed=3)."""
+    completed_days = 1
+    failed_days = 3
+    if os.path.exists(SETTINGS_FILE):
+        try:
+            with open(SETTINGS_FILE, "r") as f:
+                data = json.load(f)
+                completed_days = int(data.get("retention_completed_days", 1))
+                failed_days = int(data.get("retention_failed_days", 3))
+        except Exception as e:
+            print(f"[worker] Fehler beim Lesen der Retention-Settings: {e}")
+    return completed_days, failed_days
 
 def ensure_database_schema():
-    """Automatisches Schema-Update: Fügt fehlende Spalten geräuschlos hinzu."""
+    """Automatisches Schema-Update: Fügt 'log_output' und 'created_at' hinzu."""
     if not os.path.exists(DB_PATH):
         return
 
     with sqlite3.connect(DB_PATH, timeout=20.0) as conn:
         cursor = conn.cursor()
-        
-        # Reads all existing columns from the ‘jobs’ table
         cursor.execute("PRAGMA table_info(jobs)")
         columns = [column[1] for column in cursor.fetchall()]
         
-        # Checks whether ‘log_output’ is missing
         if "log_output" not in columns:
-            print("[kader42-software-center-worker] Auto-Migration: The ‘log_output’ column is being added...")
+            print("[worker] Auto-Migration: Spalte 'log_output' wird hinzugefügt...")
             cursor.execute("ALTER TABLE jobs ADD COLUMN log_output TEXT DEFAULT ''")
-            conn.commit()
-            print("[kader42-software-center-worker] Auto-migration completed successfully.")
+            
+        if "created_at" not in columns:
+            print("[worker] Auto-Migration: Spalte 'created_at' wird hinzugefügt...")
+            cursor.execute("ALTER TABLE jobs ADD COLUMN created_at DATETIME DEFAULT CURRENT_TIMESTAMP")
+            
+        conn.commit()
+
+def cleanup_old_jobs():
+    """Löscht veraltete Jobs automatisch basierend auf Erstellungsdatum und Status."""
+    completed_days, failed_days = get_retention_settings()
+    now = datetime.now()
+    
+    completed_cutoff = (now - timedelta(days=completed_days)).strftime("%Y-%m-%d %H:%M:%S")
+    failed_cutoff = (now - timedelta(days=failed_days)).strftime("%Y-%m-%d %H:%M:%S")
+    
+    with sqlite3.connect(DB_PATH, timeout=20.0) as conn:
+        cursor = conn.cursor()
+        # Lösche erfolgreiche Jobs
+        cursor.execute(
+            "DELETE FROM jobs WHERE status = 'completed' AND (created_at < ? OR updated_at < ?)",
+            (completed_cutoff, completed_cutoff)
+        )
+        # Lösche fehlgeschlagene/unterbrochene Jobs
+        cursor.execute(
+            "DELETE FROM jobs WHERE status IN ('failed', 'interrupted') AND (created_at < ? OR updated_at < ?)",
+            (failed_cutoff, failed_cutoff)
+        )
+        deleted_count = cursor.rowcount
+        conn.commit()
+        if deleted_count > 0:
+            print(f"[worker] Auto-Cleanup: {deleted_count} alte Jobs aus der Datenbank entfernt.")
 
 def execute_package_action(job):
     job_id = job['id']
     pkg_name = job['package_name']
     action = job['action']
     
-    #  1. Special Case: Global System Update (“Update All”)
     if pkg_name == "system-update" and action == "update":
         update_progress(job_id, "installing", 20)
         
-        # Helper function for running `yay` with live logging
         def run_update_process(extra_flags=None, initial_log=""):
             cmd = ["/usr/bin/yay", "--sudo", "/usr/bin/pkexec", "-Syu", "--noconfirm", "--needed"]
             if extra_flags:
@@ -59,7 +100,7 @@ def execute_package_action(job):
                     break
                 if line:
                     log_acc += line
-                    recent_log = log_acc[-4000:]
+                    recent_log = log_acc[-8000:]
                     try:
                         with sqlite3.connect(DB_PATH, timeout=5.0) as conn:
                             conn.execute("UPDATE jobs SET log_output = ? WHERE id = ?", (recent_log, job_id))
@@ -70,99 +111,73 @@ def execute_package_action(job):
             process.wait()
             return process.returncode, log_acc
 
-        # 1. First regular update attempt
         returncode, log_accumulator = run_update_process()
         
-        # 2. Automatic conflict detection in case of failure
         if returncode != 0:
-            conflict_signatures = [
-                "existiert im Dateisystem",
-                "exists in filesystem",
-                "conflicting files",
-                "Dateikonflikte"
-            ]
-            
-            # Check whether the failure was caused by file conflicts
-            has_file_conflict = any(sig.lower() in log_accumulator.lower() for sig in conflict_signatures)
-            
-            if has_file_conflict:
-                notice = "\n\n⚠️ File conflict detected! Start automatic repair attempt with '--overwrite' \"*\"'...\n\n"
-                print("[kader42-software-center-worker] File conflict detected. Start auto-repair with --overwrite...")
-                
-                # Second pass with --overwrite “*”
-                returncode, log_accumulator = run_update_process(
-                    extra_flags=["--overwrite", "*"], 
-                    initial_log=log_accumulator + notice
-                )
+            conflict_signatures = ["existiert im Dateisystem", "exists in filesystem", "conflicting files", "Dateikonflikte"]
+            if any(sig.lower() in log_accumulator.lower() for sig in conflict_signatures):
+                notice = "\n\n⚠️ Datei-Konflikt erkannt! Auto-Reparatur mit '--overwrite \"*\"'...\n\n"
+                returncode, log_accumulator = run_update_process(extra_flags=["--overwrite", "*"], initial_log=log_accumulator + notice)
 
             pgp_sigs = ["unknown public key", "unbekannter öffentlicher schlüssel", "failed (unknown public key)"]
-            has_pgp_error = any(sig in log_accumulator.lower() for sig in pgp_sigs)
-                
-            if has_pgp_error:
-                # Search for the Hex Key ID in the log stream
+            if any(sig in log_accumulator.lower() for sig in pgp_sigs):
                 key_match = re.search(r'(?:unknown public key|unbekannter öffentlicher Schlüssel)\s+([A-F0-9]{16})', log_accumulator, re.IGNORECASE)
-                    
                 if key_match:
                     missing_key = key_match.group(1)
-                    notice = f"\n\n🔑 Fehlenden PGP-Schlüssel {missing_key} importieren...\n\n"
-                    print(f"[kader42-worker] PGP-Key {missing_key} fehlt. Importiere via GPG...")
-                        
-                    # Retry after importing the key
-                    gpg_cmd = ["/usr/bin/gpg", "--recv-keys", missing_key]
-                    subprocess.run(gpg_cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)                        
-                    returncode, log_accumulator = run_update_process(
-                        initial_log=log_accumulator + notice
-                    )
+                    notice = f"\n\n🔑 PGP-Schlüssel {missing_key} importieren...\n\n"
+                    subprocess.run(["/usr/bin/gpg", "--recv-keys", missing_key], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)                        
+                    returncode, log_accumulator = run_update_process(initial_log=log_accumulator + notice)
 
-        recent_log = log_accumulator[-4000:] if log_accumulator else "Keine Konsolen-Ausgabe erfasst."
+        recent_log = log_accumulator[-8000:] if log_accumulator else "Keine Konsolen-Ausgabe erfasst."
         
-        # 3. Final Check
         if returncode != 0:
             with sqlite3.connect(DB_PATH, timeout=5.0) as conn:
                 conn.execute("UPDATE jobs SET log_output = ?, status = 'failed' WHERE id = ?", (recent_log, job_id))
                 conn.commit()
             raise Exception(f"Update fehlgeschlagen mit Exit Code {returncode}")
         
-    # if pkg_name == "system-update" and action == "update":
-    #     update_progress(job_id, "installing", 20)
-    #     cmd = ["/usr/bin/pkexec", "/usr/bin/yay", "-Syu", "--noconfirm", "--needed"]
-
-    # 2. Regular Individual Packages (Validation & Commands)
     else:
         if not pkg_name.isalnum() and not any(c in pkg_name for c in ['-', '_', '+', '.']):
-            raise ValueError("[kader42-software-center-worker] Invalid package name!")
+            raise ValueError("Ungültiger Paketname!")
 
         if action == "install":
             update_progress(job_id, "installing", 20)
-            cmd = ["/usr/bin/pkexec", "/usr/bin/yay", "-S", "--noconfirm", pkg_name]
-
+            cmd = ["/usr/bin/yay", "--sudo", "/usr/bin/pkexec", "-S", "--noconfirm", pkg_name]
         elif action == "update":
             update_progress(job_id, "installing", 20)
-            cmd = ["/usr/bin/pkexec", "/usr/bin/yay", "-S", "--noconfirm", pkg_name]
-
+            cmd = ["/usr/bin/yay", "--sudo", "/usr/bin/pkexec", "-S", "--noconfirm", pkg_name]
         elif action == "remove":
             update_progress(job_id, "removing", 20)
-            cmd = ["/usr/bin/pkexec", "/usr/bin/yay", "-Rns", "--noconfirm", pkg_name]
-            
+            cmd = ["/usr/bin/yay", "--sudo", "/usr/bin/pkexec", "-Rns", "--noconfirm", pkg_name]
         else:
             return
 
-    # execute process
-    process = subprocess.run(cmd, capture_output=True, text=True)
-    
+        process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1)
+        log_acc = ""
+        while True:
+            line = process.stdout.readline()
+            if not line and process.poll() is not None:
+                break
+            if line:
+                log_acc += line
+                recent_log = log_acc[-8000:]
+                try:
+                    with sqlite3.connect(DB_PATH, timeout=5.0) as conn:
+                        conn.execute("UPDATE jobs SET log_output = ? WHERE id = ?", (recent_log, job_id))
+                        conn.commit()
+                except Exception:
+                    pass
 
-    if process.returncode != 0:
-        # Filter out the curl progress output to see the actual Pacman error message: Document Type Abbreviation
-        error_msg = process.stderr if process.stderr else process.stdout
-        print(f"[kader42-software-center-worker] Update failed: {error_msg}")
-        raise Exception(f"Update Aborted (Package Conflict or Network Error).")
+        process.wait()
+        if process.returncode != 0:
+            raise Exception(f"Aktion fehlgeschlagen mit Exit Code {process.returncode}")
 
 def recovery_on_startup():
     with sqlite3.connect(DB_PATH, timeout=20.0) as conn:
         conn.execute("""
             UPDATE jobs 
             SET status='interrupted', progress=0, updated_at=CURRENT_TIMESTAMP 
-            WHERE status='running' OR status='building' OR status='installing'
+            WHERE status IN ('running', 'building', 'installing', 'removing')
         """)
         conn.commit()
 
@@ -192,7 +207,7 @@ def update_progress(job_id, status, progress):
         conn.commit()
 
 def worker_loop():
-    print("Kader⁴² Software Center Worker daemon is active and waiting for jobs...")
+    print("Kader⁴² Software Center Worker Daemon gestartet...")
     
     initialized = False
     while not initialized:
@@ -200,31 +215,38 @@ def worker_loop():
             try:
                 ensure_database_schema()
                 recovery_on_startup()
+                cleanup_old_jobs()
                 initialized = True
             except sqlite3.OperationalError:
                 time.sleep(1)
         if not initialized:
             time.sleep(1)
 
-    print("[Kader42-software-center-worker] Connection to the API database established successfully. Ready for jobs.")
+    print("[worker] Verbingung hergestellt. Warten auf Jobs...")
+    last_cleanup = time.time()
 
     while True:
         try:
+            # Stündlicher Auto-Cleanup der Datenbank
+            if time.time() - last_cleanup > 3600:
+                cleanup_old_jobs()
+                last_cleanup = time.time()
+
             job = get_next_job()
             if not job:
                 time.sleep(1)
                 continue
                 
-            print(f"[Kader42-software-center-worker] Process Job {job['id']}: {job['action']} {job['package_name']}")
+            print(f"[worker] Verarbeite Job {job['id']}: {job['action']} {job['package_name']}")
             execute_package_action(job)
             update_progress(job['id'], "completed", 100)
-            print(f"Job {job['id']} completed successfully.")
+            print(f"[worker] Job {job['id']} erfolgreich abgeschlossen.")
             
         except sqlite3.OperationalError:
             time.sleep(0.5)
             continue
         except Exception as e:
-            print(f"[Kader42-software-center-worker] Error in Job: {e}", file=sys.stderr)
+            print(f"[worker] Fehler bei Job: {e}", file=sys.stderr)
             try:
                 if 'job' in locals() and job:
                     update_progress(job['id'], "failed", 0)

@@ -66,53 +66,49 @@ def get_systemd_timer_state():
     except:
         return False
 
+# In load_settings() und save_settings() die neuen Keys ergänzen:
 def load_settings():
-    """Retrieve the activation status in real time via `is-enabled` and the time from the JSON."""
     saved_time = "04:00"
+    retention_completed = 1
+    retention_failed = 3
     if os.path.exists(SETTINGS_FILE):
         try:
             with open(SETTINGS_FILE, "r") as f:
                 data = json.load(f)
                 saved_time = data.get("update_time", "04:00")
+                retention_completed = data.get("retention_completed_days", 1)
+                retention_failed = data.get("retention_failed_days", 3)
         except Exception as e:
             print(f"Fehler beim Laden der JSON: {e}")
         
-    # If the file doesn't exist or was corrupted, 
-    # we'll still return the correct structure!
     return {
         "auto_updates": get_systemd_timer_state(),
-        "update_time": saved_time
+        "update_time": saved_time,
+        "retention_completed_days": retention_completed,
+        "retention_failed_days": retention_failed
     }
 
 def save_settings(data):
-    """Write the JSON and run the actual `systemctl enable/disable` commands."""
     try:
         auto_updates = data.get("auto_updates", False)
         update_time = data.get("update_time", "04:00")
+        retention_completed = int(data.get("retention_completed_days", 1))
+        retention_failed = int(data.get("retention_failed_days", 3))
 
-        # 1. Save only the time in the JSON (if needed, e.g., for overrides)
-        if not os.path.exists(SETTINGS_DIR):
-            try:
-                os.makedirs(SETTINGS_DIR, exist_ok=True)
-            except PermissionError:
-                # If the API doesn't have permissions here, the helper script/Polkit handles it
-                pass
-                
         if auto_updates:
-            # 2. Permanently enable or disable the systemd timer using pkexec
             subprocess.run("pkexec systemctl enable --now kader42-autoupdate.timer", shell=True)
-            print("[kader42-software-center-api] ➔ systemd: systemctl enable --now kader42-autoupdate.timer executed.")
         else:
-            # Deletes the symlinks and stops the timer immediately (--now)
             subprocess.run("pkexec systemctl disable --now kader42-autoupdate.timer", shell=True)
-            print("[kader42-software-center-api] ➔ systemd: systemctl disable --now kader42-autoupdate.timer executed")
             
-        # Optional: Here we write the JSON (if Polkit rules apply to the directory)
         with open(SETTINGS_FILE, "w") as f:
-            json.dump({"update_time": update_time}, f, indent=4)
+            json.dump({
+                "update_time": update_time,
+                "retention_completed_days": retention_completed,
+                "retention_failed_days": retention_failed
+            }, f, indent=4)
             
     except Exception as e:
-        print(f"[kader42-software-center-api] Error while running systemctl: {e}")
+        print(f"Error while saving settings: {e}")
 
 class StoreAPIHandler(BaseHTTPRequestHandler):
 
@@ -138,8 +134,20 @@ class StoreAPIHandler(BaseHTTPRequestHandler):
         url_parts = urllib.parse.urlparse(self.path)
         query_params = urllib.parse.parse_qs(url_parts.query)
         path_str = url_parts.path
-
-        if path_str == "/categories":
+        
+        # Automatic Update Check for the Software Center
+        if path_str == "/self-update-check":
+            has_update = False
+            try:
+                res = subprocess.run("yay -Qu kader42-software-center", shell=True, capture_output=True, text=True)
+                if res.stdout.strip():
+                    has_update = True
+            except Exception:
+                pass
+            self.send_json({"update_available": has_update, "package_name": "kader42-software-center"})
+            return
+        
+        elif path_str == "/categories":
             self.send_json(CATEGORY_DEFINITIONS)
 
         elif path_str == "/apps":
@@ -166,6 +174,7 @@ class StoreAPIHandler(BaseHTTPRequestHandler):
         elif path_str == "/settings":
             settings_data = load_settings()
             self.send_json(settings_data)
+            
 
         elif path_str.startswith("/job/") and path_str.endswith("/log"):
             try:
@@ -185,8 +194,21 @@ class StoreAPIHandler(BaseHTTPRequestHandler):
                 # IMPORTANT: Respond now using `send_json`, including `Content-Length`!
                 self.send_json(status_data)
             except Exception as e:
-                print(f"API Fehler beim Job-Polling: {e}")
+                print(f"API Error During Job Polling: {e}")
                 self.send_json({"error": "Invalid Job ID"}, 400)
+
+        elif path_str == "/jobs":
+            with sqlite3.connect(DB_PATH) as conn:
+                conn.row_factory = sqlite3.Row
+                cursor = conn.cursor()
+                cursor.execute("""
+                    SELECT id, package_name, action, status, progress, log_output, created_at 
+                    FROM jobs ORDER BY id DESC LIMIT 50
+                """)
+                rows = cursor.fetchall()
+                jobs = [dict(row) for row in rows]
+                self.send_json(jobs)
+            return
         
 
     def do_POST(self):
@@ -234,6 +256,19 @@ class StoreAPIHandler(BaseHTTPRequestHandler):
             self.send_header('Content-Length', str(len(res_bytes)))
             self.end_headers()
             self.wfile.write(res_bytes)
+
+    def do_DELETE(self):
+        # NEW: Manually delete individual jobs
+        path_str = self.path
+        if path_str.startswith("/job/"):
+            try:
+                job_id = int(path_str.split("/")[-1])
+                with sqlite3.connect(DB_PATH) as conn:
+                    conn.execute("DELETE FROM jobs WHERE id = ?", (job_id,))
+                    conn.commit()
+                self.send_json({"status": "deleted", "id": job_id})
+            except Exception as e:
+                self.send_json({"error": str(e)}, 400)
 
     def search_via_yay(self, query):
         apps_found = []
@@ -412,6 +447,16 @@ class StoreAPIHandler(BaseHTTPRequestHandler):
                     "log": row["log_output"] if row["log_output"] else ""
             }
         return {"status": "unknown", "progress": 0, "log": ""}
+
+    def get_all_jobs(self):
+        with sqlite3.connect(DB_PATH) as conn:
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
+            cursor.execute("""SELECT id, package_name, action, status, progress, log_output, created_at 
+                    FROM jobs ORDER BY id DESC LIMIT 50""")
+            rows = cursor.fetchall()
+            jobs = [dict(row) for row in rows]
+            self.send_json(jobs)
     
     def get_installed_apps_and_updates(self):
         apps = []
