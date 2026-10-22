@@ -300,49 +300,43 @@ class ActivityJobWidget(QFrame):
                 padding: 8px;
             }
         """)
+        # WICHTIG: Nur am Anfang einmalig verstecken
         self.log_edit.hide()
         layout.addWidget(self.log_edit)
 
-        # Erstmalige Daten-Befüllung
+        # Erstmaliges Befüllen
         self.update_data(job)
 
     def update_data(self, job):
-        """Aktualisiert Status und Log-Text im laufenden Betrieb."""
+        """Wird im Polling aufgerufen: Aktualisiert NUR den Inhalt, tastet das Layout nicht an!"""
         status = job.get("status", "queued").lower()
         
         status_colors = {
-            "completed": "#2ecc71",
-            "failed": "#e74c3c",
-            "interrupted": "#e67e22",
-            "running": "#00f0ff",
-            "installing": "#00f0ff",
-            "removing": "#e74c3c",
-            "queued": "#f1c40f"
+            "completed": "#2ecc71", "failed": "#e74c3c", "interrupted": "#e67e22",
+            "running": "#00f0ff", "installing": "#00f0ff", "removing": "#e74c3c", "queued": "#f1c40f"
         }
         color = status_colors.get(status, "#ffffff")
 
-        # Holt die deutsche/englische Übersetzung für den Status
         translated_status = _(f"status_{status}")
-        # Fallback, falls ein unbekannter Status auftaucht
         if translated_status.startswith("status_"):
             translated_status = status.upper()
 
         self.pkg_label.setText(f"<b>{job['package_name']}</b> ({job['action']})")
-        
-        # Zeigt z. B. "● FEHLGESCHLAGEN" oder "● WIRD INSTALLIERT..." an
         self.status_label.setText(f"● {translated_status.upper()}")
         self.status_label.setStyleSheet(f"font-size: 12px; color: {color}; font-weight: bold; border: none;")
 
-        # Log-Update Logik...
+        # Log-Inhalt aktualisieren
         new_log = job.get("log_output", "")
         if self.log_edit.toPlainText() != new_log:
             self.log_edit.setPlainText(new_log)
+            # Wenn der Nutzer das Log gerade offen hat, mitscrollen
             if self.log_edit.isVisible():
                 self.log_edit.verticalScrollBar().setValue(
                     self.log_edit.verticalScrollBar().maximum()
                 )
 
     def toggle_log(self):
+        """Ausschließlich HIER wird ein/ausgeklappt!"""
         if self.log_edit.isVisible():
             self.log_edit.hide()
             self.toggle_log_btn.setText(_("show_log"))
@@ -440,25 +434,60 @@ class ActivityView(QWidget):
 
         def on_loaded():
             if reply.error() == QNetworkReply.NoError:
-                raw_bytes = reply.readAll().data()
-                if raw_bytes:
-                    try:
-                        raw_str = raw_bytes.decode("utf-8").strip()
-                        jobs = json.loads(raw_str) if raw_str else []
+                try:
+                    raw_bytes = reply.readAll().data()
+                    raw_str = raw_bytes.decode("utf-8", errors="replace").strip() if raw_bytes else ""
+                    jobs = json.loads(raw_str) if raw_str else []
+                    
+                    if not jobs:
+                        self.clear_list_layout()
+                        lbl = QLabel(_("no_jobs"))
+                        lbl.setStyleSheet("color: #8fa0c4; font-size: 14px; padding: 10px;")
+                        self.list_layout.addWidget(lbl)
+                    else:
+                        self.update_or_render_jobs(jobs)
                         
-                        if not jobs:
-                            # Liste leeren und "Keine Jobs" anzeigen
-                            self.clear_list_layout()
-                            lbl = QLabel(_("no_jobs"))
-                            lbl.setStyleSheet("color: #8fa0c4; font-size: 14px; padding: 10px;")
-                            self.list_layout.addWidget(lbl)
-                        else:
-                            self.update_or_render_jobs(jobs)
-                    except Exception as e:
-                        print(f"Error loading activity jobs: {e}")
+                except Exception as e:
+                    print(f"❌ Exception in ActivityView.load_activity: {e}")
             reply.deleteLater()
 
         reply.finished.connect(on_loaded)
+
+    def update_or_render_jobs(self, jobs):
+        # 1. Bestehende offene Log-Fenster merken
+        open_log_ids = set()
+        existing_widgets = {}
+        
+        for i in range(self.list_layout.count()):
+            w = self.list_layout.itemAt(i).widget()
+            if isinstance(w, ActivityJobWidget):
+                existing_widgets[w.job_id] = w
+                if getattr(w, "is_log_visible", False):
+                    open_log_ids.add(w.job_id)
+
+        job_ids = [j["id"] for j in jobs]
+        
+        # 2. Wenn sich die Job-Liste geändert hat: Neu aufbauen
+        if set(existing_widgets.keys()) != set(job_ids):
+            self.clear_list_layout()
+            for job in jobs:
+                # Standard-Aufruf ohne extra Argument im __init__
+                w = ActivityJobWidget(job, self.network_manager)
+                
+                # Sichtbarkeit im Nachgang wiederherstellen
+                if job["id"] in open_log_ids:
+                    w.is_log_visible = True
+                    w.log_edit.show()
+                    w.toggle_log_btn.setText(_("hide_log"))
+                    
+                w.job_deleted_signal.connect(self.load_activity)
+                self.list_layout.addWidget(w)
+        else:
+            # 3. Liste unverändert -> Nur Werte in bestehenden Widgets aktualisieren
+            for job in jobs:
+                widget = existing_widgets.get(job["id"])
+                if widget:
+                    widget.update_data(job)
 
     def clear_list_layout(self):
         while self.list_layout.count():
@@ -466,28 +495,6 @@ class ActivityView(QWidget):
             if item.widget():
                 item.widget().deleteLater()
 
-    def update_or_render_jobs(self, jobs):
-        """Aktualisiert bestehende Widgets ohne Neuzeichnen (verhindert Flackern)."""
-        existing_widgets = {}
-        for i in range(self.list_layout.count()):
-            w = self.list_layout.itemAt(i).widget()
-            if isinstance(w, ActivityJobWidget):
-                existing_widgets[w.job_id] = w
-
-        # Wenn sich die Anzahl oder Reihenfolge der Jobs geändert hat: Komplett neu aufbauen
-        job_ids = [j["id"] for j in jobs]
-        if set(existing_widgets.keys()) != set(job_ids):
-            self.clear_list_layout()
-            for job in jobs:
-                w = ActivityJobWidget(job, self.network_manager)
-                w.job_deleted_signal.connect(self.load_activity)
-                self.list_layout.addWidget(w)
-        else:
-            # Nur die Daten in den bestehenden Karten aktualisieren
-            for job in jobs:
-                widget = existing_widgets.get(job["id"])
-                if widget:
-                    widget.update_data(job)
 
 # Dummy class for clean CSS inlining of the checkbox
 from PySide6.QtWidgets import QCheckBox
@@ -989,15 +996,16 @@ class KaderStore(QMainWindow):
             return
         
         cat_id = cur.data(Qt.UserRole)
+
         
-        # 1. IMMER ZUERST ALLE SPEZIAL-ANSICHTEN VERSTECKEN!
+        # 1. ALWAYS HIDE ALL SPECIAL VIEWS FIRST!
         self.scroll.hide()
         self.settings_view.hide()
         self.activity_view.hide()
         self.banner_label.hide()
         self.update_header_frame.hide()
 
-        # Grid-Inhalte der vorherigen Ansicht leeren
+        # Clear the grid content from the previous view
         self.clear_grid()
 
         # 2. Spezial-Views abfangen
@@ -1011,7 +1019,7 @@ class KaderStore(QMainWindow):
             self.activity_view.load_activity()
             return
 
-        # 3. Normale App-Grid-Ansicht aktivieren
+        # 3. Enable the normal App Grid view
         self.scroll.show()
         
         if cat_id == "kader_updates_view":
