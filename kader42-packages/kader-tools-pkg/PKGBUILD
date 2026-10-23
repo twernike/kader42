@@ -1,7 +1,7 @@
 # Maintainer: Thomas Wernike <support@kader42.de>
 pkgname=kader42-convertible-tools
 pkgver=1.1.0
-pkgrel=2
+pkgrel=3
 pkgdesc="An event listener and a launcher switcher that ensures you have the Dash menu in tablet mode and the standard Start menu in laptop mode."
 arch=('any')
 url="https://kader42.de"
@@ -18,7 +18,7 @@ source=('kader42-tablet-event-listener.service'
         )
 md5sums=(
           'a4c3c2c8b2d16eee749ff9b3fc40771c' # kader42-tablet-event-listener.service
-          '349eab10985d094fae012876ad36d80e' # kader42-tablet-event-listener
+          '779ea865b46a74fca7764e90183626e4' # kader42-tablet-event-listener
           '224b738c03eb5561c6f68c919acca2a1' # kader42-plasma-convertible-switcher
           '9f0e0acdf236010b7127239b87c56c11' # 98-kader42-tablet-mode.rules
           '38d539d2419cb5ae856ad7faeaab5e10' # kader42-convertible.conf

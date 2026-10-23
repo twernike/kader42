@@ -74,7 +74,7 @@ case "$CHASSIS_TYPE" in
 
         run_kwin_dbus_listener() {
 
-            # 1. Retry loop: Wait until KWin is reachable via D-Bus (max. 15 seconds)
+            # 1. Retry loop: Wait until KWin is accessible via D-Bus (max. 15 seconds)
             local retries=0
             while [ $retries -lt 15 ]; do
                 CURRENT_STATE=$(qdbus6 org.kde.KWin /org/kde/KWin org.kde.KWin.TabletModeManager.tabletMode 2>&1)
@@ -102,8 +102,7 @@ case "$CHASSIS_TYPE" in
                 return 1 # Fallback auslösen
             fi
 
-            # 3. INITIAL STATE: Just capture, but DO NOT execute the switcher command!
-            # This prevents Plasmashell from being disrupted during boot and ensures the background remains white..
+            # 3. D-Bus is now available. Detect initialisation mode:
             echo "[kader42-tablet-event-listener] DBus connection successful. Initial state: $CURRENT_STATE"
             
             if [ "$CURRENT_STATE" = "true" ]; then
@@ -112,7 +111,17 @@ case "$CHASSIS_TYPE" in
                 LAST_MODE=0
             fi
 
-            # 4. EVENT LOOP: Listens in the background for ACTUAL mode changes during the session
+
+            # 4. ACTUAL DELAY (background sub-process):
+            # We give Plasmashell 2 seconds to set up undisturbed,
+            # before we send the initial switcher pulse to render the desktop!
+            (
+                sleep 2
+                echo "[kader42-tablet-event-listener] Sending delayed initial layout refresh..."
+                /usr/bin/kader42-plasma-convertible-switcher "$LAST_MODE"
+            ) &
+
+            # 5. From this point onwards, the listener monitors REAL status changes during operation as usual:
             dbus-monitor --profile "type='signal',interface='org.kde.KWin.TabletModeManager',member='tabletModeChanged'" 2>/dev/null | while read -r line; do
                 NEW_STATE=$(qdbus6 org.kde.KWin /org/kde/KWin org.kde.KWin.TabletModeManager.tabletMode 2>/dev/null)
                 
@@ -122,7 +131,7 @@ case "$CHASSIS_TYPE" in
                     break 
                 fi
 
-                # Erst wenn sich der Status WIRKLICH ändert, wird der Switcher getriggert:
+                # The switcher is only triggered when the status ACTUALLY changes:
                 if [ "$NEW_STATE" = "true" ] && [ "$LAST_MODE" -ne 1 ]; then
                     echo "[kader42-tablet-event-listener | Kader⁴² DBus Event] Mode changed → 1"
                     /usr/bin/kader42-plasma-convertible-switcher "1"
