@@ -3,8 +3,8 @@ set -euo pipefail
 
 # Configuration
 PKGNAME="kader42-plymouth-themes"
-PKGVER="1.0.0"
-PKGREL="4"
+PKGVER=$1
+PKGREL=$2
 PKGDESC="Plymouth themes for Kader42"
 MAINTAINER="Thomas Wernike <support@kader42.de>"
 
