@@ -90,16 +90,15 @@ for (var i = 0; i < panelsList.length; ++i) {
 
     if (!changed) continue;
 
-    // --- 2. Widgets entfernen ---
+    // --- 2. Remove Widgets  ---
     for (var j = widgets.length - 1; j >= 0; --j) {
         widgets[j].remove();
     }
 
-    // --- 3. Widgets neu erstellen + Config zurück ---
+    // --- 3. Create new widgets + revert config ---
     for (var j = 0; j < newOrder.length; ++j) {
 
         var w = panel.addWidget(newOrder[j]);
-
         var cfg = configs[j];
 
         for (var group in cfg) {
@@ -111,6 +110,16 @@ for (var i = 0; i < panelsList.length; ++i) {
                     w.writeConfig(key, cfg[group][key]);
                 }
             }
+        }
+
+        // 🔥 FIX 1: Special case with icontasks – Prevents Discover from reappearing!
+        if (newOrder[j] === "org.kde.plasma.icontasks") {
+            w.currentConfigGroup = ["General"];
+            w.writeConfig("launchers", [
+                "applications:systemsettings.desktop",
+                "applications:org.kde.dolphin.desktop",
+                "preferred://browser"
+            ]);
         }
 
         // Spezialfall Dash
