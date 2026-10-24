@@ -7,6 +7,15 @@ SYSTEM_LANG=$(echo $LANG | cut -c1-2)
 export XDG_RUNTIME_DIR="/run/user/$(id -u)"
 export DBUS_SESSION_BUS_ADDRESS="unix:path=$XDG_RUNTIME_DIR/bus"
 
+
+# Process arguments (now supports: MODE and, optionally, --force)
+
+FORCE=false
+
+if [ "$2" = "--force" ] || [ "$1" = "--force" ]; then
+    FORCE=true
+fi
+
 switch_launcher(){
 
     local MODE=$1
@@ -21,7 +30,12 @@ fi
 
 STATE_FILE="/run/user/$(id -u)/chassis_state"
 
-# Debounce
+# Debounce: Aborts IF the mode is the same AND --force was NOT specified
+    if [ -f "$STATE_FILE" ] && [ "$(cat "$STATE_FILE")" = "$MODE" ] && [ "$FORCE" = false ]; then
+        echo "[kader42-plasma-convertible-switcher] ⚙️ Mode is already $MODE. Skipping..."
+        exit 0
+    fi
+
 [ -f "$STATE_FILE" ] && [ "$(cat "$STATE_FILE")" = "$MODE" ] && exit 0
 echo "$MODE" > "$STATE_FILE"
 
@@ -118,7 +132,7 @@ EOF
     esac
 
     notify-send -a "System" -i "$icon" "$title" "$msg"
-    echo "[kader42-plasma-convertible-switcher] Switched mode: $MODE ➡️ $msg"
+    echo "[kader42-plasma-convertible-switcher] ⚙️ Switched mode: $MODE ➡️ $msg"
 }
 
 switch_launcher $1
