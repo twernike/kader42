@@ -1,7 +1,7 @@
 # Maintainer: Thomas Wernike <support@kader42.de>
 pkgname=kader42-software-center
 pkgver=2.0.0
-pkgrel=1
+pkgrel=2
 pkgdesc="Software Management for Kader⁴²"
 arch=('any')
 url="https://kader42.de"
