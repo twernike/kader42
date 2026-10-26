@@ -370,16 +370,26 @@ class StoreAPIHandler(BaseHTTPRequestHandler):
                             current_pkg = None
                             repo = "repo" # Reset for the next item in the list
             else:
-                # PARSER FOR ‘yay -Ss’ (Free search - remains the same)
-                for line in lines:
-                    line_stripped = line.strip()
-                    if not line_stripped: continue
+                # PARSER FÜR 'yay -Ss' (Freie Suche)
+                for raw_line in lines:
+                    if not raw_line.strip():
+                        continue
                     
-                    if "/" in line_stripped and not line_stripped.startswith("http"):
+                    # 1. Zeilen ohne führende Leerzeichen = Paketname + Repo
+                    if not raw_line.startswith(" ") and "/" in raw_line:
+                        if current_pkg:
+                            apps_found.append(current_pkg)
+                            current_pkg = None
+
                         try:
+                            line_stripped = raw_line.strip()
                             parts = line_stripped.split("/")
                             repo = parts[0].strip()
                             pkg_name = parts[1].split(" ")[0].strip()
+                            
+                            if pkg_name.lower() == "kader42-software-center":
+                                continue
+
                             source_type = "aur" if repo.lower() == "aur" else "repo"
                             
                             current_pkg = {
@@ -388,17 +398,14 @@ class StoreAPIHandler(BaseHTTPRequestHandler):
                                 "source": source_type,
                                 "description": ""
                             }
-                        except:
+                        except Exception:
                             current_pkg = None
                     
-                    elif current_pkg and not line_stripped.startswith("    "):
-                        current_pkg["description"] = line_stripped
+                    # 2. Eingeraückte Zeilen = Beschreibung
+                    elif raw_line.startswith(" ") and current_pkg:
+                        current_pkg["description"] = raw_line.strip()
                         p_name = current_pkg["package_name"]
 
-                        if p_name.lower() == "kader42-software-center":
-                            current_pkg = None
-                            continue
-                        
                         if p_name in updates_available:
                             current_pkg["status"] = "update_available"
                         elif p_name in installed_packages:
@@ -418,11 +425,25 @@ class StoreAPIHandler(BaseHTTPRequestHandler):
 
                         apps_found.append(current_pkg)
                         current_pkg = None
-                        
-                    if len(apps_found) >= 15:
-                        break
-                        
-            return apps_found
+
+                # Letztes Objekt sichern, falls die Ausgabe ohne Folgezeile endet
+                if current_pkg:
+                    apps_found.append(current_pkg)
+
+                # Exakte Treffer wie "davinci-resolve" an die Spitze sortieren
+                apps_found.sort(
+                    key=lambda x: (
+                        0 if x["package_name"].lower() == query else 1,
+                        0 if x["package_name"].lower().startswith(query) else 1
+                    )
+                )
+
+                # ERST JETZT (NACH DER SCHLEIFE) BEGRENZEN UND ZURÜCKGEBEN
+                if len(query) <= 3:
+                    return apps_found[:20]
+                else:
+                    return apps_found[:100]
+            
         except Exception as e:
             print(f"Fehler bei API-Suche: {e}")
             return []
