@@ -1,12 +1,12 @@
 # Maintainer: Thomas Wernike <support@kader42.de>
 pkgname=kader42-convertible-tools
-pkgver=1.1.0
-pkgrel=4
+pkgver=2.0.0
+pkgrel=2
 pkgdesc="An event listener and a launcher switcher that ensures you have the Dash menu in tablet mode and the standard Start menu in laptop mode."
 arch=('any')
 url="https://kader42.de"
 license=('GPL')
-depends=('bash' 'dbus' 'inotify-tools')
+depends=('bash' 'dbus' 'inotify-tools' 'glibc' 'gcc-libs')
 provides=('kader-tools' )
 
 source=('kader42-tablet-event-listener.service'
@@ -17,9 +17,9 @@ source=('kader42-tablet-event-listener.service'
         'kader42-mkinitcpio.hook'
         )
 md5sums=(
-          'a4c3c2c8b2d16eee749ff9b3fc40771c' # kader42-tablet-event-listener.service
-          '779ea865b46a74fca7764e90183626e4' # kader42-tablet-event-listener
-          '224b738c03eb5561c6f68c919acca2a1' # kader42-plasma-convertible-switcher
+          'c900f6b74fcf95ccac3be250c398cb7a' # kader42-tablet-event-listener.service
+          '21eb7438c8ca9706757650ff4eb5fef4' # kader42-tablet-event-listener
+          '38a09c9d9571adeac30c75c7feac53bb' # kader42-plasma-convertible-switcher
           '9f0e0acdf236010b7127239b87c56c11' # 98-kader42-tablet-mode.rules
           '38d539d2419cb5ae856ad7faeaab5e10' # kader42-convertible.conf
           '48a3c97c69ac4d3b9cad54e016d011db' # kader42-mkinitcpio.hook
@@ -36,4 +36,19 @@ package() {
   install -Dm644 "${srcdir}/98-kader42-tablet-mode.rules" "${pkgdir}/usr/lib/udev/rules.d/98-kader42-tablet-mode.rules" # rule for detachables
   install -Dm644 "kader42-convertible.conf" "${pkgdir}/etc/mkinitcpio.conf.d/kader42-convertible.conf"
   install -Dm644 "kader42-mkinitcpio.hook" "${pkgdir}/usr/share/libalpm/hooks/kader42-mkinitcpio.hook"
+}
+
+# build() {
+#      cd "$srcdir/rust/kader42-tablet-event-listener"
+#     # cd rust/kader42-tablet-event-listener
+#     cargo build --release --locked
+# }
+
+post_upgrade() {
+    # Startet den User-Dienst für alle aktuell aktiven Logind-Sessions neu
+    for uid in $(loginctl list-sessions --no-legend | awk '{print $3}' | sort -u); do
+        if [ "$uid" -ge 1000 ]; then
+            systemctl --user -M "$uid@" restart kader42-tablet-event-listener.service 2>/dev/null || true
+        fi
+    done
 }

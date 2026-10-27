@@ -36,7 +36,6 @@ STATE_FILE="/run/user/$(id -u)/chassis_state"
         exit 0
     fi
 
-[ -f "$STATE_FILE" ] && [ "$(cat "$STATE_FILE")" = "$MODE" ] && exit 0
 echo "$MODE" > "$STATE_FILE"
 
 # 🔥 IMPORTANT: Replace the launcher only
