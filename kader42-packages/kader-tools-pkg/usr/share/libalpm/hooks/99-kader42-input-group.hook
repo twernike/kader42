@@ -1,0 +1,10 @@
+[Trigger]
+Operation = Install
+Operation = Upgrade
+Type = Package
+Target = kader42-convertible-tools
+
+[Action]
+Description = Führt bestehende Benutzer der Gruppe input zu...
+When = PostTransaction
+Exec = /usr/bin/bash -c 'for user in $(ls /home); do id "$user" &>/dev/null && usermod -aG input "$user"; done'

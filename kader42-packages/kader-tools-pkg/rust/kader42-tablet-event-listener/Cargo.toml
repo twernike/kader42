@@ -1,0 +1,8 @@
+[package]
+name = "kader42-tablet-event-listener"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+tokio = { version = "1.35", features = ["full"] } # Async Runtime für Timer/Tasks
+evdev = "0.12"

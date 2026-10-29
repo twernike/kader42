@@ -1,54 +1,27 @@
 # Maintainer: Thomas Wernike <support@kader42.de>
 pkgname=kader42-convertible-tools
 pkgver=2.0.0
-pkgrel=2
+pkgrel=3
 pkgdesc="An event listener and a launcher switcher that ensures you have the Dash menu in tablet mode and the standard Start menu in laptop mode."
 arch=('any')
-url="https://kader42.de"
-license=('GPL')
-depends=('bash' 'dbus' 'inotify-tools' 'glibc' 'gcc-libs')
-provides=('kader-tools' )
 
-source=('kader42-tablet-event-listener.service'
-        'kader42-tablet-event-listener'
-        'kader42-plasma-convertible-switcher'
-        '98-kader42-tablet-mode.rules'
-        'kader42-convertible.conf'
-        'kader42-mkinitcpio.hook'
-        )
-md5sums=(
-          'c900f6b74fcf95ccac3be250c398cb7a' # kader42-tablet-event-listener.service
-          '21eb7438c8ca9706757650ff4eb5fef4' # kader42-tablet-event-listener
-          '38a09c9d9571adeac30c75c7feac53bb' # kader42-plasma-convertible-switcher
-          '9f0e0acdf236010b7127239b87c56c11' # 98-kader42-tablet-mode.rules
-          '38d539d2419cb5ae856ad7faeaab5e10' # kader42-convertible.conf
-          '48a3c97c69ac4d3b9cad54e016d011db' # kader42-mkinitcpio.hook
+source=(
+
 )
 
+sha256sums=(
+
+)
+
+
 package() {
-  # 1. Create the directories in the package image ($pkgdir)
-  # -D creates any missing parent directories; -m755 sets execution permissions
-  
-  # copy scripts to /usr/bin
-  install -Dm755 "${srcdir}/kader42-tablet-event-listener.service" "${pkgdir}/usr/lib/systemd/user/kader42-tablet-event-listener.service"
-  install -Dm755 "${srcdir}/kader42-tablet-event-listener" "${pkgdir}/usr/bin/kader42-tablet-event-listener"
-  install -Dm755 "${srcdir}/kader42-plasma-convertible-switcher" "${pkgdir}/usr/bin/kader42-plasma-convertible-switcher"
-  install -Dm644 "${srcdir}/98-kader42-tablet-mode.rules" "${pkgdir}/usr/lib/udev/rules.d/98-kader42-tablet-mode.rules" # rule for detachables
-  install -Dm644 "kader42-convertible.conf" "${pkgdir}/etc/mkinitcpio.conf.d/kader42-convertible.conf"
-  install -Dm644 "kader42-mkinitcpio.hook" "${pkgdir}/usr/share/libalpm/hooks/kader42-mkinitcpio.hook"
-}
+    install -Dm644 "${startdir}/etc/mkinitcpio.conf.d/kader42-convertible.conf" "${pkgdir}/etc/mkinitcpio.conf.d/kader42-convertible.conf"
+    install -Dm755 "${startdir}/usr/bin/kader42-plasma-convertible-switcher" "${pkgdir}/usr/bin/kader42-plasma-convertible-switcher"
+    install -Dm755 "${startdir}/usr/bin/kader42-tablet-event-listener" "${pkgdir}/usr/bin/kader42-tablet-event-listener"
+    install -Dm644 "${startdir}/usr/lib/systemd/user/kader42-tablet-event-listener.service" "${pkgdir}/usr/lib/systemd/user/kader42-tablet-event-listener.service"
+    install -Dm644 "${startdir}/usr/lib/udev/rules.d/98-kader42-tablet-mode.rules" "${pkgdir}/usr/lib/udev/rules.d/98-kader42-tablet-mode.rules"
+    install -Dm644 "${startdir}/usr/lib/udev/rules.d/99-kader42-tablet-switch.rules" "${pkgdir}/usr/lib/udev/rules.d/99-kader42-tablet-switch.rules"
+    install -Dm644 "${startdir}/usr/share/libalpm/hooks/99-kader42-input-group.hook" "${pkgdir}/usr/share/libalpm/hooks/99-kader42-input-group.hook"
+    install -Dm644 "${startdir}/usr/share/libalpm/hooks/kader42-mkinitcpio.hook" "${pkgdir}/usr/share/libalpm/hooks/kader42-mkinitcpio.hook"
 
-# build() {
-#      cd "$srcdir/rust/kader42-tablet-event-listener"
-#     # cd rust/kader42-tablet-event-listener
-#     cargo build --release --locked
-# }
-
-post_upgrade() {
-    # Startet den User-Dienst für alle aktuell aktiven Logind-Sessions neu
-    for uid in $(loginctl list-sessions --no-legend | awk '{print $3}' | sort -u); do
-        if [ "$uid" -ge 1000 ]; then
-            systemctl --user -M "$uid@" restart kader42-tablet-event-listener.service 2>/dev/null || true
-        fi
-    done
 }
