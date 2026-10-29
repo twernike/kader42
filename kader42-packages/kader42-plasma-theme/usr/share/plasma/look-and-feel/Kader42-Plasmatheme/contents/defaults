@@ -1,5 +1,6 @@
 [kdeglobals][KDE]
 widgetStyle=breeze
+DefaultApplications/appstream=
 
 [kwinrc][DesktopSwitcher]
 LayoutName=org.kde.breeze.desktop

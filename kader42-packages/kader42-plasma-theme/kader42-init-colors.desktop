@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=Kader42 Color Initializer
+Exec=sh -c "if [ ! -f ~/.config/kader42-color-applied ]; then plasma-apply-colorscheme Kader42-Colors && touch ~/.config/kader42-color-applied; fi"
+OnlyShowIn=KDE;
+NoDisplay=true
+X-KDE-autostart-phase=1

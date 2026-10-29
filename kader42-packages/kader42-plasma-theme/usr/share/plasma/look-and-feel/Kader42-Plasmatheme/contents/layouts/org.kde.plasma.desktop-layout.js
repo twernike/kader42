@@ -36,27 +36,37 @@ notebook.writeConfig("managedBy", "convertible")
 notebook.writeConfig("panelRole", "notebook")
 notebook.writeConfig("visibilityMode", "desktop")
 
-var kickoff=notebook.addWidget("org.kde.plasma.kickoff")
+var kickoff = notebook.addWidget("org.kde.plasma.kickoff")
 
 kickoff.currentConfigGroup = ["Configuration", "General"];
-kickoff.writeConfig("favorites", "applications:systemsettings.desktop,applications:org.kde.dolphin.desktop");
+// 👉 Als JS-Array übergeben, um KDE-Defaults (u.a. Discover) sauber zu überschreiben
+kickoff.writeConfig("favorites", [
+    "applications:systemsettings.desktop",
+    "applications:org.kde.dolphin.desktop"
+]);
 
 notebook.addWidget("org.kde.plasma.pager")
+
 var tasks = notebook.addWidget("org.kde.plasma.icontasks");
 tasks.currentConfigGroup = ["General"];
-// MUST be passed as a single, unbroken string, just like with the favorites!
-tasks.writeConfig("launchers", "applications:systemsettings.desktop,applications:org.kde.dolphin.desktop,preferred://browser");
+// 👉 Ebenfalls als JS-Array übergeben – überschreibt die KDE-Taskleisten-Defaults vollständig
+tasks.writeConfig("launchers", [
+    "applications:systemsettings.desktop",
+    "applications:org.kde.dolphin.desktop",
+    "preferred://browser"
+]);
+
 notebook.addWidget("org.kde.plasma.marginsseparator")
 notebook.addWidget("org.kde.plasma.systemtray")
 notebook.addWidget("org.kde.plasma.digitalclock")
 notebook.addWidget("org.kde.plasma.showdesktop")
 
 /* Next up is determining whether to add the Input Method Panel
- * widget to the panel or not. This is done based on whether
- * the system locale's language id is a member of the following
- * white list of languages which are known to pull in one of
- * our supported IME backends when chosen during installation
- * of common distributions. */
+- widget to the panel or not. This is done based on whether
+- the system locale's language id is a member of the following
+- white list of languages which are known to pull in one of
+- our supported IME backends when chosen during installation
+- of common distributions. */
 
 var langIds = ["as",    // Assamese
                "bn",    // Bengali
