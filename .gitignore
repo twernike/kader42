@@ -28,3 +28,6 @@ kader42-packages/kader42-app-store-V2/~/.kader-store/queue.db
 kader42-packages/kader42-app-store-V2/~/.kader-store/queue.db-shm
 kader42-packages/kader42-app-store-V2/~/.kader-store/queue.db-wal
 
+target
+Cargo.lock
+
