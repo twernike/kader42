@@ -1,13 +1,14 @@
+[General]
+terminalApplication=konsole
 [KDE]
 LookAndFeelPackage=Kader42-Plasmatheme
 contrast=5
 frameContrast=0.2
+PackageKitPlugin=
 
 [OrientationSensor]
 OnlyInTabletMode=false
 
-[Favorite Apps]
-favoriteApps=preferred://browser,org.kde.dolphin.desktop,org.kde.konsole.desktop,org.kde.kate.desktop,org.kde.kmail.desktop,org.kde.konversation.desktop,org.kde.okular.desktop,org.kde.plasma.systemmonitor.desktop,org.kde.plasma.systemsettings.desktop
 
 [KFileDialog Settings]
 Allow Expansion=false
