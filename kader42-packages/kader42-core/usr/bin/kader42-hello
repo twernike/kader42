@@ -7,7 +7,7 @@ import getpass
 from PyQt6.QtWidgets import (QApplication, QWidget, QHBoxLayout, QVBoxLayout, 
                              QLabel, QScrollArea, QPushButton, QFrame, QCheckBox)
 from PyQt6.QtGui import QPixmap, QIcon
-from PyQt6.QtCore import Qt, QSettings
+from PyQt6.QtCore import Qt, QSettings, QTimer
 from PyQt6.QtWidgets import QFrame  # Make sure QFrame is imported
 import os
 
@@ -49,6 +49,9 @@ class Kader42Welcome(QWidget):
         super().__init__()
 
         DISTRO_ICON = "/usr/share/pixmaps/mello.svg" 
+
+        # IMPORTANT: Prevents the white buffer grid bug under Wayland/KWin
+        self.setAttribute(Qt.WidgetAttribute.WA_OpaquePaintEvent, True)
 
         # 1. Initialize QSettings (Saves to ~/.config/Kader42/Welcome.conf)
         self.settings = QSettings("Kader42", "Welcome")
@@ -250,6 +253,16 @@ class Kader42Welcome(QWidget):
             except Exception as e:
                 print(f"Error deleting autostart file: {e}")
         self.close()
+
+    def showEvent(self, event):
+      super().showEvent(event)
+      # Triggert 50ms nach dem Fensterstart den KWin-Redraw unter Wayland
+      QTimer.singleShot(50, self.force_kwin_redraw)
+
+    def force_kwin_redraw(self):
+      self.update()
+      self.repaint()
+
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
