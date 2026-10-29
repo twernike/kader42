@@ -370,12 +370,12 @@ class StoreAPIHandler(BaseHTTPRequestHandler):
                             current_pkg = None
                             repo = "repo" # Reset for the next item in the list
             else:
-                # PARSER FÜR 'yay -Ss' (Freie Suche)
+                # PARSER FOR “yay -Ss” (Free search)
                 for raw_line in lines:
                     if not raw_line.strip():
                         continue
                     
-                    # 1. Zeilen ohne führende Leerzeichen = Paketname + Repo
+                    # 1. Lines without leading spaces = package name + repoo
                     if not raw_line.startswith(" ") and "/" in raw_line:
                         if current_pkg:
                             apps_found.append(current_pkg)
@@ -401,7 +401,7 @@ class StoreAPIHandler(BaseHTTPRequestHandler):
                         except Exception:
                             current_pkg = None
                     
-                    # 2. Eingeraückte Zeilen = Beschreibung
+                    # 2. Indented lines = description
                     elif raw_line.startswith(" ") and current_pkg:
                         current_pkg["description"] = raw_line.strip()
                         p_name = current_pkg["package_name"]
@@ -426,11 +426,11 @@ class StoreAPIHandler(BaseHTTPRequestHandler):
                         apps_found.append(current_pkg)
                         current_pkg = None
 
-                # Letztes Objekt sichern, falls die Ausgabe ohne Folgezeile endet
+                # Save the last object if the output ends without a subsequent line
                 if current_pkg:
                     apps_found.append(current_pkg)
 
-                # Exakte Treffer wie "davinci-resolve" an die Spitze sortieren
+                #Sort exact matches such as ‘davinci-resolve’ to the top
                 apps_found.sort(
                     key=lambda x: (
                         0 if x["package_name"].lower() == query else 1,
@@ -438,7 +438,7 @@ class StoreAPIHandler(BaseHTTPRequestHandler):
                     )
                 )
 
-                # ERST JETZT (NACH DER SCHLEIFE) BEGRENZEN UND ZURÜCKGEBEN
+                # After the LOOP LIMIT AND RETURN
                 if len(query) <= 3:
                     return apps_found[:20]
                 else:

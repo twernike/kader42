@@ -33,14 +33,14 @@ source=('kader42-software-center-api.py'
         'kader42-check-and-update.py'
         '10-kader42-software-center-keep-password.rules'
         )
-md5sums=('7c97c4c63cee0df02eec45dde6067924'
+md5sums=('d256e7c7a6f3b7e26b2130ed1cea26ae' # kader42-software-center-api.py
          '1a0a63cdd6bb4230e8c05eb28a739620'
          '31e404c6fb68e31044fc9e53beb1425b'
          '8cef2076a10b763f8a4c9250a1ba36aa'
          '782755f3c3d88ac2d3d5ebc043b1e846'
          '91f291fba8fe4ab52a749e1c2442f112'
          '19e3e657dcbe0a7bdd1bb6409f7b2282'
-         '81c001b72c312e3c8403431ade896f8b'
+         '3477e81ecdddad8329f5dc3f55f0d93a' # kader42-software-center
          '9a638f3c11c76ff8194ab127833aa0aa'
          'edd2f57005a0e1dd1e78f54a51b65de8'
          '546f23e6a1e49ef8a371b22125baf63a'
