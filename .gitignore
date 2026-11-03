@@ -11,7 +11,8 @@
 *.sig
 
 pkg/
-src/
+kader42-packages/*/src/
+!rust/**/src/
 docker-work/
 data/
 build/
@@ -27,7 +28,6 @@ kader42-packages/kader42-app-store-V2/__pycache__/shared.cpython-314.pyc
 kader42-packages/kader42-app-store-V2/~/.kader-store/queue.db
 kader42-packages/kader42-app-store-V2/~/.kader-store/queue.db-shm
 kader42-packages/kader42-app-store-V2/~/.kader-store/queue.db-wal
-
 target
 Cargo.lock
 kader42.db
