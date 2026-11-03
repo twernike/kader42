@@ -1,0 +1,31 @@
+function showHelp()
+{
+    echo -e "\e[1;92m The following parameters are needed:\e[0m"
+    echo 
+    echo
+    echo -e "\e[1;92m First parameter: The SAMBA NAS name.\e[0m"
+    echo -e "\e[1;92m Second parameter: The shared folder\e[0m"
+    echo -e "\e[1;92m Third parameter: The directory to which the SAMBA share is to be mounted.\e[0m"
+    echo
+    echo -e "\e[1;92m help ➤  Show this helptext. \e[0m"
+    echo
+    echo -e "\e[1;92m Example: \e[0m"
+    echo -e "\e[1;92m ./mount-samba.sh myNas mySharedFolder myMountedFolder  \e[0m"
+
+    exit 1
+}
+
+
+
+if [[ "$1" == "help" ]]; then
+    showHelp
+fi
+
+if [[ "$1" == ""  || "$2" == "" || "$3" == "" ]]; then
+    echo -e "\e[1;92m Needed parameters are missing!\e[0m"
+    echo
+    showHelp
+fi
+
+sudo mkdir -p /mnt/$3
+sudo mount -t cifs //$1/$2 /mnt/nas -o user=thomas,uid=$USER,gid=$USER
