@@ -48,6 +48,8 @@ noto-fonts-cjk
 noto-fonts-emoji
 pyside6
 kdesu
+htop
+btop
 
 #######################################################
 # Needed packages for convertible
