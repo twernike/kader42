@@ -1,0 +1,2 @@
+# Prevent Realtek USB Audio in the Dell WD15 (Vendor 0bda) from entering autosuspend mode
+ACTION=="add", SUBSYSTEM=="usb", ATTRS{idVendor}=="0bda", ATTR{power/control}="on"

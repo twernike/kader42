@@ -1,0 +1,2 @@
+# Prevents USB autosuspend for Realtek USB Ethernet (r8152) in docks
+ACTION=="add", SUBSYSTEM=="usb", DRIVERS=="r8152", ATTR{power/control}="on"

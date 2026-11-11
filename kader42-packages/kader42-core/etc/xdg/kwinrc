@@ -5,17 +5,6 @@ NoiseStrength=10
 [Effect-overview]
 TouchBorderActivate=2
 
-[Effect-translucency]
-ComboboxPopups=85
-Dialogs=85
-DropdownMenus=76
-Inactive=74
-IndividualMenuConfig=true
-Menus=65
-MoveResize=76
-PopupMenus=76
-TornOffMenus=76
-
 [Effect-windowview]
 TouchBorderActivate=6
 
@@ -34,8 +23,23 @@ VirtualKeyboardEnabled=true
 library=org.kde.kwin.aurorae
 theme=org.kde.plastic
 
+[Effect-translucency]
+ComboboxPopups=85
+Dialogs=85
+DropdownMenus=76
+Inactive=100
+IndividualMenuConfig=true
+Menus=65
+MoveResize=76
+PopupMenus=76
+TornOffMenus=76
+
+[Effect-DimInactive]
+Strength=25
+
 [Plugins]
 translucencyEnabled=true
+diminactiveEnabled=true
 forceautorotationEnabled=true
 
 [ModifierOnlyShortcuts]

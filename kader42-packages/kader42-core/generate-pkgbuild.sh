@@ -3,8 +3,8 @@ set -euo pipefail
 
 # Configuration
 PKGNAME="kader42-core"
-PKGVER="1.0.12"
-PKGREL="9"
+PKGVER="1.1.0"
+PKGREL="3"
 PKGDESC="Core configurations and systemd units for Kader42"
 MAINTAINER="Thomas Wernike <support@kader42.de>"
 

@@ -1,0 +1,5 @@
+# Prevent Realtek RTL8153 (USB ID 0bda:8153) from entering USB autosuspend mode
+ACTION=="add", SUBSYSTEM=="usb", ATTR{idVendor}=="0bda", ATTR{idProduct}=="8153", ATTR{power/control}="on"
+
+# Automatically disable EEE as soon as the r8152 network interface is detected
+ACTION=="add", SUBSYSTEM=="net", DRIVERS=="r8152", RUN+="/usr/bin/ethtool --set-eee $name eee off"

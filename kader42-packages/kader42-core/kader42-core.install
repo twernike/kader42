@@ -11,4 +11,15 @@ post_install() {
 
 post_upgrade() {
     post_install
+    echo "==> Reload KWin configuration for active sessions..."
+    
+    # Identify all active user sessions and access their D-Bus
+    for uid in $(loginctl list-sessions --no-legend 2>/dev/null | awk '{print $3}' | sort -u); do
+        bus_path="/run/user/${uid}/bus"
+        if [[ -S "$bus_path" ]]; then
+            user_name=$(id -nu "$uid")
+            sudo -u "$user_name" DBUS_SESSION_BUS_ADDRESS="unix:path=${bus_path}" \
+                qdbus6 org.kde.KWin /KWin reconfigure 2>/dev/null || true
+        fi
+    done
 }
