@@ -7,6 +7,8 @@ post_install() {
     if [ -x /usr/bin/kader42-discover-sync ]; then
         /usr/bin/kader42-discover-sync
     fi
+
+    systemctl --global enable kader42-audio-guard.service >/dev/null 2>&1 || true
 }
 
 post_upgrade() {

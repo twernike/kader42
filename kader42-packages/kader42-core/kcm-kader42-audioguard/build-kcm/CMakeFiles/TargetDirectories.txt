@@ -1,0 +1,13 @@
+/home/thomas/git/kader42/kader42-packages/kader42-core/kcm-kader42-audioguard/build-kcm/CMakeFiles/uninstall.dir
+/home/thomas/git/kader42/kader42-packages/kader42-core/kcm-kader42-audioguard/build-kcm/CMakeFiles/fetch-translations.dir
+/home/thomas/git/kader42/kader42-packages/kader42-core/kcm-kader42-audioguard/build-kcm/CMakeFiles/kcm_kader42_audioguard.dir
+/home/thomas/git/kader42/kader42-packages/kader42-core/kcm-kader42-audioguard/build-kcm/CMakeFiles/kcm_kader42_audioguard-kcm-desktop-gen.dir
+/home/thomas/git/kader42/kader42-packages/kader42-core/kcm-kader42-audioguard/build-kcm/CMakeFiles/test.dir
+/home/thomas/git/kader42/kader42-packages/kader42-core/kcm-kader42-audioguard/build-kcm/CMakeFiles/edit_cache.dir
+/home/thomas/git/kader42/kader42-packages/kader42-core/kcm-kader42-audioguard/build-kcm/CMakeFiles/rebuild_cache.dir
+/home/thomas/git/kader42/kader42-packages/kader42-core/kcm-kader42-audioguard/build-kcm/CMakeFiles/list_install_components.dir
+/home/thomas/git/kader42/kader42-packages/kader42-core/kcm-kader42-audioguard/build-kcm/CMakeFiles/install.dir
+/home/thomas/git/kader42/kader42-packages/kader42-core/kcm-kader42-audioguard/build-kcm/CMakeFiles/install/local.dir
+/home/thomas/git/kader42/kader42-packages/kader42-core/kcm-kader42-audioguard/build-kcm/CMakeFiles/install/strip.dir
+/home/thomas/git/kader42/kader42-packages/kader42-core/kcm-kader42-audioguard/build-kcm/CMakeFiles/kcm_kader42_audioguard_autogen_timestamp_deps.dir
+/home/thomas/git/kader42/kader42-packages/kader42-core/kcm-kader42-audioguard/build-kcm/CMakeFiles/kcm_kader42_audioguard_autogen.dir

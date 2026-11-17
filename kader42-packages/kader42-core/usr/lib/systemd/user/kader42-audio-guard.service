@@ -1,0 +1,13 @@
+[Unit]
+Description=Monitors audio devices, especially when used with a USB docking station, and may restart services if necessary.  
+After=pipewire.service pipewire-pulse.service wireplumber.service graphical-session.target
+Wants=wireplumber.service
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/kader42-audio-guard --daemon
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=default.target

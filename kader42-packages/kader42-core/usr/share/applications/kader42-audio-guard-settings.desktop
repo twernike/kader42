@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Name=Kader42 Audio Guard
+Comment=Configure automatic audio recovery and desktop notifications
+Comment[de]=Automatische Audio-Wiederherstellung und Benachrichtigungen konfigurieren
+Icon=audio-card
+Exec=/usr/bin/kader42-audio-guard-settings
+Categories=Settings;HardwareSettings;AudioVideo;
+OnlyShowIn=KDE;
+X-KDE-System-Settings-Parent-Category=multimedia
+X-KDE-Keywords=audio;sound;pipewire;wireplumber;notifications;dock;wd15;kader42;audioguard
+X-KDE-Keywords[de]=Audio;Ton;Klang;Soundkarte;Benachrichtigungen;Meldungen;PipeWire;WirePlumber;Dock;WD15;Kader42;audioguard

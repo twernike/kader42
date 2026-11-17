@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+NoDisplay=true
+X-KDE-AliasFor=systemsettings
+Exec=systemsettings kcm_kader42_audioguard
+Icon=audio-card
+Name=Kader42 Audio Guard
+Name[de]=Kader42 Audio Guard

@@ -1,0 +1,7 @@
+{
+	"InstallScripts" : 
+	[
+		"/home/thomas/git/kader42/kader42-packages/kader42-core/kcm-kader42-audioguard/build-kcm/cmake_install.cmake"
+	],
+	"Parallel" : false
+}

@@ -1,0 +1,13 @@
+{
+    "KPlugin": {
+        "Description": "Configure automatic audio recovery and desktop notifications",
+        "Description[de]": "Automatische Audio-Wiederherstellung und Benachrichtigungen konfigurieren",
+        "Icon": "audio-card",
+        "Name": "Kader42 Audio Guard",
+        "Name[de]": "Kader42 Audio Guard"
+    },
+    "X-KDE-Keywords": "audio,sound,pipewire,wireplumber,notifications,dock,wd15,kader42",
+    "X-KDE-Keywords[de]": "Audio,Ton,Klang,Soundkarte,Benachrichtigungen,Meldungen,PipeWire,WirePlumber,Dock,WD15,Kader42",
+    "X-KDE-System-Settings-Parent-Category": "input-devices",
+    "X-KDE-Weight": 60
+}

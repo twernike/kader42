@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Kader42 Audio Guard
+Comment=Automatic audio recovery and protection against exclusive sound card locks
+Comment[de]=Automatische Audio-Wiederherstellung und Schutz vor blockierten Soundkarten
+Icon=audio-card
+Exec=/usr/bin/kader42-audio-guard-settings
+OnlyShowIn=KDE;
+X-KDE-System-Settings-Parent-Category=audio-and-video
+X-KDE-Keywords=audio;sound;pipewire;wireplumber;dock;wd15;kader42;
+X-KDE-Keywords[de]=Audio;Ton;Klang;Soundkarte;PipeWire;WirePlumber;Dock;WD15;Kader42;

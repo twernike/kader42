@@ -1,0 +1,8 @@
+# Hashes of file build rules.
+a30d73c4f74de4e589e4985d1402c43d CMakeFiles/fetch-translations
+9422a5ef8397d0b3b3980ed13eb152ee CMakeFiles/kcm_kader42_audioguard-kcm-desktop-gen
+3c7ad0cfe08d8f4b06cd76aee14e87fc CMakeFiles/kcm_kader42_audioguard_autogen
+c2cfa96233e6c4348baeadc68738b93a CMakeFiles/uninstall
+44b54dddb9d1835ce440226a7c990842 kcm_kader42_audioguard_autogen/timestamp
+5073155cf08df8cfc497f39930cd0b32 qrc_kcm_kader42_audioguard.cpp
+e3bb9bf3a09b966fba8abb97498361a4 releaseme

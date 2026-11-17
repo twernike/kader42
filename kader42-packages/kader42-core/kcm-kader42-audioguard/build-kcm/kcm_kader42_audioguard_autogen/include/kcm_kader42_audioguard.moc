@@ -1,0 +1,364 @@
+/****************************************************************************
+** Meta object code from reading C++ file 'kcm_kader42_audioguard.cpp'
+**
+** Created by: The Qt Meta Object Compiler version 69 (Qt 6.12.0)
+**
+** WARNING! All changes made in this file will be lost!
+*****************************************************************************/
+
+#include <QtCore/qmetatype.h>
+#include <QtCore/qplugin.h>
+
+#include <QtCore/qtmochelpers.h>
+
+#include <memory>
+
+
+#include <QtCore/qxptype_traits.h>
+#if !defined(Q_MOC_OUTPUT_REVISION)
+#error "The header file 'kcm_kader42_audioguard.cpp' doesn't include <QObject>."
+#elif Q_MOC_OUTPUT_REVISION != 69
+#error "This file was generated using the moc from 6.12.0. It"
+#error "cannot be used with the include files from this version of Qt."
+#error "(The moc has changed too much.)"
+#endif
+
+#ifndef Q_CONSTINIT
+#define Q_CONSTINIT
+#endif
+
+QT_WARNING_PUSH
+QT_WARNING_DISABLE_DEPRECATED
+QT_WARNING_DISABLE_GCC("-Wuseless-cast")
+namespace {
+struct qt_meta_tag_ZN20Kader42AudioGuardKcmE_t {};
+} // unnamed namespace
+
+template <> constexpr inline auto Kader42AudioGuardKcm::qt_create_metaobjectdata<qt_meta_tag_ZN20Kader42AudioGuardKcmE_t>()
+{
+    namespace QMC = QtMocConstants;
+    QtMocHelpers::StringRefStorage qt_stringData {
+        "Kader42AudioGuardKcm",
+        "isServiceActive",
+        "",
+        "setServiceEnabled",
+        "enabled",
+        "notificationsEnabled",
+        "setNotificationsEnabled",
+        "testNotify",
+        "repairAudio"
+    };
+
+    QtMocHelpers::UintData qt_methods {
+        // Method 'isServiceActive'
+        QtMocHelpers::MethodData<bool() const>(1, 2, QMC::AccessPublic, QMetaType::Bool),
+        // Method 'setServiceEnabled'
+        QtMocHelpers::MethodData<void(bool)>(3, 2, QMC::AccessPublic, QMetaType::Void, {{
+            { QMetaType::Bool, 4 },
+        }}),
+        // Method 'notificationsEnabled'
+        QtMocHelpers::MethodData<bool() const>(5, 2, QMC::AccessPublic, QMetaType::Bool),
+        // Method 'setNotificationsEnabled'
+        QtMocHelpers::MethodData<void(bool)>(6, 2, QMC::AccessPublic, QMetaType::Void, {{
+            { QMetaType::Bool, 4 },
+        }}),
+        // Method 'testNotify'
+        QtMocHelpers::MethodData<void()>(7, 2, QMC::AccessPublic, QMetaType::Void),
+        // Method 'repairAudio'
+        QtMocHelpers::MethodData<bool()>(8, 2, QMC::AccessPublic, QMetaType::Bool),
+    };
+    QtMocHelpers::UintData qt_properties {
+    };
+    QtMocHelpers::UintData qt_enums {
+    };
+    return QtMocHelpers::metaObjectData<Kader42AudioGuardKcm, qt_meta_tag_ZN20Kader42AudioGuardKcmE_t>(QMC::MetaObjectFlag{}, qt_stringData,
+            qt_methods, qt_properties, qt_enums);
+}
+Q_CONSTINIT const QMetaObject Kader42AudioGuardKcm::staticMetaObject = { {
+    QMetaObject::SuperData::link<KQuickConfigModule::staticMetaObject>(),
+    qt_staticMetaObjectStaticContent<qt_meta_tag_ZN20Kader42AudioGuardKcmE_t>.stringdata,
+    qt_staticMetaObjectStaticContent<qt_meta_tag_ZN20Kader42AudioGuardKcmE_t>.data,
+    qt_static_metacall,
+    nullptr,
+    qt_staticMetaObjectRelocatingContent<qt_meta_tag_ZN20Kader42AudioGuardKcmE_t>.metaTypes,
+    nullptr
+} };
+
+void Kader42AudioGuardKcm::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, void **_a)
+{
+    auto *_t = static_cast<Kader42AudioGuardKcm *>(_o);
+    if (_c == QMetaObject::InvokeMetaMethod) {
+        switch (_id) {
+        case 0: { bool _r = _t->isServiceActive();
+            if (_a[0]) *reinterpret_cast<bool*>(_a[0]) = std::move(_r); }  break;
+        case 1: _t->setServiceEnabled((*reinterpret_cast<std::add_pointer_t<bool>>(_a[1]))); break;
+        case 2: { bool _r = _t->notificationsEnabled();
+            if (_a[0]) *reinterpret_cast<bool*>(_a[0]) = std::move(_r); }  break;
+        case 3: _t->setNotificationsEnabled((*reinterpret_cast<std::add_pointer_t<bool>>(_a[1]))); break;
+        case 4: _t->testNotify(); break;
+        case 5: { bool _r = _t->repairAudio();
+            if (_a[0]) *reinterpret_cast<bool*>(_a[0]) = std::move(_r); }  break;
+        default: ;
+        }
+    }
+}
+
+const QMetaObject *Kader42AudioGuardKcm::metaObject() const
+{
+    return QObject::d_ptr->metaObject ? QObject::d_ptr->dynamicMetaObject() : &staticMetaObject;
+}
+
+void *Kader42AudioGuardKcm::qt_metacast(const char *_clname)
+{
+    if (!_clname) return nullptr;
+    if (!strcmp(_clname, qt_staticMetaObjectStaticContent<qt_meta_tag_ZN20Kader42AudioGuardKcmE_t>.strings))
+        return static_cast<void*>(this);
+    return KQuickConfigModule::qt_metacast(_clname);
+}
+
+int Kader42AudioGuardKcm::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
+{
+    _id = KQuickConfigModule::qt_metacall(_c, _id, _a);
+    if (_id < 0)
+        return _id;
+    if (_c == QMetaObject::InvokeMetaMethod) {
+        if (_id < 6)
+            qt_static_metacall(this, _c, _id, _a);
+        _id -= 6;
+    }
+    if (_c == QMetaObject::RegisterMethodArgumentMetaType) {
+        if (_id < 6)
+            *reinterpret_cast<QMetaType *>(_a[0]) = QMetaType();
+        _id -= 6;
+    }
+    return _id;
+}
+namespace {
+struct qt_meta_tag_ZN30kcm_kader42_audioguard_factoryE_t {};
+} // unnamed namespace
+
+template <> constexpr inline auto kcm_kader42_audioguard_factory::qt_create_metaobjectdata<qt_meta_tag_ZN30kcm_kader42_audioguard_factoryE_t>()
+{
+    namespace QMC = QtMocConstants;
+    QtMocHelpers::StringRefStorage qt_stringData {
+        "kcm_kader42_audioguard_factory"
+    };
+
+    QtMocHelpers::UintData qt_methods {
+    };
+    QtMocHelpers::UintData qt_properties {
+    };
+    QtMocHelpers::UintData qt_enums {
+    };
+    return QtMocHelpers::metaObjectData<kcm_kader42_audioguard_factory, qt_meta_tag_ZN30kcm_kader42_audioguard_factoryE_t>(QMC::MetaObjectFlag{}, qt_stringData,
+            qt_methods, qt_properties, qt_enums);
+}
+Q_CONSTINIT const QMetaObject kcm_kader42_audioguard_factory::staticMetaObject = { {
+    QMetaObject::SuperData::link<KPluginFactory::staticMetaObject>(),
+    qt_staticMetaObjectStaticContent<qt_meta_tag_ZN30kcm_kader42_audioguard_factoryE_t>.stringdata,
+    qt_staticMetaObjectStaticContent<qt_meta_tag_ZN30kcm_kader42_audioguard_factoryE_t>.data,
+    qt_static_metacall,
+    nullptr,
+    qt_staticMetaObjectRelocatingContent<qt_meta_tag_ZN30kcm_kader42_audioguard_factoryE_t>.metaTypes,
+    nullptr
+} };
+
+void kcm_kader42_audioguard_factory::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, void **_a)
+{
+    auto *_t = static_cast<kcm_kader42_audioguard_factory *>(_o);
+    (void)_t;
+    (void)_c;
+    (void)_id;
+    (void)_a;
+}
+
+const QMetaObject *kcm_kader42_audioguard_factory::metaObject() const
+{
+    return QObject::d_ptr->metaObject ? QObject::d_ptr->dynamicMetaObject() : &staticMetaObject;
+}
+
+void *kcm_kader42_audioguard_factory::qt_metacast(const char *_clname)
+{
+    if (!_clname) return nullptr;
+    if (!strcmp(_clname, qt_staticMetaObjectStaticContent<qt_meta_tag_ZN30kcm_kader42_audioguard_factoryE_t>.strings))
+        return static_cast<void*>(this);
+    if (!strcmp(_clname, "org.kde.KPluginFactory"))
+        return static_cast< KPluginFactory*>(this);
+    return KPluginFactory::qt_metacast(_clname);
+}
+
+int kcm_kader42_audioguard_factory::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
+{
+    _id = KPluginFactory::qt_metacall(_c, _id, _a);
+    return _id;
+}
+
+#ifdef QT_MOC_EXPORT_PLUGIN_V2
+static constexpr unsigned char qt_pluginMetaDataV2_kcm_kader42_audioguard_factory[] = {
+    0xbf, 
+    // "IID"
+    0x02,  0x76,  'o',  'r',  'g',  '.',  'k',  'd', 
+    'e',  '.',  'K',  'P',  'l',  'u',  'g',  'i', 
+    'n',  'F',  'a',  'c',  't',  'o',  'r',  'y', 
+    // "className"
+    0x03,  0x78,  0x1e,  'k',  'c',  'm',  '_',  'k', 
+    'a',  'd',  'e',  'r',  '4',  '2',  '_',  'a', 
+    'u',  'd',  'i',  'o',  'g',  'u',  'a',  'r', 
+    'd',  '_',  'f',  'a',  'c',  't',  'o',  'r', 
+    'y', 
+    // "MetaData"
+    0x04,  0xa5,  0x67,  'K',  'P',  'l',  'u',  'g', 
+    'i',  'n',  0xa5,  0x6b,  'D',  'e',  's',  'c', 
+    'r',  'i',  'p',  't',  'i',  'o',  'n',  0x78, 
+    0x3c,  'C',  'o',  'n',  'f',  'i',  'g',  'u', 
+    'r',  'e',  ' ',  'a',  'u',  't',  'o',  'm', 
+    'a',  't',  'i',  'c',  ' ',  'a',  'u',  'd', 
+    'i',  'o',  ' ',  'r',  'e',  'c',  'o',  'v', 
+    'e',  'r',  'y',  ' ',  'a',  'n',  'd',  ' ', 
+    'd',  'e',  's',  'k',  't',  'o',  'p',  ' ', 
+    'n',  'o',  't',  'i',  'f',  'i',  'c',  'a', 
+    't',  'i',  'o',  'n',  's',  0x6f,  'D',  'e', 
+    's',  'c',  'r',  'i',  'p',  't',  'i',  'o', 
+    'n',  '[',  'd',  'e',  ']',  0x78,  0x49,  'A', 
+    'u',  't',  'o',  'm',  'a',  't',  'i',  's', 
+    'c',  'h',  'e',  ' ',  'A',  'u',  'd',  'i', 
+    'o',  '-',  'W',  'i',  'e',  'd',  'e',  'r', 
+    'h',  'e',  'r',  's',  't',  'e',  'l',  'l', 
+    'u',  'n',  'g',  ' ',  'u',  'n',  'd',  ' ', 
+    'B',  'e',  'n',  'a',  'c',  'h',  'r',  'i', 
+    'c',  'h',  't',  'i',  'g',  'u',  'n',  'g', 
+    'e',  'n',  ' ',  'k',  'o',  'n',  'f',  'i', 
+    'g',  'u',  'r',  'i',  'e',  'r',  'e',  'n', 
+    0x64,  'I',  'c',  'o',  'n',  0x6a,  'a',  'u', 
+    'd',  'i',  'o',  '-',  'c',  'a',  'r',  'd', 
+    0x64,  'N',  'a',  'm',  'e',  0x73,  'K',  'a', 
+    'd',  'e',  'r',  '4',  '2',  ' ',  'A',  'u', 
+    'd',  'i',  'o',  ' ',  'G',  'u',  'a',  'r', 
+    'd',  0x68,  'N',  'a',  'm',  'e',  '[',  'd', 
+    'e',  ']',  0x73,  'K',  'a',  'd',  'e',  'r', 
+    '4',  '2',  ' ',  'A',  'u',  'd',  'i',  'o', 
+    ' ',  'G',  'u',  'a',  'r',  'd',  0x6e,  'X', 
+    '-',  'K',  'D',  'E',  '-',  'K',  'e',  'y', 
+    'w',  'o',  'r',  'd',  's',  0x78,  0x40,  'a', 
+    'u',  'd',  'i',  'o',  ',',  's',  'o',  'u', 
+    'n',  'd',  ',',  'p',  'i',  'p',  'e',  'w', 
+    'i',  'r',  'e',  ',',  'w',  'i',  'r',  'e', 
+    'p',  'l',  'u',  'm',  'b',  'e',  'r',  ',', 
+    'n',  'o',  't',  'i',  'f',  'i',  'c',  'a', 
+    't',  'i',  'o',  'n',  's',  ',',  'd',  'o', 
+    'c',  'k',  ',',  'w',  'd',  '1',  '5',  ',', 
+    'k',  'a',  'd',  'e',  'r',  '4',  '2',  0x72, 
+    'X',  '-',  'K',  'D',  'E',  '-',  'K',  'e', 
+    'y',  'w',  'o',  'r',  'd',  's',  '[',  'd', 
+    'e',  ']',  0x78,  0x5e,  'A',  'u',  'd',  'i', 
+    'o',  ',',  'T',  'o',  'n',  ',',  'K',  'l', 
+    'a',  'n',  'g',  ',',  'S',  'o',  'u',  'n', 
+    'd',  'k',  'a',  'r',  't',  'e',  ',',  'B', 
+    'e',  'n',  'a',  'c',  'h',  'r',  'i',  'c', 
+    'h',  't',  'i',  'g',  'u',  'n',  'g',  'e', 
+    'n',  ',',  'M',  'e',  'l',  'd',  'u',  'n', 
+    'g',  'e',  'n',  ',',  'P',  'i',  'p',  'e', 
+    'W',  'i',  'r',  'e',  ',',  'W',  'i',  'r', 
+    'e',  'P',  'l',  'u',  'm',  'b',  'e',  'r', 
+    ',',  'D',  'o',  'c',  'k',  ',',  'W',  'D', 
+    '1',  '5',  ',',  'K',  'a',  'd',  'e',  'r', 
+    '4',  '2',  0x78,  0x25,  'X',  '-',  'K',  'D', 
+    'E',  '-',  'S',  'y',  's',  't',  'e',  'm', 
+    '-',  'S',  'e',  't',  't',  'i',  'n',  'g', 
+    's',  '-',  'P',  'a',  'r',  'e',  'n',  't', 
+    '-',  'C',  'a',  't',  'e',  'g',  'o',  'r', 
+    'y',  0x6d,  'i',  'n',  'p',  'u',  't',  '-', 
+    'd',  'e',  'v',  'i',  'c',  'e',  's',  0x6c, 
+    'X',  '-',  'K',  'D',  'E',  '-',  'W',  'e', 
+    'i',  'g',  'h',  't',  0x18,  0x3c, 
+    0xff, 
+};
+QT_MOC_EXPORT_PLUGIN_V2(kcm_kader42_audioguard_factory, kcm_kader42_audioguard_factory, qt_pluginMetaDataV2_kcm_kader42_audioguard_factory)
+#else
+QT_PLUGIN_METADATA_SECTION
+Q_CONSTINIT static constexpr unsigned char qt_pluginMetaData_kcm_kader42_audioguard_factory[] = {
+    'Q', 'T', 'M', 'E', 'T', 'A', 'D', 'A', 'T', 'A', ' ', '!',
+    // metadata version, Qt version, architectural requirements
+    0, QT_VERSION_MAJOR, QT_VERSION_MINOR, qPluginArchRequirements(),
+    0xbf, 
+    // "IID"
+    0x02,  0x76,  'o',  'r',  'g',  '.',  'k',  'd', 
+    'e',  '.',  'K',  'P',  'l',  'u',  'g',  'i', 
+    'n',  'F',  'a',  'c',  't',  'o',  'r',  'y', 
+    // "className"
+    0x03,  0x78,  0x1e,  'k',  'c',  'm',  '_',  'k', 
+    'a',  'd',  'e',  'r',  '4',  '2',  '_',  'a', 
+    'u',  'd',  'i',  'o',  'g',  'u',  'a',  'r', 
+    'd',  '_',  'f',  'a',  'c',  't',  'o',  'r', 
+    'y', 
+    // "MetaData"
+    0x04,  0xa5,  0x67,  'K',  'P',  'l',  'u',  'g', 
+    'i',  'n',  0xa5,  0x6b,  'D',  'e',  's',  'c', 
+    'r',  'i',  'p',  't',  'i',  'o',  'n',  0x78, 
+    0x3c,  'C',  'o',  'n',  'f',  'i',  'g',  'u', 
+    'r',  'e',  ' ',  'a',  'u',  't',  'o',  'm', 
+    'a',  't',  'i',  'c',  ' ',  'a',  'u',  'd', 
+    'i',  'o',  ' ',  'r',  'e',  'c',  'o',  'v', 
+    'e',  'r',  'y',  ' ',  'a',  'n',  'd',  ' ', 
+    'd',  'e',  's',  'k',  't',  'o',  'p',  ' ', 
+    'n',  'o',  't',  'i',  'f',  'i',  'c',  'a', 
+    't',  'i',  'o',  'n',  's',  0x6f,  'D',  'e', 
+    's',  'c',  'r',  'i',  'p',  't',  'i',  'o', 
+    'n',  '[',  'd',  'e',  ']',  0x78,  0x49,  'A', 
+    'u',  't',  'o',  'm',  'a',  't',  'i',  's', 
+    'c',  'h',  'e',  ' ',  'A',  'u',  'd',  'i', 
+    'o',  '-',  'W',  'i',  'e',  'd',  'e',  'r', 
+    'h',  'e',  'r',  's',  't',  'e',  'l',  'l', 
+    'u',  'n',  'g',  ' ',  'u',  'n',  'd',  ' ', 
+    'B',  'e',  'n',  'a',  'c',  'h',  'r',  'i', 
+    'c',  'h',  't',  'i',  'g',  'u',  'n',  'g', 
+    'e',  'n',  ' ',  'k',  'o',  'n',  'f',  'i', 
+    'g',  'u',  'r',  'i',  'e',  'r',  'e',  'n', 
+    0x64,  'I',  'c',  'o',  'n',  0x6a,  'a',  'u', 
+    'd',  'i',  'o',  '-',  'c',  'a',  'r',  'd', 
+    0x64,  'N',  'a',  'm',  'e',  0x73,  'K',  'a', 
+    'd',  'e',  'r',  '4',  '2',  ' ',  'A',  'u', 
+    'd',  'i',  'o',  ' ',  'G',  'u',  'a',  'r', 
+    'd',  0x68,  'N',  'a',  'm',  'e',  '[',  'd', 
+    'e',  ']',  0x73,  'K',  'a',  'd',  'e',  'r', 
+    '4',  '2',  ' ',  'A',  'u',  'd',  'i',  'o', 
+    ' ',  'G',  'u',  'a',  'r',  'd',  0x6e,  'X', 
+    '-',  'K',  'D',  'E',  '-',  'K',  'e',  'y', 
+    'w',  'o',  'r',  'd',  's',  0x78,  0x40,  'a', 
+    'u',  'd',  'i',  'o',  ',',  's',  'o',  'u', 
+    'n',  'd',  ',',  'p',  'i',  'p',  'e',  'w', 
+    'i',  'r',  'e',  ',',  'w',  'i',  'r',  'e', 
+    'p',  'l',  'u',  'm',  'b',  'e',  'r',  ',', 
+    'n',  'o',  't',  'i',  'f',  'i',  'c',  'a', 
+    't',  'i',  'o',  'n',  's',  ',',  'd',  'o', 
+    'c',  'k',  ',',  'w',  'd',  '1',  '5',  ',', 
+    'k',  'a',  'd',  'e',  'r',  '4',  '2',  0x72, 
+    'X',  '-',  'K',  'D',  'E',  '-',  'K',  'e', 
+    'y',  'w',  'o',  'r',  'd',  's',  '[',  'd', 
+    'e',  ']',  0x78,  0x5e,  'A',  'u',  'd',  'i', 
+    'o',  ',',  'T',  'o',  'n',  ',',  'K',  'l', 
+    'a',  'n',  'g',  ',',  'S',  'o',  'u',  'n', 
+    'd',  'k',  'a',  'r',  't',  'e',  ',',  'B', 
+    'e',  'n',  'a',  'c',  'h',  'r',  'i',  'c', 
+    'h',  't',  'i',  'g',  'u',  'n',  'g',  'e', 
+    'n',  ',',  'M',  'e',  'l',  'd',  'u',  'n', 
+    'g',  'e',  'n',  ',',  'P',  'i',  'p',  'e', 
+    'W',  'i',  'r',  'e',  ',',  'W',  'i',  'r', 
+    'e',  'P',  'l',  'u',  'm',  'b',  'e',  'r', 
+    ',',  'D',  'o',  'c',  'k',  ',',  'W',  'D', 
+    '1',  '5',  ',',  'K',  'a',  'd',  'e',  'r', 
+    '4',  '2',  0x78,  0x25,  'X',  '-',  'K',  'D', 
+    'E',  '-',  'S',  'y',  's',  't',  'e',  'm', 
+    '-',  'S',  'e',  't',  't',  'i',  'n',  'g', 
+    's',  '-',  'P',  'a',  'r',  'e',  'n',  't', 
+    '-',  'C',  'a',  't',  'e',  'g',  'o',  'r', 
+    'y',  0x6d,  'i',  'n',  'p',  'u',  't',  '-', 
+    'd',  'e',  'v',  'i',  'c',  'e',  's',  0x6c, 
+    'X',  '-',  'K',  'D',  'E',  '-',  'W',  'e', 
+    'i',  'g',  'h',  't',  0x18,  0x3c, 
+    0xff, 
+};
+QT_MOC_EXPORT_PLUGIN(kcm_kader42_audioguard_factory, kcm_kader42_audioguard_factory)
+#endif  // QT_MOC_EXPORT_PLUGIN_V2
+
+QT_WARNING_POP

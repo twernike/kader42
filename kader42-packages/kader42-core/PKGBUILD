@@ -1,8 +1,8 @@
 # Maintainer: Thomas Wernike <support@kader42.de>
 pkgname=kader42-core
-pkgver=1.1.0
-pkgrel=3
-pkgdesc="Core configurations and systemd units for Kader42"
+pkgver=2.0.0
+pkgrel=5
+pkgdesc="Core configurations, tools and systemd units for Kader42"
 arch=('any')
 depends=('bash' 'dbus' 'kernel-modules-hook' 'pacback' 'systemd-boot-pacman-hook' 'system-config-printer' 'cups' 'libreoffice-fresh-de' 'kader42-software-center' 'kader42-plasma-theme')
 install=kader42-core.install
@@ -53,16 +53,23 @@ package() {
     install -Dm755 "${startdir}/etc/xdg/plasmashellrc" "${pkgdir}/etc/xdg/plasmashellrc"
     install -Dm755 "${startdir}/etc/xdg/powerdevilrc" "${pkgdir}/etc/xdg/powerdevilrc"
     install -Dm755 "${startdir}/etc/xdg/powermanagementprofilesrc" "${pkgdir}/etc/xdg/powermanagementprofilesrc"
+    install -Dm755 "${startdir}/usr/bin/kader42-audio-guard" "${pkgdir}/usr/bin/kader42-audio-guard"
+    install -Dm755 "${startdir}/usr/bin/kader42-audio-guard-settings" "${pkgdir}/usr/bin/kader42-audio-guard-settings"
     install -Dm755 "${startdir}/usr/bin/kader42-discover-sync" "${pkgdir}/usr/bin/kader42-discover-sync"
     install -Dm755 "${startdir}/usr/bin/kader42-hello" "${pkgdir}/usr/bin/kader42-hello"
     install -Dm755 "${startdir}/usr/bin/kader-install.sh" "${pkgdir}/usr/bin/kader-install.sh"
     install -Dm755 "${startdir}/usr/bin/mount-samba" "${pkgdir}/usr/bin/mount-samba"
+    install -Dm755 "${startdir}/usr/lib/qt6/plugins/plasma/kcms/systemsettings/kcm_kader42_audioguard.so" "${pkgdir}/usr/lib/qt6/plugins/plasma/kcms/systemsettings/kcm_kader42_audioguard.so"
     install -Dm644 "${startdir}/usr/lib/systemd/system/display-manager.service.d/kader42-plymouth.conf" "${pkgdir}/usr/lib/systemd/system/display-manager.service.d/kader42-plymouth.conf"
     install -Dm755 "${startdir}/usr/lib/systemd/system-preset/61-kader-2.preset" "${pkgdir}/usr/lib/systemd/system-preset/61-kader-2.preset"
     install -Dm644 "${startdir}/usr/lib/systemd/system/sddm.service.d/42-kader42-override.conf" "${pkgdir}/usr/lib/systemd/system/sddm.service.d/42-kader42-override.conf"
     install -Dm644 "${startdir}/usr/lib/systemd/system/sddm.service.d/42-kader42-plymouth.conf" "${pkgdir}/usr/lib/systemd/system/sddm.service.d/42-kader42-plymouth.conf"
+    install -Dm644 "${startdir}/usr/lib/systemd/user/kader42-audio-guard.service" "${pkgdir}/usr/lib/systemd/user/kader42-audio-guard.service"
     install -Dm644 "${startdir}/usr/lib/systemd/user-preset/62-kader-user-2.preset" "${pkgdir}/usr/lib/systemd/user-preset/62-kader-user-2.preset"
     install -Dm755 "${startdir}/usr/lib/vconsole.conf" "${pkgdir}/usr/lib/vconsole.conf"
+    install -Dm644 "${startdir}/usr/share/applications/kader42-audio-guard.desktop" "${pkgdir}/usr/share/applications/kader42-audio-guard.desktop"
+    install -Dm644 "${startdir}/usr/share/applications/kader42-audio-guard-settings.desktop" "${pkgdir}/usr/share/applications/kader42-audio-guard-settings.desktop"
+    install -Dm644 "${startdir}/usr/share/knotifications6/kader42-audio-guard.notifyrc" "${pkgdir}/usr/share/knotifications6/kader42-audio-guard.notifyrc"
     install -Dm644 "${startdir}/usr/share/konsole/kader42-2.colorscheme" "${pkgdir}/usr/share/konsole/kader42-2.colorscheme"
     install -Dm644 "${startdir}/usr/share/konsole/Kader42-2.profile" "${pkgdir}/usr/share/konsole/Kader42-2.profile"
     install -Dm644 "${startdir}/usr/share/pixmaps/mello.svg" "${pkgdir}/usr/share/pixmaps/mello.svg"

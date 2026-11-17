@@ -1,0 +1,19 @@
+[Global]
+IconName=audio-card
+Name=Kader42 Audio Guard
+Comment=Monitors sound cards and USB docks in the background and automatically recovers audio output after locks or dropouts.
+Comment[de]=Überwacht im Hintergrund Soundkarten und USB-Docks und stellt die Audio-Ausgabe nach Blockaden oder Aussetzern automatisch wieder her.
+
+[Event/audio-recovered]
+Name=Audio recovered
+Name[de]=Audio wiederhergestellt
+Comment=Notifies when PipeWire or a USB dock has been reinitialized after an issue.
+Comment[de]=Informiert, sobald PipeWire oder das USB-Dock nach einer Störung neu initialisiert wurde.
+Action=Popup
+
+[Event/audio-blocked]
+Name=Audio device blocked
+Name[de]=Audiogerät blockiert
+Comment=Warns when an application exclusively locks a sound card and blocks system audio.
+Comment[de]=Warnt, wenn ein Programm eine Soundkarte exklusiv belegt und die Systemausgabe blockiert.
+Action=Popup

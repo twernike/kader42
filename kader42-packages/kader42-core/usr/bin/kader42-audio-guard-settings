@@ -1,0 +1,184 @@
+#!/usr/bin/env python3
+import os
+import subprocess
+import sys
+from pathlib import Path
+from PySide6.QtCore import QLocale
+from PySide6.QtGui import QIcon
+from PySide6.QtWidgets import (
+    QApplication,
+    QCheckBox,
+    QFrame,
+    QHBoxLayout,
+    QLabel,
+    QMessageBox,
+    QPushButton,
+    QVBoxLayout,
+    QWidget,
+)
+
+TEXTS = {
+    "de": {
+        "title": "Kader42 Audio Guard",
+        "description": (
+            "Der Kader42 Audio Guard überwacht im Hintergrund Ihre Soundkarten und USB-Docks "
+            "(z. B. Dell WD15). Falls eine Anwendung ein ALSA-Gerät exklusiv blockiert oder "
+            "PipeWire auf „Schein-Ausgabe“ zurückfällt, stellt der Dienst die Audio-Ausgabe "
+            "automatisch wieder her."
+        ),
+        "enable_service": "Hintergrundüberwachung beim Anmelden aktivieren",
+        "enable_notify": "Desktop-Benachrichtigungen bei Störungen und Reparaturen anzeigen",
+        "status_running": "Dienststatus: Aktiv (läuft im Hintergrund)",
+        "status_stopped": "Dienststatus: Inaktiv",
+        "test_btn": "Test-Meldung",
+        "repair_btn": "Audio jetzt reparieren",
+        "repair_ok_title": "Wiederherstellung erfolgreich",
+        "repair_ok_msg": "PipeWire und WirePlumber wurden erfolgreich neu initialisiert.",
+        "repair_err_title": "Wiederherstellung nicht möglich",
+        "repair_err_msg": "Ein Programm belegt das Audiogerät noch exklusiv. Bitte schließen Sie die blockierende Anwendung und versuchen Sie es erneut.",
+    },
+    "en": {
+        "title": "Kader42 Audio Guard",
+        "description": (
+            "Kader42 Audio Guard monitors your sound cards and USB docks (such as the Dell WD15) "
+            "in the background. If an application exclusively locks an ALSA device or PipeWire "
+            "falls back to Dummy Output, the service automatically restores audio output."
+        ),
+        "enable_service": "Enable background monitoring on login",
+        "enable_notify": "Show desktop notifications on locks and automatic recovery",
+        "status_running": "Service status: Active (running in background)",
+        "status_stopped": "Service status: Inactive",
+        "test_btn": "Test notification",
+        "repair_btn": "Repair audio now",
+        "repair_ok_title": "Recovery successful",
+        "repair_ok_msg": "PipeWire and WirePlumber have been successfully reinitialized.",
+        "repair_err_title": "Recovery failed",
+        "repair_err_msg": "An application is still holding an exclusive lock on the audio device. Please close the blocking application and try again.",
+    },
+}
+
+
+def get_lang() -> str:
+    lang_env = os.environ.get("LANGUAGE", "").split(":")[0].strip()
+    if lang_env:
+        return "de" if lang_env.lower().startswith("de") else "en"
+    return "de" if QLocale.system().name().startswith("de") else "en"
+
+
+def config_path() -> Path:
+    base = Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config"))
+    return base / "kader42" / "audio-guard.conf"
+
+
+def read_notifications_enabled() -> bool:
+    for path in (config_path(), Path("/etc/kader42/audio-guard.conf")):
+        if path.is_file():
+            for line in path.read_text(encoding="utf-8").splitlines():
+                if line.strip().startswith("notifications="):
+                    val = line.split("=", 1)[1].strip().lower()
+                    return val not in ("false", "0", "no")
+    return True
+
+
+def write_notifications_enabled(enabled: bool) -> None:
+    path = config_path()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(f"notifications={'true' if enabled else 'false'}\n", encoding="utf-8")
+
+
+def is_service_active() -> bool:
+    res = subprocess.run(
+        ["systemctl", "--user", "is-active", "--quiet", "kader42-audio-guard.service"],
+        check=False,
+    )
+    return res.returncode == 0
+
+
+class AudioGuardWindow(QWidget):
+    def __init__(self) -> None:
+        super().__init__()
+        self.t = TEXTS[get_lang()]
+        self.setWindowTitle(self.t["title"])
+        self.setWindowIcon(QIcon.fromTheme("audio-card"))
+        self.setMinimumWidth(540)
+
+        layout = QVBoxLayout(self)
+        layout.setSpacing(14)
+        layout.setContentsMargins(20, 20, 20, 20)
+
+        header = QLabel(f"<h2>{self.t['title']}</h2>")
+        layout.addWidget(header)
+
+        desc = QLabel(self.t["description"])
+        desc.setWordWrap(True)
+        layout.addWidget(desc)
+
+        line = QFrame()
+        line.setFrameShape(QFrame.Shape.HLine)
+        line.setFrameShadow(QFrame.Shadow.Sunken)
+        layout.addWidget(line)
+
+        self.service_cb = QCheckBox(self.t["enable_service"])
+        self.service_cb.setChecked(is_service_active())
+        self.service_cb.toggled.connect(self.on_service_toggled)
+        layout.addWidget(self.service_cb)
+
+        self.notify_cb = QCheckBox(self.t["enable_notify"])
+        self.notify_cb.setChecked(read_notifications_enabled())
+        self.notify_cb.toggled.connect(self.on_notify_toggled)
+        layout.addWidget(self.notify_cb)
+
+        bottom = QHBoxLayout()
+        self.status_label = QLabel()
+        self.update_status_label()
+        bottom.addWidget(self.status_label)
+        bottom.addStretch()
+
+        self.test_btn = QPushButton(QIcon.fromTheme("notifications"), self.t["test_btn"])
+        self.test_btn.setEnabled(self.notify_cb.isChecked())
+        self.test_btn.clicked.connect(self.on_test_clicked)
+        bottom.addWidget(self.test_btn)
+
+        self.repair_btn = QPushButton(QIcon.fromTheme("view-refresh"), self.t["repair_btn"])
+        self.repair_btn.clicked.connect(self.on_repair_clicked)
+        bottom.addWidget(self.repair_btn)
+
+        layout.addLayout(bottom)
+
+    def update_status_label(self) -> None:
+        active = is_service_active()
+        self.status_label.setText(
+            self.t["status_running"] if active else self.t["status_stopped"]
+        )
+
+    def on_service_toggled(self, checked: bool) -> None:
+        action = "enable" if checked else "disable"
+        subprocess.run(
+            ["systemctl", "--user", action, "--now", "kader42-audio-guard.service"],
+            check=False,
+        )
+        self.update_status_label()
+
+    def on_notify_toggled(self, checked: bool) -> None:
+        write_notifications_enabled(checked)
+        self.test_btn.setEnabled(checked)
+
+    def on_test_clicked(self) -> None:
+        subprocess.run(["/usr/bin/kader42-audio-guard", "--test-notify"], check=False)
+
+    def on_repair_clicked(self) -> None:
+        self.repair_btn.setEnabled(False)
+        QApplication.processEvents()
+        res = subprocess.run(["/usr/bin/kader42-audio-guard", "--repair"], check=False)
+        self.repair_btn.setEnabled(True)
+        if res.returncode == 0:
+            QMessageBox.information(self, self.t["repair_ok_title"], self.t["repair_ok_msg"])
+        else:
+            QMessageBox.warning(self, self.t["repair_err_title"], self.t["repair_err_msg"])
+
+
+if __name__ == "__main__":
+    app = QApplication(sys.argv)
+    win = AudioGuardWindow()
+    win.show()
+    sys.exit(app.exec())

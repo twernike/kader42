@@ -3,9 +3,9 @@ set -euo pipefail
 
 # Configuration
 PKGNAME="kader42-core"
-PKGVER="1.1.0"
-PKGREL="3"
-PKGDESC="Core configurations and systemd units for Kader42"
+PKGVER="2.0.0"
+PKGREL="5"
+PKGDESC="Core configurations, tools and systemd units for Kader42"
 MAINTAINER="Thomas Wernike <support@kader42.de>"
 
 TARGET_DIRS=("etc" "usr")
@@ -82,3 +82,7 @@ $(printf "%s\n" "${install_lines[@]}")
 EOF
 
 echo "==> PKGBUILD wurde erfolgreich aktualisiert!"
+makepkg -s
+mv *.pkg.tar.zst ../
+cd ..
+repo-add kader42.db.tar.gz *.pkg.tar.zst

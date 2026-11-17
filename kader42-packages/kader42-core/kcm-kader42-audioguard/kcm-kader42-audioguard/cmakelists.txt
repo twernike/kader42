@@ -1,0 +1,23 @@
+cmake_minimum_required(VERSION 3.16)
+project(kcm_kader42_audioguard)
+
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+find_package(ECM REQUIRED NO_MODULE)
+set(CMAKE_MODULE_PATH ${ECM_MODULE_PATH})
+
+include(KDEInstallDirs)
+include(KDECMakeSettings)
+include(KDECompilerSettings NO_POLICY_SCOPE)
+
+find_package(Qt6 REQUIRED COMPONENTS Core Quick)
+find_package(KF6 REQUIRED COMPONENTS CoreAddons KCMUtils)
+
+kcmutils_add_qml_kcm(kcm_kader42_audioguard SOURCES kcm_kader42_audioguard.cpp)
+target_link_libraries(kcm_kader42_audioguard PRIVATE
+    Qt6::Core
+    Qt6::Quick
+    KF6::CoreAddons
+    KF6::KCMUtils
+)
