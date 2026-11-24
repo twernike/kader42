@@ -4,18 +4,18 @@ set -euo pipefail
 # Configuration
 PKGNAME="kader42-core"
 PKGVER="2.0.0"
-PKGREL="5"
+PKGREL="6"
 PKGDESC="Core configurations, tools and systemd units for Kader42"
 MAINTAINER="Thomas Wernike <support@kader42.de>"
 
 TARGET_DIRS=("etc" "usr")
 
-# Arrays vorbereiten
+# Preparing arrays
 source_entries=()
 sha256_entries=()
 install_lines=()
 
-# 1. Lose Basis-Dateien hinzufügen
+# 1. Add individual base files
 base_sources=(
     'kader42-cleanup.service'
     'kader42-software-center-favorite.upd'
@@ -27,7 +27,7 @@ for src in "${base_sources[@]}"; do
     sha256_entries+=("    'SKIP'")
 done
 
-# 2. Ordner etc/ und usr/ scannen
+# 2. Scan the etc/ and usr/ directories
 for dir in "${TARGET_DIRS[@]}"; do
     if [ -d "$dir" ]; then
         while IFS= read -r -d '' file; do
@@ -46,7 +46,7 @@ for dir in "${TARGET_DIRS[@]}"; do
     fi
 done
 
-# 3. PKGBUILD direkt generieren und schreiben
+# 3. Generate and write the PKGBUILD directly
 cat <<EOF > PKGBUILD
 # Maintainer: ${MAINTAINER}
 pkgname=${PKGNAME}
@@ -81,7 +81,7 @@ $(printf "%s\n" "${install_lines[@]}")
 }
 EOF
 
-echo "==> PKGBUILD wurde erfolgreich aktualisiert!"
+echo "==> PKGBUILD has been successfully updated!"
 makepkg -s
 mv *.pkg.tar.zst ../
 cd ..

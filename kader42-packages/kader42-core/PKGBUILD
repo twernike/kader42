@@ -1,7 +1,7 @@
 # Maintainer: Thomas Wernike <support@kader42.de>
 pkgname=kader42-core
 pkgver=2.0.0
-pkgrel=5
+pkgrel=6
 pkgdesc="Core configurations, tools and systemd units for Kader42"
 arch=('any')
 depends=('bash' 'dbus' 'kernel-modules-hook' 'pacback' 'systemd-boot-pacman-hook' 'system-config-printer' 'cups' 'libreoffice-fresh-de' 'kader42-software-center' 'kader42-plasma-theme')

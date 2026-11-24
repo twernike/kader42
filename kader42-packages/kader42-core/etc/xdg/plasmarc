@@ -1,2 +1,6 @@
 [org.kde.plasma.kickoff][General]
 favorites=applications:kader42-software-center.desktop,applications:systemsettings.desktop,applications:org.kde.dolphin.desktop
+
+[Wallpaper]
+defaultWallpaperTheme=Kader42-Wallpapers
+defaultFileSuffix=.jpg
