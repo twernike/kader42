@@ -1,0 +1,24 @@
+# Maintainer: Thomas Wernike <support@kader42.de>
+pkgname=kader42-wallpapers
+pkgver=1.0.0
+pkgrel=0
+pkgdesc="The specific Kader42 Wallpaper Theme"
+arch=('any')
+
+source=(
+
+)
+
+sha256sums=(
+
+)
+
+
+package() {
+    install -Dm644 "${startdir}/usr/share/wallpapers/Kader42-Wallpapers/contents/images/5120x2880.jpg" "${pkgdir}/usr/share/wallpapers/Kader42-Wallpapers/contents/images/5120x2880.jpg"
+    install -Dm644 "${startdir}/usr/share/wallpapers/Kader42-Wallpapers/contents/images/720x1440.jpg" "${pkgdir}/usr/share/wallpapers/Kader42-Wallpapers/contents/images/720x1440.jpg"
+    install -Dm644 "${startdir}/usr/share/wallpapers/Kader42-Wallpapers/contents/login-screen.png" "${pkgdir}/usr/share/wallpapers/Kader42-Wallpapers/contents/login-screen.png"
+    install -Dm644 "${startdir}/usr/share/wallpapers/Kader42-Wallpapers/contents/screenshot.png" "${pkgdir}/usr/share/wallpapers/Kader42-Wallpapers/contents/screenshot.png"
+    install -Dm644 "${startdir}/usr/share/wallpapers/Kader42-Wallpapers/metadata.json" "${pkgdir}/usr/share/wallpapers/Kader42-Wallpapers/metadata.json"
+
+}
