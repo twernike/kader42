@@ -3,8 +3,8 @@ set -euo pipefail
 
 # Configuration
 PKGNAME="kader42-plasma-theme"
-PKGVER="1.0.4"
-PKGREL="0"
+PKGVER="1.0.6"
+PKGREL="5"
 PKGDESC="The specific Kader42 Plasma Theme"
 MAINTAINER="Thomas Wernike <support@kader42.de>"
 
@@ -21,10 +21,7 @@ for dir in "${TARGET_DIRS[@]}"; do
     if [ -d "$dir" ]; then
         while IFS= read -r -d '' file; do
             if [ -f "$file" ]; then
-                # source_entries+=("    '$file'")
-                # sha256_entries+=("    'SKIP'")
-
-                # Modus wählen: 755 für Executables / usr/bin, sonst 644
+                # Select mode: 755 for executables / usr/bin, otherwise 644
                 if [[ "$file" == usr/bin/* ]] || [ -x "$file" ]; then
                     install_lines+=("    install -Dm755 \"\${startdir}/$file\" \"\${pkgdir}/$file\"")
                 else
@@ -35,7 +32,7 @@ for dir in "${TARGET_DIRS[@]}"; do
     fi
 done
 
-# 3. PKGBUILD direkt generieren und schreiben
+# 3. Generate and write the PKGBUILD directly
 cat <<EOF > PKGBUILD
 # Maintainer: ${MAINTAINER}
 pkgname=${PKGNAME}
@@ -43,6 +40,7 @@ pkgver=${PKGVER}
 pkgrel=${PKGREL}
 pkgdesc="${PKGDESC}"
 arch=('any')
+depends=('kader42-wallpapers')
 install=${PKGNAME}.install
 
 source=(
@@ -60,4 +58,8 @@ $(printf "%s\n" "${install_lines[@]}")
 }
 EOF
 
-echo "==> PKGBUILD wurde erfolgreich aktualisiert!"
+echo "==> PKGBUILD has been successfully updated!"
+makepkg -s
+mv *.pkg.tar.zst ../
+cd ..
+repo-add kader42.db.tar.gz *.pkg.tar.zst
